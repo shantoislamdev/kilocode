@@ -1,6 +1,6 @@
 // kilocode_change - new file
 import { test, expect, describe } from "bun:test"
-import { formatTable, isTextModel } from "../../src/cli/cmd/roll-call"
+import { formatTable, formatMarkdown, isTextModel } from "../../src/cli/cmd/roll-call"
 
 describe("formatTable", () => {
   test("formats simple table correctly", () => {
@@ -101,5 +101,26 @@ describe("isTextModel", () => {
 
   test("rejects embedding model (no text output)", () => {
     expect(isTextModel(caps({ input: { text: true } }))).toBe(false)
+  })
+})
+
+describe("formatMarkdown", () => {
+  test("produces valid markdown table", () => {
+    const rows = [
+      ["openai/gpt-4o", "YES", "Hello!", "500ms"],
+      ["openai/gpt-3.5", "NO", "(timeout)", "25000ms"],
+    ]
+    const md = formatMarkdown(rows)
+    const lines = md.split("\n")
+
+    expect(lines[0]).toMatch(/^\|.*Model.*\|.*Access.*\|.*Snippet.*\|.*Latency.*\|$/)
+    expect(lines[1]).toMatch(/^\| -+ \| -+ \| -+ \| -+ \|$/)
+    expect(lines).toHaveLength(4)
+  })
+
+  test("handles empty rows", () => {
+    const md = formatMarkdown([])
+    const lines = md.split("\n")
+    expect(lines).toHaveLength(2) // header + separator only
   })
 })

@@ -53,6 +53,16 @@ export function formatTable(
   return { header, separator, rows: formattedRows }
 }
 
+export function formatMarkdown(rows: string[][]): string {
+  const sanitized = rows.map((row) => row.map((cell) => sanitize(cell ?? "")))
+  const widths = HEADERS.map((h, i) => Math.max(h.length, ...sanitized.map((r) => r[i].length)))
+  const pad = (text: string, i: number) => text.padEnd(widths[i])
+  const header = "| " + HEADERS.map((h, i) => pad(h, i)).join(" | ") + " |"
+  const separator = "| " + widths.map((w) => "-".repeat(w)).join(" | ") + " |"
+  const body = sanitized.map((row) => "| " + row.map((c, i) => pad(c, i)).join(" | ") + " |")
+  return [header, separator, ...body].join("\n")
+}
+
 export function isTextModel(model: Provider.Model): boolean {
   return model.capabilities.input.text && model.capabilities.output.text
 }
@@ -90,13 +100,13 @@ export const RollCallCommand = cmd({
       .option("quiet", {
         type: "boolean",
         default: false,
-        describe: "Suppress non-error output",
+        describe: "Suppress progress and decoration",
       })
       .option("output", {
         type: "string",
-        choices: ["table", "json"],
+        choices: ["table", "json", "md"],
         default: "table",
-        describe: "Output format",
+        describe: "Output format (table, json, or md)",
       })
   },
   handler: async (args) => {
@@ -128,7 +138,9 @@ export async function rollCallHandler(args: any) {
     return
   }
 
-  if (!quiet) {
+  const json = output === "json"
+
+  if (!quiet && !json) {
     UI.println(
       `${color(UI.Style.TEXT_INFO)}Starting roll call for models with prompt: "${prompt}"${color(UI.Style.TEXT_NORMAL)}`,
     )
@@ -159,13 +171,14 @@ export async function rollCallHandler(args: any) {
       }
 
       if (modelsToTest.length === 0) {
-        if (!quiet)
+        if (!quiet && !json)
           UI.println(`${color(UI.Style.TEXT_WARNING)}No models to test after filtering.${color(UI.Style.TEXT_NORMAL)}`)
+        if (json) console.log(JSON.stringify([], null, 2))
         process.exitCode = 1
         return
       }
 
-      if (!quiet) {
+      if (!quiet && !json) {
         UI.println(
           `${color(UI.Style.TEXT_INFO)}Prompting ${modelsToTest.length} models...${color(UI.Style.TEXT_NORMAL)}`,
         )
@@ -234,7 +247,7 @@ export async function rollCallHandler(args: any) {
           errorMessage,
         })
 
-        if (verbose && !quiet) {
+        if (verbose && !quiet && !json) {
           if (access) {
             UI.println(`${color(UI.Style.TEXT_SUCCESS)}✔${color(UI.Style.TEXT_NORMAL)} ${fullName} - ${latency}ms`)
           } else {
@@ -261,28 +274,34 @@ export async function rollCallHandler(args: any) {
         }
       }
 
-      if (quiet) return
-
-      if (output === "json") {
+      if (json) {
         console.log(JSON.stringify(results, null, 2))
-      } else {
-        const rows = results.map((r) => [
-          r.model,
-          r.access ? "YES" : "NO",
-          r.access ? r.snippet : r.errorMessage ? `(${r.errorMessage})` : "",
-          r.latency !== null ? `${r.latency}ms` : "N/A",
-        ])
+        return
+      }
 
-        const terminalWidth = parseInt(process.env.COLUMNS || "", 10) || process.stdout.columns || 80
-        const table = formatTable(rows, terminalWidth)
+      const rows = results.map((r) => [
+        r.model,
+        r.access ? "YES" : "NO",
+        r.access ? r.snippet : r.errorMessage ? `(${r.errorMessage})` : "",
+        r.latency !== null ? `${r.latency}ms` : "N/A",
+      ])
 
-        UI.println(table.header)
-        UI.println(table.separator)
-        table.rows.forEach((line, idx) => {
-          const rowColor = results[idx].access ? UI.Style.TEXT_SUCCESS : UI.Style.TEXT_DANGER
-          UI.println(color(rowColor) + line + color(UI.Style.TEXT_NORMAL))
-        })
+      if (output === "md") {
+        console.log(formatMarkdown(rows))
+        return
+      }
 
+      const terminalWidth = parseInt(process.env.COLUMNS || "", 10) || process.stdout.columns || 80
+      const table = formatTable(rows, terminalWidth)
+
+      UI.println(table.header)
+      UI.println(table.separator)
+      table.rows.forEach((line, idx) => {
+        const rowColor = results[idx].access ? UI.Style.TEXT_SUCCESS : UI.Style.TEXT_DANGER
+        UI.println(color(rowColor) + line + color(UI.Style.TEXT_NORMAL))
+      })
+
+      if (!quiet) {
         const successful = results.filter((r) => r.access).length
         const failed = results.length - successful
         UI.println("")
