@@ -132,6 +132,12 @@ export async function rollCallHandler(args: any) {
     return
   }
 
+  if (timeout < 1) {
+    UI.error("--timeout must be at least 1")
+    process.exitCode = 1
+    return
+  }
+
   if (!filter || !filter.trim()) {
     UI.error("filter is required and cannot be empty")
     process.exitCode = 1
