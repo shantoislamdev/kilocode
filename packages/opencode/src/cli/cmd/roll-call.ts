@@ -54,12 +54,12 @@ export function formatTable(
 }
 
 export function formatMarkdown(rows: string[][]): string {
-  const sanitized = rows.map((row) => row.map((cell) => sanitize(cell ?? "")))
-  const widths = HEADERS.map((h, i) => Math.max(h.length, ...sanitized.map((r) => r[i].length)))
+  const escaped = rows.map((row) => row.map((cell) => sanitize(cell ?? "").replace(/\|/g, "\\|")))
+  const widths = HEADERS.map((h, i) => Math.max(h.length, ...escaped.map((r) => r[i].length)))
   const pad = (text: string, i: number) => text.padEnd(widths[i])
   const header = "| " + HEADERS.map((h, i) => pad(h, i)).join(" | ") + " |"
   const separator = "| " + widths.map((w) => "-".repeat(w)).join(" | ") + " |"
-  const body = sanitized.map((row) => "| " + row.map((c, i) => pad(c, i)).join(" | ") + " |")
+  const body = escaped.map((row) => "| " + row.map((c, i) => pad(c, i)).join(" | ") + " |")
   return [header, separator, ...body].join("\n")
 }
 
@@ -163,6 +163,7 @@ export async function rollCallHandler(args: any) {
             if (!regex.test(fullName)) continue
           } catch (e) {
             UI.error(`Invalid filter regex: ${filter}`)
+            process.exitCode = 1
             return
           }
           if (!isTextModel(model)) continue

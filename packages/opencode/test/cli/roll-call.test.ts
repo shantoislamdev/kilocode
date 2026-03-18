@@ -123,4 +123,11 @@ describe("formatMarkdown", () => {
     const lines = md.split("\n")
     expect(lines).toHaveLength(2) // header + separator only
   })
+
+  test("escapes pipe characters in cells", () => {
+    const rows = [["model", "YES", "hello | world", "100ms"]]
+    const md = formatMarkdown(rows)
+    expect(md).toContain("hello \\| world")
+    expect(md.split("\n")[2].match(/(?<!\\)\|/g)!.length).toBe(5) // only structural pipes
+  })
 })
