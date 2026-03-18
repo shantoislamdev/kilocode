@@ -55,7 +55,7 @@ export function formatTable(
 
 export const RollCallCommand = cmd({
   command: "roll-call <filter>",
-  describe: "batch-test models matching a filter for connectivity and latency",
+  describe: "batch-test text models matching a filter for connectivity and latency",
   builder: (yargs: Argv) => {
     return yargs
       .positional("filter", {
