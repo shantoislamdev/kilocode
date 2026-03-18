@@ -114,11 +114,13 @@ export async function rollCallHandler(args: any) {
 
   if (parallel < 1) {
     UI.error("--parallel must be at least 1")
+    process.exitCode = 1
     return
   }
 
   if (!filter || !filter.trim()) {
     UI.error("filter is required and cannot be empty")
+    process.exitCode = 1
     return
   }
 
@@ -155,6 +157,7 @@ export async function rollCallHandler(args: any) {
       if (modelsToTest.length === 0) {
         if (!quiet)
           UI.println(`${color(UI.Style.TEXT_WARNING)}No models to test after filtering.${color(UI.Style.TEXT_NORMAL)}`)
+        process.exitCode = 1
         return
       }
 
