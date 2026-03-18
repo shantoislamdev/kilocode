@@ -53,6 +53,10 @@ export function formatTable(
   return { header, separator, rows: formattedRows }
 }
 
+export function isTextModel(model: Provider.Model): boolean {
+  return model.capabilities.input.text && model.capabilities.output.text
+}
+
 export const RollCallCommand = cmd({
   command: "roll-call <filter>",
   describe: "batch-test text models matching a filter for connectivity and latency",
@@ -149,7 +153,7 @@ export async function rollCallHandler(args: any) {
             UI.error(`Invalid filter regex: ${filter}`)
             return
           }
-          if (!model.capabilities.output.text) continue
+          if (!isTextModel(model)) continue
           modelsToTest.push({ providerID, modelID, model })
         }
       }
