@@ -403,6 +403,7 @@ export const dict = {
   "language.no": "Norsk",
   "language.br": "Português (Brasil)",
   "language.bs": "Bosanski",
+  "language.nl": "Nederlands",
   "language.th": "ไทย",
   "language.tr": "Türkçe",
 
