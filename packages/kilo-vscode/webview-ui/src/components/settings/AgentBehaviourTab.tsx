@@ -257,7 +257,7 @@ const AgentBehaviourTab: Component = () => {
     return ""
   }
 
-  // Handle creating a new mode
+  // Handle creating a new mode (accumulates in config draft, persisted via Save Bar)
   const handleCreate = () => {
     const name = newName().trim()
     const error = validateName(name)
@@ -265,7 +265,11 @@ const AgentBehaviourTab: Component = () => {
       setNameError(error)
       return
     }
-    session.createMode(name, newDescription().trim(), newPrompt().trim())
+    updateAgentConfig(name, {
+      mode: "primary",
+      description: newDescription().trim() || undefined,
+      prompt: newPrompt().trim() || undefined,
+    })
     // Reset and go back to list
     setNewName("")
     setNewDescription("")
@@ -285,23 +289,18 @@ const AgentBehaviourTab: Component = () => {
     setAgentView("edit")
   }
 
-  // Save edits to a mode
+  // Save edits to a mode (accumulates in config draft, persisted via Save Bar)
   const handleSaveEdit = () => {
     const name = editingAgent()
     if (!name) return
     const agent = session.agents().find((a) => a.name === name)
-    if (agent?.native) {
-      // For native modes, only update via config overrides
-      updateAgentConfig(name, {
-        prompt: editPrompt().trim() || undefined,
-      })
-    } else {
-      // For custom modes, use the updateMode handler which triggers a full refresh
-      session.updateMode(name, {
-        description: editDescription().trim() || undefined,
-        prompt: editPrompt().trim() || undefined,
-      })
+    const partial: Partial<AgentConfig> = {
+      prompt: editPrompt().trim() || undefined,
     }
+    if (!agent?.native) {
+      partial.description = editDescription().trim() || undefined
+    }
+    updateAgentConfig(name, partial)
     setAgentView("list")
     setEditingAgent("")
   }

@@ -61,8 +61,6 @@ export const AgentBehaviourAgents: Story = {
     const session = {
       ...mockSessionValue({ id: "agents-story", status: "idle" }),
       agents: () => MOCK_AGENTS,
-      createMode: noop,
-      updateMode: noop,
       removeMode: noop,
       removeMcp: noop,
       skills: () => [],
@@ -87,8 +85,6 @@ export const AgentBehaviourEditCustomMode: Story = {
     const session = {
       ...mockSessionValue({ id: "edit-mode-story", status: "idle" }),
       agents: () => MOCK_AGENTS,
-      createMode: noop,
-      updateMode: noop,
       removeMode: noop,
       removeMcp: noop,
       skills: () => [],

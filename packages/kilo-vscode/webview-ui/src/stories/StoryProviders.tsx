@@ -153,8 +153,6 @@ export function mockSessionValue(overrides?: {
     skills: () => [],
     refreshSkills: noop,
     removeSkill: noop,
-    createMode: noop,
-    updateMode: noop,
     removeMode: noop,
     selectedAgent: () => "code",
     selectAgent: noop,
