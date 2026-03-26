@@ -18,26 +18,29 @@ export const KiloClawNav: NavSection[] = [
         ],
       },
       {
-        href: "/kiloclaw/chat-platforms/telegram",
+        href: "/kiloclaw/chat-platforms",
         children: "Chat Platforms",
         subLinks: [
+          { href: "/kiloclaw/chat-platforms", children: "Overview" },
           { href: "/kiloclaw/chat-platforms/telegram", children: "Telegram" },
           { href: "/kiloclaw/chat-platforms/discord", children: "Discord" },
           { href: "/kiloclaw/chat-platforms/slack", children: "Slack" },
         ],
       },
       {
-        href: "/kiloclaw/development-tools/github",
+        href: "/kiloclaw/development-tools",
         children: "Development Tools",
         subLinks: [
+          { href: "/kiloclaw/development-tools", children: "Overview" },
           { href: "/kiloclaw/development-tools/github", children: "GitHub" },
           { href: "/kiloclaw/development-tools/google", children: "Google Workspace" },
         ],
       },
       {
-        href: "/kiloclaw/tools/1password",
+        href: "/kiloclaw/tools",
         children: "Tools",
         subLinks: [
+          { href: "/kiloclaw/tools", children: "Overview" },
           { href: "/kiloclaw/tools/1password", children: "1Password" },
           { href: "/kiloclaw/tools/brave-search", children: "Brave Search" },
           { href: "/kiloclaw/tools/agentcard", children: "AgentCard" },
