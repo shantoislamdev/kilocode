@@ -15,6 +15,7 @@ import { ProviderError } from "@/provider/error"
 import { iife } from "@/util/iife"
 import { type SystemError } from "bun"
 import type { Provider } from "@/provider/provider"
+import { SessionNetwork } from "./network" // kilocode_change
 
 export namespace MessageV2 {
   export function isMedia(mime: string) {
@@ -853,36 +854,10 @@ export namespace MessageV2 {
           },
           { cause: e },
         ).toObject()
-      case ["ECONNRESET", "ECONNREFUSED", "ENOTFOUND", "EAI_AGAIN", "ETIMEDOUT", "ENETUNREACH"].includes(
-        ((e as SystemError)?.code ?? "") as string,
-      ):
+      case SessionNetwork.disconnected(e): // kilocode_change
         return new MessageV2.APIError(
           {
-            message:
-              (e as SystemError).code === "ECONNRESET"
-                ? "Connection reset by server"
-                : (e as SystemError).code === "ECONNREFUSED"
-                  ? "Connection refused"
-                  : (e as SystemError).code === "ENOTFOUND"
-                    ? "Host not found"
-                    : (e as SystemError).code === "EAI_AGAIN"
-                      ? "DNS lookup failed"
-                      : (e as SystemError).code === "ETIMEDOUT"
-                        ? "Connection timed out"
-                        : "Network is unreachable",
-            isRetryable: true,
-            metadata: {
-              code: (e as SystemError).code ?? "",
-              syscall: (e as SystemError).syscall ?? "",
-              message: (e as SystemError).message ?? "",
-            },
-          },
-          { cause: e },
-        ).toObject()
-      case (e as SystemError)?.code === "ECONNRESET":
-        return new MessageV2.APIError(
-          {
-            message: "Connection reset by server",
+            message: SessionNetwork.message(e),
             isRetryable: true,
             metadata: {
               code: (e as SystemError).code ?? "",
