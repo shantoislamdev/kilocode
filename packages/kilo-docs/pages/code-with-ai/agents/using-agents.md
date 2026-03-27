@@ -71,7 +71,7 @@ Users often confuse `/newtask` and `/smol`. Here's the key difference:
    | Windows          | Ctrl + . |
    | Linux            | Ctrl + . |
 
-You can hold `shift` to move backwards through the list of modes, for example ⌘ + shift +  on macOS.
+You can hold `shift` to move backwards through the list of modes, for example ⌘ + shift + on macOS.
 
 4. **Accept suggestions:** Click on mode switch suggestions that Kilo Code offers when appropriate
 
@@ -121,7 +121,7 @@ You can hold `shift` to move backwards through the list of modes, for example �
 | **Ideal For**        | Tracking down bugs, diagnosing errors, and resolving complex issues                 |
 | **Special Features** | Uses a methodical approach of analyzing, narrowing possibilities, and fixing issues |
 
-### orchestrator
+### orchestrator (Deprecated)
 
 | Aspect               | Details                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -129,6 +129,10 @@ You can hold `shift` to move backwards through the list of modes, for example �
 | **Tool Access**      | Limited access to create new tasks and coordinate workflows                                                          |
 | **Ideal For**        | Breaking down complex projects into manageable subtasks assigned to specialized agents                               |
 | **Special Features** | Delegates work to other agents; also has access to the **explore** subagent for codebase exploration                 |
+
+{% callout type="warning" %}
+Orchestrator is deprecated and will be removed in a future release. Agents with full tool access (Code, Plan, Debug) now support subagents natively — there's no need for a dedicated orchestrator. See [Orchestrator Mode (Deprecated)](/docs/code-with-ai/agents/orchestrator-mode) for migration details.
+{% /callout %}
 
 {% callout type="info" %}
 The VSCode extension and CLI do not include a built-in Review agent. Code review workflows can be handled by the **code** agent or via custom agent configurations.
@@ -173,7 +177,7 @@ The VSCode extension and CLI do not include a built-in Review agent. Code review
 | **Ideal For**        | Tracking down bugs, diagnosing errors, and resolving complex issues                 |
 | **Special Features** | Uses a methodical approach of analyzing, narrowing possibilities, and fixing issues |
 
-### orchestrator
+### orchestrator (Deprecated)
 
 | Aspect               | Details                                                                                                              |
 | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
@@ -181,6 +185,10 @@ The VSCode extension and CLI do not include a built-in Review agent. Code review
 | **Tool Access**      | Limited access to create new tasks and coordinate workflows                                                          |
 | **Ideal For**        | Breaking down complex projects into manageable subtasks assigned to specialized agents                               |
 | **Special Features** | Delegates work to other agents; also has access to the **explore** subagent for codebase exploration                 |
+
+{% callout type="warning" %}
+Orchestrator is deprecated and will be removed in a future release. Agents with full tool access (Code, Plan, Debug) now support subagents natively — there's no need for a dedicated orchestrator. See [Orchestrator Mode (Deprecated)](/docs/code-with-ai/agents/orchestrator-mode) for migration details.
+{% /callout %}
 
 {% callout type="info" %}
 The VSCode extension and CLI do not include a built-in Review agent. Code review workflows can be handled by the **code** agent or via custom agent configurations.

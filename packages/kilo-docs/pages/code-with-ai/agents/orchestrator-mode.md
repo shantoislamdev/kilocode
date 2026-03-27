@@ -1,19 +1,19 @@
 ---
 title: "Orchestrator Mode"
-description: "Orchestrator mode is no longer needed — all agents now support subagents"
+description: "Orchestrator mode is no longer needed — agents with full tool access now support subagents natively"
 ---
 
 # Orchestrator Mode (Deprecated)
 
 {% callout type="warning" title="Deprecated — scheduled for removal" %}
-Orchestrator mode is deprecated and will be removed in a future release. In the VSCode extension and CLI, **every agent can now delegate to subagents automatically**. You no longer need a dedicated orchestrator — just pick the agent for your task (e.g. Code, Plan, Debug) and it will coordinate subagents when helpful.
+Orchestrator mode is deprecated and will be removed in a future release. In the VSCode extension and CLI, **agents with full tool access (Code, Plan, Debug) can now delegate to subagents automatically**. You no longer need a dedicated orchestrator — just pick the agent for your task and it will coordinate subagents when helpful. (Read-only agents like Ask do not support delegation.)
 {% /callout %}
 
 ## What Changed
 
 Previously, orchestrator mode was the only way to break complex tasks into subtasks. You had to explicitly switch to orchestrator mode, which would then delegate work to other modes like Code or Architect.
 
-Now, **subagent support is built into every agent**. When any agent encounters a task that would benefit from delegation — like exploring a codebase, running a parallel search, or handling a subtask in isolation — it can launch a subagent directly using the `task` tool. There's no need to switch agents first.
+Now, **subagent support is built into agents that have full tool access** (Code, Plan, Debug). When one of these agents encounters a task that would benefit from delegation — like exploring a codebase, running a parallel search, or handling a subtask in isolation — it can launch a subagent directly using the `task` tool. There's no need to switch agents first.
 
 ## What You Should Do
 
