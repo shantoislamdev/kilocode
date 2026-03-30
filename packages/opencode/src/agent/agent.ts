@@ -173,6 +173,14 @@ export namespace Agent {
       // gh — require user approval since commands vary widely
       "gh *": "ask",
     }
+
+    // kilocode_change start — allow MCP tools in ask agent with user approval.
+    // Generates per-server wildcard rules that override "*": "deny".
+    const mcpRules: Record<string, "allow" | "ask" | "deny"> = {}
+    for (const key of Object.keys(cfg.mcp ?? {})) {
+      const sanitized = key.replace(/[^a-zA-Z0-9_-]/g, "_")
+      mcpRules[sanitized + "_*"] = "ask"
+    }
     // kilocode_change end
 
     const defaults = PermissionNext.fromConfig({
@@ -319,6 +327,7 @@ export namespace Agent {
             external_directory: {
               [Truncate.GLOB]: "allow",
             },
+            ...mcpRules,
           }),
         ),
         mode: "primary",
