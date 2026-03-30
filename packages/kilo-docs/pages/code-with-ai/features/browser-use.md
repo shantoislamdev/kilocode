@@ -16,13 +16,7 @@ Browser Use requires an advanced agentic model. It is typically most reliable wi
 {% tabs %}
 {% tab label="VSCode" %}
 
-Kilo Code uses [Playwright](https://playwright.dev/) via MCP (`@playwright/mcp@latest`) for browser automation. The Playwright MCP server is registered dynamically as `kilo-playwright`.
-
-Browser automation is auto-configured in the extension:
-
-- Toggle it on from **Settings → Browser** tab
-- Configure `browserAutomation.headless` and `browserAutomation.useSystemChrome` settings
-- Playwright auto-downloads Chromium on first use
+Browser automation is built into the extension and requires no manual setup. Enable it from **Settings → Browser** and Kilo handles the rest automatically.
 
 {% /tab %}
 {% tab label="CLI" %}
@@ -64,26 +58,7 @@ For example:
 {% tabs %}
 {% tab label="VSCode" %}
 
-The Playwright MCP server provides a set of browser tools for interacting with web pages. These tools return screenshots and accessibility snapshots after each action.
-
-Key characteristics:
-
-- The browser launches automatically when a browser tool is invoked
-- Multiple browser tools can be used in sequence
-- Screenshots are captured after each action for visual feedback
-
-### Available Browser Tools
-
-| Tool                 | Description                         | When to Use                           |
-| -------------------- | ----------------------------------- | ------------------------------------- |
-| `browser_navigate`   | Navigates to a URL                  | Opening a web page                    |
-| `browser_click`      | Clicks an element on the page       | Interacting with buttons, links, etc. |
-| `browser_type`       | Types text into an input element    | Filling forms, search boxes           |
-| `browser_screenshot` | Captures a screenshot of the page   | Inspecting visual state               |
-| `browser_scroll`     | Scrolls the page or a specific area | Viewing content above or below        |
-| `browser_hover`      | Hovers over an element              | Revealing tooltips or menus           |
-| `browser_select`     | Selects an option from a dropdown   | Choosing from select elements         |
-| `browser_drag`       | Drags an element to a target        | Drag-and-drop interactions            |
+Kilo launches a browser automatically when asked and returns screenshots after each action so you can see what's happening. It can navigate to URLs, click elements, fill in forms, scroll, hover, select from dropdowns, and drag and drop — all driven by natural language instructions in chat.
 
 {% /tab %}
 {% tab label="CLI" %}
@@ -142,9 +117,9 @@ Key characteristics:
 
 Browser automation settings are available under **Settings → Browser**:
 
-- **Enable browser automation**: Toggle to enable or disable Playwright browser automation
-- **Headless mode** (`browserAutomation.headless`): Run the browser without a visible window (default: disabled)
-- **Use system Chrome** (`browserAutomation.useSystemChrome`): Use your installed Chrome instead of the bundled Chromium
+- **Enable browser automation**: Toggle to enable or disable browser automation
+- **Headless mode**: Run the browser without a visible window (default: disabled)
+- **Use system Chrome**: Use your installed Chrome instead of the bundled browser
 
 {% /tab %}
 {% tab label="CLI" %}
