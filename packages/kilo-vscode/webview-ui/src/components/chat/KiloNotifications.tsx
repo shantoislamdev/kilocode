@@ -1,4 +1,4 @@
-import { Component, For, Show, createEffect, createMemo, createSignal } from "solid-js"
+import { Component, Show, createEffect, createMemo, createSignal } from "solid-js"
 import { useNotifications } from "../../context/notifications"
 import { useVSCode } from "../../context/vscode"
 import { useSession } from "../../context/session"
@@ -108,13 +108,6 @@ export const KiloNotifications: Component = () => {
                   </button>
                 )}
               </Show>
-              <For each={current()?.actions}>
-                {(action) => (
-                  <button class="kilo-notifications-action-btn" onClick={() => handleAction(action.actionURL)}>
-                    {action.actionText}
-                  </button>
-                )}
-              </For>
             </div>
             <div class="kilo-notifications-next-group">
               <Show when={safeIndex() > 0}>
