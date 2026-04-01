@@ -69,6 +69,26 @@ export function createClawChat(sdk: any) {
   }
 
   onMount(async () => {
+    // Register cleanup synchronously while the SolidJS owner scope is
+    // still available. After any `await` the owner is lost, so
+    // `onCleanup` calls would be silently discarded.
+    const cleanup = {
+      unsub: null as (() => void) | null,
+      unsubUpdated: null as (() => void) | null,
+      unsubPresence: null as (() => void) | null,
+    }
+    onCleanup(() => {
+      cleanup.unsub?.()
+      cleanup.unsubUpdated?.()
+      cleanup.unsubPresence?.()
+      if (chat) {
+        chat.disconnect().catch((err) => {
+          log.error("disconnect failed", { error: err?.message ?? String(err) })
+        })
+      }
+      chat = null
+    })
+
     log.info("fetching credentials")
     const res = await sdk.client.kilo.claw.chatCredentials().catch((e: any) => {
       log.error("chatCredentials() threw", { error: e?.message ?? String(e) })
@@ -105,7 +125,7 @@ export function createClawChat(sdk: any) {
       setOnline(presence(chat.channel, bot))
 
       // Subscribe to new messages
-      const unsub = chat.onMessage((msg) => {
+      cleanup.unsub = chat.onMessage((msg) => {
         setMessages((prev) => {
           const next = [...prev, msg]
           return next.length > MAX_MESSAGES ? next.slice(-MAX_MESSAGES) : next
@@ -113,7 +133,7 @@ export function createClawChat(sdk: any) {
       })
 
       // Subscribe to message updates (bot streams token-by-token via message.updated)
-      const unsubUpdated = chat.onMessageUpdated((msg) => {
+      cleanup.unsubUpdated = chat.onMessageUpdated((msg) => {
         setMessages((prev) => {
           const idx = prev.findIndex((m) => m.id === msg.id)
           if (idx === -1) {
@@ -127,22 +147,10 @@ export function createClawChat(sdk: any) {
       })
 
       // Subscribe to bot presence changes
-      const unsubPresence = chat.onPresence(setOnline)
+      cleanup.unsubPresence = chat.onPresence(setOnline)
 
       setConnected(true)
       setLoading(false)
-
-      onCleanup(() => {
-        unsub()
-        unsubUpdated()
-        unsubPresence()
-        if (chat) {
-          chat.disconnect().catch((err) => {
-            log.error("disconnect failed", { error: err?.message ?? String(err) })
-          })
-        }
-        chat = null
-      })
     } catch (err: any) {
       log.error("connect failed", {
         error: err?.message ?? String(err),
