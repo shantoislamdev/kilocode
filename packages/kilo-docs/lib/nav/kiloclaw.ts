@@ -7,7 +7,7 @@ export const KiloClawNav: NavSection[] = [
       { href: "/kiloclaw/overview", children: "Overview" },
       { href: "/kiloclaw/dashboard", children: "Dashboard" },
       { href: "/kiloclaw/pre-installed-software", children: "Pre-installed Software" },
-      { href: "/kiloclaw/suggested-configuration", children: "Suggested Configuration" },
+      { href: "/kiloclaw/end-to-end", children: "End to End Config" },
       {
         href: "/kiloclaw/control-ui/overview",
         children: "Control UI",
