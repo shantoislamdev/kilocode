@@ -46,6 +46,20 @@ export namespace ProviderTransform {
     return undefined
   }
 
+  // kilocode_change start - gate OpenAI Responses API params for openai-compatible providers
+  function supportsOpenAIResponsesParams(model: Provider.Model): boolean {
+    switch (model.api.npm) {
+      case "@ai-sdk/openai":
+      case "@ai-sdk/azure":
+      case "@ai-sdk/github-copilot":
+      case "@openrouter/ai-sdk-provider":
+      case "@kilocode/kilo-gateway":
+        return true
+    }
+    return false
+  }
+  // kilocode_change end
+
   function normalizeMessages(
     msgs: ModelMessage[],
     model: Provider.Model,
@@ -826,12 +840,17 @@ export namespace ProviderTransform {
     if (input.model.api.id.includes("gpt-5") && !input.model.api.id.includes("gpt-5-chat")) {
       if (!input.model.api.id.includes("gpt-5-pro")) {
         result["reasoningEffort"] = "medium"
+      }
+
+      const nativeOpenAI = supportsOpenAIResponsesParams(input.model)
+
+      if (!input.model.api.id.includes("gpt-5-pro") && nativeOpenAI) {
         result["reasoningSummary"] = "auto"
       }
 
-      // Only set textVerbosity for non-chat gpt-5.x models
-      // Chat models (e.g. gpt-5.2-chat-latest) only support "medium" verbosity
+      // textVerbosity is also an OpenAI Responses API parameter
       if (
+        nativeOpenAI &&
         input.model.api.id.includes("gpt-5.") &&
         !input.model.api.id.includes("codex") &&
         !input.model.api.id.includes("-chat") &&
