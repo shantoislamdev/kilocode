@@ -13,6 +13,7 @@ import * as ConfigMarkdown from "./markdown"
 import { ConfigModelID } from "./model-id"
 import { ConfigParse } from "./parse"
 import { ConfigPermission } from "./permission"
+import { ConfigVariable } from "./variable"
 // kilocode_change start
 import { KilocodeConfig } from "@/kilocode/config/config"
 import type { Warning } from "./config"
@@ -162,10 +163,18 @@ export async function load(dir: string, warnings?: Warning[]) {
     // kilocode_change end
     const name = configEntryNameFromPath(item, patterns)
 
+    const prompt = await ConfigVariable.substitute({
+      text: md.content.trim(),
+      type: "virtual",
+      dir: path.dirname(item),
+      source: item,
+      missing: "empty",
+    })
+
     const config = {
       name,
       ...md.data,
-      prompt: md.content.trim(),
+      prompt,
     }
     // kilocode_change start - use Effect schema (propertyOrder: original) + non-fatal handleInvalid
     try {
