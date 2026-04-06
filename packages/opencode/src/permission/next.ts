@@ -368,6 +368,10 @@ export namespace PermissionNext {
       const s = await state()
 
       if (!input.enable) {
+        if (input.sessionID) {
+          delete s.session[input.sessionID]
+          return
+        }
         const idx = s.approved.findLastIndex((r) => r.permission === "*" && r.pattern === "*" && r.action === "allow")
         if (idx >= 0) s.approved.splice(idx, 1)
         return

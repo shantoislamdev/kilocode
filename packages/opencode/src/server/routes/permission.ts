@@ -127,6 +127,18 @@ export const PermissionRoutes = lazy(() =>
         const rules: PermissionNext.Ruleset = [{ permission: "*", pattern: "*", action: "allow" }]
 
         if (!json.enable) {
+          if (json.sessionID) {
+            const session = await Session.get(json.sessionID)
+            await Session.setPermission({
+              sessionID: json.sessionID,
+              permission: (session.permission ?? []).filter(
+                (rule) => !(rule.permission === "*" && rule.pattern === "*" && rule.action === "allow"),
+              ),
+            })
+            await PermissionNext.allowEverything({ enable: false, sessionID: json.sessionID })
+            return c.json(true)
+          }
+
           await Config.updateGlobal({ permission: { "*": { "*": null } } }, { dispose: false })
           await PermissionNext.allowEverything({ enable: false })
           return c.json(true)
