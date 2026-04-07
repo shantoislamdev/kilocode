@@ -561,7 +561,7 @@ export namespace Config {
     warnings?: Warning[],
   ) {
     const text = detail(issues)
-    const message = `Config file at ${item} is invalid`
+    const message = text ? `Config file at ${item} is invalid: ${text}` : `Config file at ${item} is invalid`
     const err = new InvalidError({ path: item, issues }, { cause })
     if (warnings) warnings.push({ path: item, message, detail: text || undefined })
     const { Session } = await import("@/session")
