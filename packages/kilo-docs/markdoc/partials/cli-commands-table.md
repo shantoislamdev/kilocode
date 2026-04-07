@@ -13,7 +13,6 @@
 | `kilo upgrade [target]` | upgrade kilo to the latest or a specific version |
 | `kilo uninstall` | uninstall kilo and remove all related files |
 | `kilo serve` | starts a headless kilo server |
-| `kilo web` | start kilo server and open web interface |
 | `kilo models [provider]` | list all available models |
 | `kilo stats` | show token usage and cost statistics |
 | `kilo export [sessionID]` | export session data as JSON |

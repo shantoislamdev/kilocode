@@ -167,7 +167,7 @@ function formatText(
 }
 
 async function loadCommands(): Promise<Cmd[]> {
-  const { commands } = await import("../cli/commands")
+  const { commands } = await import("./commands")
   return commands as Cmd[]
 }
 
