@@ -45,29 +45,23 @@ That's it. No configuration needed.
 
 ## Auto Balanced
 
-`kilo-auto/balanced` follows the same mode-based routing structure as Frontier but uses more cost-effective models — Kimi K2.5 for reasoning-heavy modes and Minimax M2.7 for implementation modes.
+`kilo-auto/balanced` follows the same mode-based routing structure as Frontier but uses a more cost-effective model — Qwen 3.6 Plus across all modes.
 
 ### Mode-to-Model Mapping
 
-| Mode           | Model Used   | Best For                     |
-| -------------- | ------------ | ---------------------------- |
-| `architect`    | Kimi K2.5    | System design, planning      |
-| `orchestrator` | Kimi K2.5    | Multi-step task coordination |
-| `ask`          | Kimi K2.5    | Questions, explanations      |
-| `plan`         | Kimi K2.5    | Planning, reasoning          |
-| `general`      | Kimi K2.5    | General assistance           |
-| `debug`        | Kimi K2.5    | Debugging and fixing issues  |
-| `code`         | Minimax M2.7 | Writing and editing code     |
-| `build`        | Minimax M2.7 | Implementation tasks         |
-| `explore`      | Minimax M2.7 | Codebase exploration         |
+| Mode           | Model Used    | Best For                     |
+| -------------- | ------------- | ---------------------------- |
+| `architect`    | Qwen 3.6 Plus | System design, planning      |
+| `orchestrator` | Qwen 3.6 Plus | Multi-step task coordination |
+| `ask`          | Qwen 3.6 Plus | Questions, explanations      |
+| `plan`         | Qwen 3.6 Plus | Planning, reasoning          |
+| `general`      | Qwen 3.6 Plus | General assistance           |
+| `debug`        | Qwen 3.6 Plus | Debugging and fixing issues  |
+| `code`         | Qwen 3.6 Plus | Writing and editing code     |
+| `build`        | Qwen 3.6 Plus | Implementation tasks         |
+| `explore`      | Qwen 3.6 Plus | Codebase exploration         |
 
-**Planning and reasoning tasks** use Kimi K2.5, a strong open-weight reasoning model from Moonshot AI.
-
-**Implementation tasks** use Minimax M2.7, which provides fast, capable code generation at a fraction of frontier model costs.
-
-{% callout type="info" title="Image support" %}
-Auto Balanced does not support image inputs, since Minimax M2.7 does not have vision capabilities.
-{% /callout %}
+**All tasks** use Qwen 3.6 Plus, a strong multimodal reasoning model with 1M context window, fast code generation, and vision capabilities — at a fraction of frontier model costs.
 
 ## Benefits
 
