@@ -3,8 +3,10 @@ import { hideBin } from "yargs/helpers"
 import { RunCommand } from "./cli/cmd/run"
 import { GenerateCommand } from "./cli/cmd/generate"
 import { Log } from "./util/log"
-// kilocode_change - disabled account commands — not part of Kilo
+// kilocode_change start
 // import { LoginCommand, LogoutCommand, SwitchCommand, OrgsCommand } from "./cli/cmd/account"
+// import { ConsoleCommand } from "./cli/cmd/account"
+// kilocode_change end
 import { ProvidersCommand } from "./cli/cmd/providers"
 import { AgentCommand } from "./cli/cmd/agent"
 import { UpgradeCommand } from "./cli/cmd/upgrade"
@@ -189,6 +191,7 @@ let cli = yargs(hideBin(process.argv))
   // .command(LogoutCommand)
   // .command(SwitchCommand)
   // .command(OrgsCommand)
+  // .command(ConsoleCommand)
   // kilocode_change end
   .command(ProvidersCommand)
   .command(AgentCommand)

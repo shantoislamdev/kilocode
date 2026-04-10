@@ -16,5 +16,6 @@
   "devDependencies": {
     "typescript": "catalog:",
     "@types/bun": "catalog:"
-  }
+  },
+  "peerDependencies": {}
 }

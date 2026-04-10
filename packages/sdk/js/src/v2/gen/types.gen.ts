@@ -3503,7 +3503,11 @@ export type SessionMessagesData = {
   query?: {
     directory?: string
     workspace?: string
+    /**
+     * Maximum number of messages to return
+     */
     limit?: number
+    before?: string
   }
   url: "/session/{sessionID}/message"
 }
