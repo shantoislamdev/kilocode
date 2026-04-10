@@ -424,44 +424,14 @@ To set the maximum time to wait for a response after a tool call to the MCP serv
 
 ### Tool Permissions
 
+MCP tools use the same permission system as built-in tools (`allow`, `ask`, `deny`). Each MCP tool's permission key is its namespaced name: `{server}_{tool}` (e.g. `my_server_do_something`). You can use glob patterns like `my_server_*` for broad rules.
+
+For full details on configuring MCP tool permissions — including examples with glob patterns and per-tool overrides — see [Auto-Approving Actions](/docs/getting-started/settings/auto-approving-actions#mcp-tool-permissions).
+
 {% tabs %}
-{% tab label="VSCode" %}
-
-MCP tool calls use the same permission system as built-in tools. Each MCP tool's permission key is its namespaced name: `{server}_{tool}` (e.g. `my_server_do_something`).
-
-There are three permission levels:
-
-| Permission | Behavior                                                                                                          |
-| ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| `"allow"`  | Tool calls are auto-approved without prompting.                                                                   |
-| `"ask"`    | A prompt appears each time the tool is called, requiring manual approval. This is the default if no rule matches. |
-| `"deny"`   | Tool calls are blocked entirely.                                                                                  |
-
-**At runtime:** When an MCP tool is called and no permission rule matches, the Permission Dock shows an approval prompt (equivalent to `"ask"`). Click **Approve Always** to save an `"allow"` rule to your config so future calls to that tool are auto-approved.
-
-**In your config file:** Add the tool name (or a wildcard pattern) to the `permission` key in `kilo.jsonc`:
-
-```jsonc
-{
-  "permission": {
-    // Auto-approve a specific tool
-    "my_server_safe_read": "allow",
-
-    // Require approval for all other tools on this server
-    "my_server_*": "ask",
-
-    // Block a dangerous tool entirely
-    "my_server_delete_all": "deny",
-  },
-}
-```
-
-Glob patterns are evaluated top-to-bottom and the first match wins, so you can allow specific safe tools while requiring approval for everything else on a server.
-
-{% /tab %}
 {% tab label="VSCode (Legacy)" %}
 
-MCP tool auto-approval works on a per-tool basis and is disabled by default. To configure auto-approval:
+In the legacy extension, MCP tool auto-approval works on a per-tool basis and is disabled by default. To configure auto-approval:
 
 1. First enable the global "Use MCP servers" auto-approval option in [auto-approving-actions](/docs/getting-started/settings/auto-approving-actions)
 2. Navigate to Settings > Agent Behaviour > MCP Servers, then locate the specific tool you want to auto-approve

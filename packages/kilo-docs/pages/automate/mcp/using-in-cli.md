@@ -161,34 +161,9 @@ Add the test MCP server for development:
 
 ## Tool Permissions
 
-MCP tool calls use the same permission system as built-in tools. Each MCP tool's permission key is its namespaced name: `{server}_{tool}` (e.g. `my_server_do_something`).
+MCP tools use the same permission system as built-in tools (`allow`, `ask`, `deny`). Each MCP tool's permission key is its namespaced name: `{server}_{tool}` (e.g. `my_server_do_something`). You can use glob patterns like `my_server_*` for broad rules.
 
-There are three permission levels:
-
-| Permission | Behavior                                                                                                          |
-| ---------- | ----------------------------------------------------------------------------------------------------------------- |
-| `"allow"`  | Tool calls are auto-approved without prompting.                                                                   |
-| `"ask"`    | A prompt appears each time the tool is called, requiring manual approval. This is the default if no rule matches. |
-| `"deny"`   | Tool calls are blocked entirely.                                                                                  |
-
-Add the tool name (or a wildcard pattern) to the `permission` key in your `kilo.json`:
-
-```jsonc
-{
-  "permission": {
-    // Auto-approve a specific tool
-    "my_server_safe_read": "allow",
-
-    // Require approval for all other tools on this server
-    "my_server_*": "ask",
-
-    // Block a dangerous tool entirely
-    "my_server_delete_all": "deny",
-  },
-}
-```
-
-Glob patterns are evaluated top-to-bottom and the first match wins. This lets you allow specific safe tools while requiring approval for everything else on a server.
+For full details on configuring MCP tool permissions — including examples with glob patterns and per-tool overrides — see [Auto-Approving Actions](/docs/getting-started/settings/auto-approving-actions#mcp-tool-permissions).
 
 ## Environment Variables
 

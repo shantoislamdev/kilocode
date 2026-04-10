@@ -64,6 +64,31 @@ When a tool is set to `"ask"`, Kilo pauses and displays a permission prompt with
 
 Expand **Manage Auto-Approve Rules** to add commands or patterns to your allowed or denied lists. These rules are then appended to the bottom of the approval rules in settings and the config file.
 
+## MCP Tool Permissions
+
+MCP tools use the same permission system as built-in tools. Each MCP tool's permission key is its namespaced name: `{server}_{tool}` (e.g. `my_server_do_something`).
+
+**At runtime:** When an MCP tool is called and no permission rule matches, the Permission Dock shows an approval prompt (equivalent to `"ask"`). Click **Approve Always** to save an `"allow"` rule to your config so future calls to that tool are auto-approved.
+
+**In your config file:** Add the tool name (or a wildcard pattern) to the `permission` key in `kilo.jsonc`:
+
+```jsonc
+{
+  "permission": {
+    // Auto-approve a specific tool
+    "my_server_safe_read": "allow",
+
+    // Require approval for all other tools on this server
+    "my_server_*": "ask",
+
+    // Block a dangerous tool entirely
+    "my_server_delete_all": "deny",
+  },
+}
+```
+
+Glob patterns are evaluated top-to-bottom and the first match wins, so you can allow specific safe tools while requiring approval for everything else on a server.
+
 ## Defaults
 
 Most tools default to `"*": "allow"` for a smooth out-of-the-box experience. Notable exceptions that prompt by default:
@@ -207,6 +232,29 @@ Most tools default to `"*": "allow"` for a smooth out-of-the-box experience. Not
 - **`.env` files** — reading `.env` files prompts for approval. Files matching `*.env.*` (e.g., `.env.local`, `.env.production`) also trigger an ask, while `*.env.example` is explicitly allowed.
 - **`external_directory`** — accessing files outside the project prompts for approval
 - **`doom_loop`** — prompts when the agent enters a repeated failure cycle
+
+## MCP Tool Permissions
+
+MCP tools use the same permission system as built-in tools. Each MCP tool's permission key is its namespaced name: `{server}_{tool}` (e.g. `my_server_do_something`).
+
+Add the tool name (or a wildcard pattern) to the `permission` key in your `kilo.jsonc`:
+
+```jsonc
+{
+  "permission": {
+    // Auto-approve a specific tool
+    "my_server_safe_read": "allow",
+
+    // Require approval for all other tools on this server
+    "my_server_*": "ask",
+
+    // Block a dangerous tool entirely
+    "my_server_delete_all": "deny",
+  },
+}
+```
+
+Glob patterns are evaluated top-to-bottom and the first match wins. This lets you allow specific safe tools while requiring approval for everything else on a server.
 
 ## Full Configuration Example
 
