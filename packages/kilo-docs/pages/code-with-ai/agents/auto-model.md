@@ -19,7 +19,7 @@ Auto Model is a smart model routing system that automatically selects the optima
 2. Start working in any mode (Code, Architect, Debug, etc.)
 3. The system automatically routes your requests to the best model for that task
 
-That's it. No configuration needed. For the exact model mappings for each tier, see the [Gateway docs](/docs/gateway/models-and-providers#kilo-autofrontier).
+That's it. No configuration needed. The extension shows which model was used for each request — including cost information — when you expand a message. For the exact model mappings for each tier, see the [Gateway docs](/docs/gateway/models-and-providers#kilo-autofrontier).
 
 ## Tiers
 
