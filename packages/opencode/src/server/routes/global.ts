@@ -201,8 +201,8 @@ export const GlobalRoutes = lazy(() =>
     .post(
       "/upgrade",
       describeRoute({
-        summary: "Upgrade kilo",
-        description: "Upgrade kilo to the specified version or latest if not specified.",
+        summary: "Upgrade kilo", // kilocode_change
+        description: "Upgrade kilo to the specified version or latest if not specified.", // kilocode_change
         operationId: "global.upgrade",
         responses: {
           200: {

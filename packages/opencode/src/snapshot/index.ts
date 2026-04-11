@@ -1,9 +1,9 @@
-import { $ } from "bun"
-import { NodeChildProcessSpawner, NodeFileSystem, NodePath } from "@effect/platform-node"
+import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { Cause, Duration, Effect, Layer, Schedule, ServiceMap, Stream } from "effect"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
 import path from "path"
 import z from "zod"
+import * as CrossSpawnSpawner from "@/effect/cross-spawn-spawner"
 import { InstanceState } from "@/effect/instance-state"
 import { makeRunPromise } from "@/effect/run-service"
 import { AppFileSystem } from "@/filesystem"
@@ -219,6 +219,18 @@ export namespace Snapshot {
 
             const track = Effect.fnUntraced(function* () {
               if (!(yield* enabled())) return
+              const existed = yield* exists(state.gitdir)
+              yield* fs.ensureDir(state.gitdir).pipe(Effect.orDie)
+              if (!existed) {
+                yield* git(["init"], {
+                  env: { GIT_DIR: state.gitdir, GIT_WORK_TREE: state.worktree },
+                })
+                yield* git(["--git-dir", state.gitdir, "config", "core.autocrlf", "false"])
+                yield* git(["--git-dir", state.gitdir, "config", "core.longpaths", "true"])
+                yield* git(["--git-dir", state.gitdir, "config", "core.symlinks", "true"])
+                yield* git(["--git-dir", state.gitdir, "config", "core.fsmonitor", "false"])
+                log.info("initialized")
+              }
               yield* add()
               const result = yield* git(args(["write-tree"]), { cwd: state.directory })
               const hash = result.text.trim()
@@ -518,7 +530,7 @@ export namespace Snapshot {
     )
 
   export const defaultLayer = layer.pipe(
-    Layer.provide(NodeChildProcessSpawner.layer),
+    Layer.provide(CrossSpawnSpawner.layer),
     Layer.provide(AppFileSystem.defaultLayer),
     Layer.provide(NodeFileSystem.layer),
     Layer.provide(NodePath.layer),

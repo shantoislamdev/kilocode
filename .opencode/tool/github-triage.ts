@@ -1,6 +1,19 @@
 /// <reference path="../env.d.ts" />
-// import { Octokit } from "@octokit/rest"
 import { tool } from "@kilocode/plugin"
+const TEAM = {
+  desktop: ["adamdotdevin", "iamdavidhill", "Brendonovich", "nexxeln"],
+  zen: ["fwang", "MrMushrooooom"],
+  tui: ["thdxr", "kommander", "rekram1-node"],
+  core: ["thdxr", "rekram1-node", "jlongster"],
+  docs: ["R44VC0RP"],
+  windows: ["Hona"],
+} as const
+
+const ASSIGNEES = [...new Set(Object.values(TEAM).flat())]
+
+function pick<T>(items: readonly T[]) {
+  return items[Math.floor(Math.random() * items.length)]!
+}
 
 function getIssueNumber(): number {
   const issue = parseInt(process.env.ISSUE_NUMBER ?? "", 10)

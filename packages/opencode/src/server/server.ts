@@ -135,10 +135,12 @@ export namespace Server {
               )
                 return input
 
+              // kilocode_change start
               // *.opencode.ai (https only, adjust if needed)
-              if (/^https:\/\/([a-z0-9-]+\.)*opencode\.ai$/.test(input)) {
+              if (/^https:\/\/([a-z0-9-]+\.)*kilo\.ai$/.test(input)) {
                 return input
               }
+              // kilocode_change end
               if (opts?.cors?.includes(input)) {
                 return input
               }
@@ -560,8 +562,8 @@ export namespace Server {
         .all("/*", async (c) => {
           return c.notFound()
         })
+      // kilocode_change end
     )
-    // kilocode_change end
   }
 
   export async function openapi() {

@@ -1,6 +1,7 @@
-import { NodeChildProcessSpawner, NodeFileSystem, NodePath } from "@effect/platform-node"
+import { NodeFileSystem, NodePath } from "@effect/platform-node"
 import { Effect, Layer, Schema, ServiceMap, Stream } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
+import * as CrossSpawnSpawner from "@/effect/cross-spawn-spawner"
 import { makeRunPromise } from "@/effect/run-service"
 import { withTransientReadRetry } from "@/util/effect-http-client"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
@@ -174,7 +175,7 @@ export namespace Installation {
         )
 
         const methodImpl = Effect.fn("Installation.method")(function* () {
-          if (process.execPath.includes(path.join(".kilo", "bin")) || process.execPath.includes(path.join(".opencode", "bin"))) return "curl" as Method // kilocode_change
+          if (process.execPath.includes(path.join(".kilo", "bin"))) return "curl" as Method // kilocode_change
           if (process.execPath.includes(path.join(".local", "bin"))) return "curl" as Method
           const exec = process.execPath.toLowerCase()
 
@@ -201,7 +202,7 @@ export namespace Installation {
           for (const check of checks) {
             const output = yield* check.command()
             const installedName =
-              check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "kilo" : "@kilocode/cli" // kilocode_change
+              check.name === "brew" || check.name === "choco" || check.name === "scoop" ? "kilo" : "kilo" // kilocode_change
             if (output.includes(installedName)) {
               return check.name
             }
@@ -221,7 +222,8 @@ export namespace Installation {
               return info.formulae[0].versions.stable
             }
             const response = yield* httpOk.execute(
-              HttpClientRequest.get("https://formulae.brew.sh/api/formula/kilo.json").pipe( // kilocode_change
+              HttpClientRequest.get("https://formulae.brew.sh/api/formula/kilo.json").pipe(
+                // kilocode_change
                 HttpClientRequest.acceptJson,
               ),
             )
@@ -262,7 +264,8 @@ export namespace Installation {
           }
 
           const response = yield* httpOk.execute(
-            HttpClientRequest.get("https://api.github.com/repos/Kilo-Org/kilocode/releases/latest").pipe( // kilocode_change
+            HttpClientRequest.get("https://api.github.com/repos/Kilo-Org/kilocode/releases/latest").pipe(
+              // kilocode_change
               HttpClientRequest.acceptJson,
             ),
           )
@@ -345,10 +348,10 @@ export namespace Installation {
 
   export const defaultLayer = layer.pipe(
     Layer.provide(FetchHttpClient.layer),
-    Layer.provide(NodeChildProcessSpawner.layer),
+    Layer.provide(CrossSpawnSpawner.layer),
     Layer.provide(NodeFileSystem.layer),
     Layer.provide(NodePath.layer),
-  ) as Layer.Layer<Service>
+  )
 
   const runPromise = makeRunPromise(Service, defaultLayer)
 

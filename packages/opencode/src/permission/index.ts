@@ -187,8 +187,9 @@ export namespace Permission {
       )
 
       const ask = Effect.fn("Permission.ask")(function* (input: z.infer<typeof AskInput>) {
-        const s = yield* InstanceState.get(state)
+        const { approved, pending } = yield* InstanceState.get(state)
         const { ruleset, ...request } = input
+        const s = yield* InstanceState.get(state) // kilocode_change
         const local = s.session[request.sessionID] ?? [] // kilocode_change
         let needsAsk = false
 
@@ -197,7 +198,7 @@ export namespace Permission {
         // kilocode_change end
 
         for (const pattern of request.patterns) {
-          const rule = evaluate(request.permission, pattern, ruleset, s.approved, local) // kilocode_change — include session rules
+          const rule = evaluate(request.permission, pattern, ruleset, approved)
           log.info("evaluated", { permission: request.permission, pattern, action: rule })
           if (rule.action === "deny") {
             return yield* new DeniedError({
@@ -358,9 +359,7 @@ export namespace Permission {
             delete s.session[input.sessionID]
             return
           }
-          const idx = s.approved.findLastIndex(
-            (r) => r.permission === "*" && r.pattern === "*" && r.action === "allow",
-          )
+          const idx = s.approved.findLastIndex((r) => r.permission === "*" && r.pattern === "*" && r.action === "allow")
           if (idx >= 0) s.approved.splice(idx, 1)
           return
         }

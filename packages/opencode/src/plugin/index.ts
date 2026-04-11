@@ -11,11 +11,11 @@ import { Session } from "../session"
 import { NamedError } from "@opencode-ai/util/error"
 import { CopilotAuthPlugin } from "./copilot"
 import { gitlabAuthPlugin as GitlabAuthPlugin } from "opencode-gitlab-auth"
+import { PoeAuthPlugin } from "opencode-poe-auth"
 import { Effect, Layer, ServiceMap } from "effect"
 import { InstanceState } from "@/effect/instance-state"
-import { makeRunPromise } from "@/effect/run-service"
-
 import { KiloAuthPlugin } from "@kilocode/kilo-gateway" // kilocode_change
+import { makeRunPromise } from "@/effect/run-service"
 
 export namespace Plugin {
   const log = Log.create({ service: "plugin" })
@@ -52,6 +52,7 @@ export namespace Plugin {
     CodexAuthPlugin,
     CopilotAuthPlugin,
     GitlabAuthPlugin as unknown as PluginInstance,
+    PoeAuthPlugin as unknown as PluginInstance,
   ] // kilocode_change end
 
   // Old npm package names for plugins that are now built-in — skip if users still have them in config
@@ -144,7 +145,11 @@ export namespace Plugin {
 
             // Notify plugins of current config
             for (const hook of hooks) {
-              await (hook as any).config?.(cfg)
+              try {
+                await (hook as any).config?.(cfg)
+              } catch (err) {
+                log.error("plugin config hook failed", { error: err })
+              }
             }
           })
 

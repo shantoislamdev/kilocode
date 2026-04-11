@@ -260,7 +260,7 @@ export namespace ProviderAuth {
       }
     }
     Telemetry.trackAuthSuccess(input.providerID)
+    ModelCache.clear(input.providerID)
     // kilocode_change end
-    ModelCache.clear(input.providerID) // kilocode_change
   }
 }

@@ -5,9 +5,7 @@ import { AppFileSystem } from "../../src/filesystem"
 import { testEffect } from "../lib/effect"
 import path from "path"
 
-const live = AppFileSystem.layer.pipe(
-  Layer.provide(NodeFileSystem.layer),
-) as Layer.Layer<AppFileSystem.Service>
+const live = AppFileSystem.layer.pipe(Layer.provide(NodeFileSystem.layer))
 const { effect: it } = testEffect(live)
 
 describe("AppFileSystem", () => {

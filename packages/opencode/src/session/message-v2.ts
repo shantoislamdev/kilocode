@@ -507,7 +507,8 @@ export namespace MessageV2 {
 
   // kilocode_change start - strip bloated metadata fields from stored parts to prevent multi-MB payloads
   // This handles both legacy data that was stored with full file contents and keeps the API response lean.
-  export function stripPartMetadata(part: Part): Part { // kilocode_change - exported for testing
+  export function stripPartMetadata(part: Part): Part {
+    // kilocode_change - exported for testing
     if (part.type !== "tool") return part
     const { state } = part
     if (state.status !== "completed" && state.status !== "running") return part
@@ -540,7 +541,8 @@ export namespace MessageV2 {
     return { ...part, state: { ...state, metadata: next } } as Part
   }
 
-  export function stripMessageMetadata(info: Info): Info { // kilocode_change - exported for testing
+  export function stripMessageMetadata(info: Info): Info {
+    // kilocode_change - exported for testing
     // Strip summary.diffs before/after from user messages (can be 20+ MB)
     if (info.role !== "user") return info
     const user = info as User

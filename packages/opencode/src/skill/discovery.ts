@@ -108,9 +108,9 @@ export namespace Discovery {
       }),
     )
 
-  export const defaultLayer = layer.pipe(
+  export const defaultLayer: Layer.Layer<Service> = layer.pipe(
     Layer.provide(FetchHttpClient.layer),
     Layer.provide(AppFileSystem.defaultLayer),
     Layer.provide(NodePath.layer),
-  ) as Layer.Layer<Service>
+  )
 }

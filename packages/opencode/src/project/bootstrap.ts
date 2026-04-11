@@ -11,6 +11,7 @@ import { Command } from "../command"
 import { Instance } from "./instance"
 import { Log } from "@/util/log"
 import { KiloSessions } from "@/kilo-sessions/kilo-sessions" // kilocode_change
+// import { ShareNext } from "@/share/share-next" // kilocode_change
 
 export async function InstanceBootstrap() {
   Log.Default.info("bootstrapping", { directory: Instance.directory })

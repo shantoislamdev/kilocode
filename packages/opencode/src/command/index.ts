@@ -103,6 +103,7 @@ export namespace Command {
           subtask: true,
           hints: hints(PROMPT_REVIEW),
         }
+
         // kilocode_change start
         commands[Default.LOCAL_REVIEW] = localReviewCommand()
         commands[Default.LOCAL_REVIEW_UNCOMMITTED] = localReviewUncommittedCommand()

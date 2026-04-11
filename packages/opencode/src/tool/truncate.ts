@@ -133,9 +133,7 @@ export namespace Truncate {
     }),
   )
 
-  export const defaultLayer = layer.pipe(
-    Layer.provide(AppFileSystem.defaultLayer),
-  ) as Layer.Layer<Service>
+  export const defaultLayer = layer.pipe(Layer.provide(AppFileSystem.defaultLayer)) as Layer.Layer<Service>
 
   const runPromise = makeRunPromise(Service, defaultLayer)
 

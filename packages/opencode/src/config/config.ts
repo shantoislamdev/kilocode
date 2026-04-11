@@ -25,6 +25,7 @@ import {
 } from "jsonc-parser"
 // kilocode_change end
 import { Instance } from "../project/instance"
+import { State } from "../project/state" // kilocode_change
 import { LSPServer } from "../lsp/server"
 import { BunProc } from "@/bun"
 import { Installation } from "@/installation"
@@ -1897,7 +1898,7 @@ export namespace Config {
       // correct precedence order. This avoids the stale-cache problem without the
       // precedence bug that would occur if we merged the global patch directly into
       // the already-resolved config (which includes project overrides).
-      Instance.resetStateEntry(stateInit)
+      State.resetEntry(Instance.directory, stateInit) // kilocode_change
 
       GlobalBus.emit("event", {
         directory: "global",

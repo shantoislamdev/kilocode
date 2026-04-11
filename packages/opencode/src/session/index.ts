@@ -123,7 +123,11 @@ export namespace Session {
   // kilocode_change start
   function family(id: string) {
     const row = Database.use((db) =>
-      db.select({ worktree: ProjectTable.worktree }).from(ProjectTable).where(eq(ProjectTable.id, ProjectID.make(id))).get(),
+      db
+        .select({ worktree: ProjectTable.worktree })
+        .from(ProjectTable)
+        .where(eq(ProjectTable.id, ProjectID.make(id)))
+        .get(),
     )
     const root = row?.worktree ? Filesystem.resolve(row.worktree) : undefined
     if (!root || root === "/") return [id]
@@ -668,7 +672,12 @@ export namespace Session {
       if (ids.length === 1 && ids[0] === input.projectID) {
         conditions.push(eq(SessionTable.project_id, ProjectID.make(input.projectID)))
       } else {
-        conditions.push(inArray(SessionTable.project_id, ids.map(id => ProjectID.make(id))))
+        conditions.push(
+          inArray(
+            SessionTable.project_id,
+            ids.map((id) => ProjectID.make(id)),
+          ),
+        )
       }
     }
     // kilocode_change end

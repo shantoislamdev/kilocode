@@ -116,8 +116,9 @@ export const PrCommand = cmd({
         UI.println()
 
         const opencodeArgs = sessionId ? ["-s", sessionId] : []
+        // kilocode_change start
         const opencodeProcess = Process.spawn([bin, ...opencodeArgs], {
-          // kilocode_change
+          // kilocode_change end
           stdin: "inherit",
           stdout: "inherit",
           stderr: "inherit",

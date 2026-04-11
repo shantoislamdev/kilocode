@@ -113,7 +113,8 @@ export namespace ToolRegistry {
 
       async function all(custom: Tool.Info[]): Promise<Tool.Info[]> {
         const cfg = await Config.get()
-        const question = ["app", "cli", "desktop"].includes(Flag.KILO_CLIENT) || Flag.KILO_ENABLE_QUESTION_TOOL
+        const question =
+          ["app", "cli", "desktop", "vscode"].includes(Flag.KILO_CLIENT) || Flag.KILO_ENABLE_QUESTION_TOOL
 
         return [
           InvalidTool,

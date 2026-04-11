@@ -1,4 +1,3 @@
-import { rm } from "fs/promises"
 import os from "os"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -18,6 +17,7 @@ import { ConfigMarkdown } from "../config/markdown"
 import { Glob } from "../util/glob"
 import { Log } from "../util/log"
 import { Discovery } from "./discovery"
+import { rm } from "fs/promises" // kilocode_change
 
 export namespace Skill {
   const log = Log.create({ service: "skill" })

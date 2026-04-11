@@ -123,8 +123,10 @@ test("plan agent denies edits except .kilo/plans/* and .opencode/plans/*", async
       expect(plan).toBeDefined()
       // Wildcard is denied
       expect(evalPerm(plan, "edit")).toBe("deny")
+      // kilocode_change start
       // .kilo/plans/ is the primary allowed path
       expect(Permission.evaluate("edit", ".kilo/plans/foo.md", plan!.permission).action).toBe("allow")
+      // kilocode_change end
       // .opencode/plans/ is also allowed as backward compat fallback
       expect(Permission.evaluate("edit", ".opencode/plans/foo.md", plan!.permission).action).toBe("allow")
     },

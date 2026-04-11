@@ -1,4 +1,3 @@
-// kilocode_change - renamed all OPENCODE_ env vars to KILO_
 import { Config } from "effect"
 
 function truthy(key: string) {
@@ -44,9 +43,9 @@ export namespace Flag {
   export const KILO_EXPERIMENTAL_FILEWATCHER = Config.boolean("KILO_EXPERIMENTAL_FILEWATCHER").pipe(
     Config.withDefault(false),
   )
-  export const KILO_EXPERIMENTAL_DISABLE_FILEWATCHER = Config.boolean(
-    "KILO_EXPERIMENTAL_DISABLE_FILEWATCHER",
-  ).pipe(Config.withDefault(false))
+  export const KILO_EXPERIMENTAL_DISABLE_FILEWATCHER = Config.boolean("KILO_EXPERIMENTAL_DISABLE_FILEWATCHER").pipe(
+    Config.withDefault(false),
+  )
   export const KILO_EXPERIMENTAL_ICON_DISCOVERY = KILO_EXPERIMENTAL || truthy("KILO_EXPERIMENTAL_ICON_DISCOVERY")
 
   const copy = process.env["KILO_EXPERIMENTAL_DISABLE_COPY_ON_SELECT"]
@@ -66,6 +65,7 @@ export namespace Flag {
   export const KILO_EXPERIMENTAL_MARKDOWN = !falsy("KILO_EXPERIMENTAL_MARKDOWN")
   export const KILO_MODELS_URL = process.env["KILO_MODELS_URL"]
   export const KILO_MODELS_PATH = process.env["KILO_MODELS_PATH"]
+  export const KILO_DB = process.env["KILO_DB"]
   export const KILO_DISABLE_CHANNEL_DB = truthy("KILO_DISABLE_CHANNEL_DB")
   export const KILO_SKIP_MIGRATIONS = truthy("KILO_SKIP_MIGRATIONS")
   export const KILO_STRICT_CONFIG_DEPS = truthy("KILO_STRICT_CONFIG_DEPS")
