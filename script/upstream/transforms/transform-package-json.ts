@@ -202,6 +202,7 @@ const KILO_BIN: Record<string, Record<string, string>> = {
 
 // Packages that should have their name transformed
 const TRANSFORM_PACKAGE_NAMES: Record<string, string> = {
+  "package.json": "@kilocode/kilo",
   "packages/opencode/package.json": "@kilocode/cli",
   "packages/plugin/package.json": "@kilocode/plugin",
   "packages/sdk/js/package.json": "@kilocode/sdk",
