@@ -493,7 +493,7 @@ describe("RemoteSender", () => {
 
   test("suggestion_accept sends response after work completes", async () => {
     const { conn, sent } = fakeConn()
-    const accept = spyOn(Suggestion, "accept").mockResolvedValue(undefined)
+    const accept = spyOn(Suggestion, "accept").mockResolvedValue(true)
     const sender = RemoteSender.create({
       conn,
       directory: "/tmp/test",

@@ -318,7 +318,9 @@ export namespace RemoteSender {
           return
         }
         const dir = msg.sessionId ? directoryFor(msg.sessionId) : Promise.resolve(options.directory)
-        dispatchQuick(msg, dir, () => Suggestion.accept(parsed.data))
+        dispatchQuick(msg, dir, async () => {
+          await Suggestion.accept(parsed.data)
+        })
         return
       }
       if (msg.command === "suggestion_dismiss") {
