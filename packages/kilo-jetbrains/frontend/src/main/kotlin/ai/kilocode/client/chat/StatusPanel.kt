@@ -36,7 +36,7 @@ import javax.swing.SwingConstants
  * status indicators: animated spinner for loading, green check for
  * success, red circle for error, grey circle for idle.
  */
-class EmptyChatUi(
+class StatusPanel(
     parent: Disposable,
     private val model: SessionModel,
 ) : JPanel(GridBagLayout()), SessionModelListener, Disposable {
@@ -56,7 +56,7 @@ class EmptyChatUi(
     // ------ header ------
 
     private val logo = JBLabel(
-        IconLoader.getIcon("/icons/kilo-content.svg", EmptyChatUi::class.java),
+        IconLoader.getIcon("/icons/kilo-content.svg", StatusPanel::class.java),
     ).apply {
         alignmentX = CENTER_ALIGNMENT
     }

@@ -22,7 +22,7 @@ import javax.swing.JPanel
  *
  * All business logic (app/workspace watching, session lifecycle, event
  * handling, status computation) lives in [SessionModel]. Welcome
- * rendering lives in [EmptyChatUi]. This class handles layout, prompt
+ * rendering lives in [StatusPanel]. This class handles layout, prompt
  * wiring, message list updates, card switching, picker population,
  * busy state, and scrolling.
  */
@@ -40,7 +40,7 @@ class ChatPanel(
     }
 
     private val model = SessionModel(this, sessions, workspace, app, cs)
-    private val welcome = EmptyChatUi(this, model)
+    private val welcome = StatusPanel(this, model)
     private val messages = MessageListPanel()
 
     private val cards = CardLayout()
