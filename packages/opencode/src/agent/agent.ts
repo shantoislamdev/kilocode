@@ -365,18 +365,24 @@ export namespace Agent {
           )
           const existing = yield* InstanceState.useEffect(state, (s) => s.list())
 
+          // TODO: clean this up so provider specific logic doesnt bleed over
+          const authInfo = yield* auth.get(model.providerID).pipe(Effect.orDie)
+          const isOpenaiOauth = model.providerID === "openai" && authInfo?.type === "oauth"
+
           const params = {
             // kilocode_change start - enable telemetry with custom PostHog tracer
             experimental_telemetry: KiloAgent.telemetryOptions(cfg),
             // kilocode_change end
             temperature: 0.3,
             messages: [
-              ...system.map(
-                (item): ModelMessage => ({
-                  role: "system",
-                  content: item,
-                }),
-              ),
+              ...(isOpenaiOauth
+                ? []
+                : system.map(
+                    (item): ModelMessage => ({
+                      role: "system",
+                      content: item,
+                    }),
+                  )),
               {
                 role: "user",
                 content: `Create an agent configuration based on this request: \"${input.description}\".\n\nIMPORTANT: The following identifiers already exist and must NOT be used: ${existing.map((i) => i.name).join(", ")}\n  Return ONLY the JSON object, no other text, do not wrap in backticks`,
@@ -390,13 +396,12 @@ export namespace Agent {
             }),
           } satisfies Parameters<typeof generateObject>[0]
 
-          // TODO: clean this up so provider specific logic doesnt bleed over
-          const authInfo = yield* auth.get(model.providerID).pipe(Effect.orDie)
-          if (model.providerID === "openai" && authInfo?.type === "oauth") {
+          if (isOpenaiOauth) {
             return yield* Effect.promise(async () => {
               const result = streamObject({
                 ...params,
                 providerOptions: ProviderTransform.providerOptions(resolved, {
+                  instructions: system.join("\n"),
                   store: false,
                 }),
                 onError: () => {},
@@ -414,11 +419,13 @@ export namespace Agent {
     }),
   )
 
-  export const defaultLayer = layer.pipe(
-    Layer.provide(Provider.defaultLayer),
-    Layer.provide(Auth.defaultLayer),
-    Layer.provide(Config.defaultLayer),
-    Layer.provide(Skill.defaultLayer),
+  export const defaultLayer = Layer.suspend(() =>
+    layer.pipe(
+      Layer.provide(Provider.defaultLayer),
+      Layer.provide(Auth.defaultLayer),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(Skill.defaultLayer),
+    ),
   )
 
   const { runPromise } = makeRuntime(Service, defaultLayer)
