@@ -50,6 +50,8 @@ function mergeReviewComments(current: ReviewComment[], incoming: ReviewComment[]
 
 interface PromptInputProps {
   blocked?: () => boolean
+  /** When true, session is busy only because a suggestion is pending — treat as idle for input */
+  suggesting?: () => boolean
   boxId?: string
   pendingSessionID?: string
 }
@@ -268,7 +270,7 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
   window.addEventListener("compactSession", onCompact)
   onCleanup(() => window.removeEventListener("compactSession", onCompact))
 
-  const isBusy = () => session.status() !== "idle"
+  const isBusy = () => session.status() !== "idle" && !props.suggesting?.()
   const isDisabled = () => !server.isConnected()
   const hasInput = () => text().trim().length > 0 || imageAttach.images().length > 0 || reviewComments().length > 0
   const canSend = () => hasInput() && !isDisabled() && !terminal.pending() && !props.blocked?.()

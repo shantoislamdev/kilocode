@@ -12,9 +12,10 @@ import { StoryProviders, mockSessionValue } from "./StoryProviders"
 import { ChatView } from "../components/chat/ChatView"
 import { TaskHeader } from "../components/chat/TaskHeader"
 import { QuestionDock } from "../components/chat/QuestionDock"
+import { SuggestBar } from "../components/chat/SuggestBar"
 import { SessionContext } from "../context/session"
 import { ServerContext } from "../context/server"
-import type { QuestionRequest, TodoItem } from "../types/messages"
+import type { QuestionRequest, SuggestionRequest, TodoItem } from "../types/messages"
 
 const SESSION_ID = "story-session-chat-001"
 
@@ -64,6 +65,14 @@ const multiQuestion: QuestionRequest = {
     },
   ],
   tool: { messageID: "asst-msg-001", callID: "call-question-002" },
+}
+
+const reviewSuggestion: SuggestionRequest = {
+  id: "s-review-001",
+  sessionID: SESSION_ID,
+  text: "Start a code review of uncommitted changes?",
+  actions: [{ label: "Start review", description: "Run a local review now", prompt: "/local-review-uncommitted" }],
+  tool: { messageID: "asst-msg-002", callID: "call-suggest-001" },
 }
 
 // ---------------------------------------------------------------------------
@@ -167,6 +176,17 @@ export const QuestionDockManyOptions: Story = {
     <StoryProviders sessionID={SESSION_ID} questions={[manyOptionsQuestion]}>
       <div style={{ width: "100%" }}>
         <QuestionDock request={manyOptionsQuestion} />
+      </div>
+    </StoryProviders>
+  ),
+}
+
+export const SuggestBarReview: Story = {
+  name: "SuggestBar — review suggestion",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} suggestions={[reviewSuggestion]}>
+      <div style={{ width: "100%" }}>
+        <SuggestBar request={reviewSuggestion} />
       </div>
     </StoryProviders>
   ),
