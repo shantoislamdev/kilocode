@@ -8,7 +8,7 @@ import type { Tool } from "../../src/tool/tool"
 import { Instance } from "../../src/project/instance"
 import { SkillTool } from "../../src/tool/skill"
 import { ToolRegistry } from "../../src/tool/registry"
-import { provideTmpdirInstance } from "../fixture/fixture"
+import { provideTmpdirInstance, tmpdir } from "../fixture/fixture"
 import { SessionID, MessageID } from "../../src/session/schema"
 import { testEffect } from "../lib/effect"
 
@@ -189,4 +189,47 @@ Use this skill.
       { git: true },
     ),
   )
+
+  // kilocode_change start
+  it.live(
+    "built-in kilo-config includes named command lookup guidance",
+    () =>
+      provideTmpdirInstance(
+        (dir) =>
+          Effect.gen(function* () {
+            const home = process.env.KILO_TEST_HOME
+            process.env.KILO_TEST_HOME = dir
+            yield* Effect.addFinalizer(() =>
+              Effect.sync(() => {
+                process.env.KILO_TEST_HOME = home
+              }),
+            )
+
+            const registry = yield* ToolRegistry.Service
+            const agent = { name: "build", mode: "primary" as const, permission: [], options: {} }
+            const tool = (yield* registry.tools({
+              providerID: "opencode" as any,
+              modelID: "gpt-5" as any,
+              agent,
+            })).find((t) => t.id === SkillTool.id)
+            if (!tool) throw new Error("Skill tool not found")
+
+            const ctx: Tool.Context = {
+              ...baseCtx,
+              ask: () => Effect.void,
+            }
+
+            const result = yield* tool.execute({ name: "kilo-config" }, ctx)
+
+            expect(result.metadata.dir).toBe("builtin")
+            expect(result.output).toContain("Finding a named command")
+            expect(result.output).toContain("~/.config/kilo/")
+            expect(result.output).toContain("~/.kilocode/")
+            expect(result.output).toContain("**/command/")
+            expect(result.output).toContain("explicit search")
+          }),
+        { git: true },
+      ),
+  )
+  // kilocode_change end
 })
