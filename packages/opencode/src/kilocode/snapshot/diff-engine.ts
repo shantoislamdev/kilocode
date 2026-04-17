@@ -166,8 +166,10 @@ export namespace DiffEngine {
           pool = null
           try {
             next.worker.terminate()
-          } catch {
-            // already gone
+          } catch (err) {
+            log.debug("diff worker terminate after crash failed", {
+              error: err instanceof Error ? err.message : String(err),
+            })
           }
         }
       }
@@ -192,8 +194,10 @@ export namespace DiffEngine {
     pool = null
     try {
       hit.worker.terminate()
-    } catch {
-      // worker already stopped
+    } catch (err) {
+      log.debug("diff worker terminate failed", {
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
   }
 
@@ -269,8 +273,10 @@ export namespace DiffEngine {
     drainPending(hit, "worker-error")
     try {
       hit.worker.terminate()
-    } catch {
-      // already stopped
+    } catch (err) {
+      log.debug("diff worker shutdown terminate failed", {
+        error: err instanceof Error ? err.message : String(err),
+      })
     }
   }
 
