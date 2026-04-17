@@ -23,15 +23,13 @@ describe("prompt.ts Kilo-specific invariants", () => {
     expect(content).toContain("Suggestion.dismissAll")
   })
 
-  test("dismissAll and state.cancel appear together in a kilocode_change block", () => {
+  test("dismissAll runs before the prompt queue enqueues the new loop", () => {
     const content = fs.readFileSync(PROMPT_FILE, "utf-8")
-    // Both dismissAll and state.cancel are needed in the same block to fix
-    // the stuck session race condition. state.cancel appears elsewhere in
-    // prompt.ts (upstream code at line ~111), so we must verify it co-occurs
-    // with dismissAll inside the same kilocode_change block.
-    const block = content.match(/kilocode_change start[^\n]*dismiss[\s\S]*?kilocode_change end/)
+    // dismissAll must precede KiloSessionPromptQueue.enqueue so a previous loop
+    // blocked on a suggestion can settle before the queue starts the next prompt.
+    const block = content.match(
+      /kilocode_change start[^\n]*dismiss[\s\S]*?Suggestion\.dismissAll[\s\S]*?kilocode_change end[\s\S]*?KiloSessionPromptQueue\.enqueue/,
+    )
     expect(block).not.toBeNull()
-    expect(block![0]).toContain("Suggestion.dismissAll")
-    expect(block![0]).toContain("state.cancel")
   })
 })
