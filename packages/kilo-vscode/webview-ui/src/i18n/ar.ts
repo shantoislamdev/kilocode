@@ -762,7 +762,7 @@ export const dict = {
   "provider.custom.models.variants.thinking.placeholder": "thinking",
   "provider.custom.models.variants.thinking.enabled": "enabled",
   "provider.custom.models.variants.thinking.disabled": "disabled",
-  "provider.custom.models.variants.chatTemplateArgs.label": "وسائط قالب الدردشة (مثل Hugging Face)",
+  "provider.custom.models.variants.chatTemplateArgs.label": "تفعيل التفكير عبر وسائط قالب الدردشة (مثل Hugging Face)",
   "provider.custom.models.variants.chatTemplateArgs.placeholder": "chat_template_args",
   "provider.custom.models.variants.chatTemplateArgs.true": "true",
   "provider.custom.models.variants.chatTemplateArgs.false": "false",

@@ -759,7 +759,7 @@ export const dict = {
   "provider.custom.models.variants.thinking.placeholder": "thinking",
   "provider.custom.models.variants.thinking.enabled": "enabled",
   "provider.custom.models.variants.thinking.disabled": "disabled",
-  "provider.custom.models.variants.chatTemplateArgs.label": "聊天範本參數（如 Hugging Face）",
+  "provider.custom.models.variants.chatTemplateArgs.label": "透過聊天範本參數啟用思考（如 Hugging Face）",
   "provider.custom.models.variants.chatTemplateArgs.placeholder": "chat_template_args",
   "provider.custom.models.variants.chatTemplateArgs.true": "true",
   "provider.custom.models.variants.chatTemplateArgs.false": "false",

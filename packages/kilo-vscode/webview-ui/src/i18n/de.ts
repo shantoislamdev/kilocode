@@ -779,7 +779,8 @@ export const dict = {
   "provider.custom.models.variants.thinking.placeholder": "thinking",
   "provider.custom.models.variants.thinking.enabled": "enabled",
   "provider.custom.models.variants.thinking.disabled": "disabled",
-  "provider.custom.models.variants.chatTemplateArgs.label": "Chat-Vorlagenargumente (z.B. Hugging Face)",
+  "provider.custom.models.variants.chatTemplateArgs.label":
+    "Nachdenken über Chat-Vorlagenargumente aktivieren (z.B. Hugging Face)",
   "provider.custom.models.variants.chatTemplateArgs.placeholder": "chat_template_args",
   "provider.custom.models.variants.chatTemplateArgs.true": "true",
   "provider.custom.models.variants.chatTemplateArgs.false": "false",
