@@ -124,6 +124,44 @@ export const ChatViewWithMessages: Story = {
   },
 }
 
+/**
+ * ChatView with a pending question tool call and an empty input.
+ *
+ * Locks in the fix for the regression where the question tool's pending request
+ * caused the Send button to render as a Stop square. The snapshot captures the
+ * prompt bar footer — the submit control must be the paper-plane arrow icon,
+ * not the filled square Stop icon.
+ *
+ * If someone re-couples the prompt input to the question tool, this story's
+ * baseline PNG will diverge and the visual-regression CI job will fail.
+ */
+const pendingToolQuestion: QuestionRequest = {
+  id: "q-toolcall-001",
+  sessionID: SESSION_ID,
+  questions: [
+    {
+      question: "What would you like to do next?",
+      header: "Next step",
+      options: [
+        { label: "Continue", description: "Keep going with the current plan" },
+        { label: "Revise", description: "Adjust the approach before continuing" },
+      ],
+    },
+  ],
+  tool: { messageID: "asst-q-001", callID: "call-q-001" },
+}
+
+export const ChatViewWithPendingQuestionEmptyInput: Story = {
+  name: "ChatView — pending question, empty input (submit must be arrow, not square)",
+  render: () => (
+    <StoryProviders sessionID={SESSION_ID} status="busy" questions={[pendingToolQuestion]}>
+      <div style={{ "max-height": "400px", display: "flex", "flex-direction": "column" }}>
+        <ChatView />
+      </div>
+    </StoryProviders>
+  ),
+}
+
 // ---------------------------------------------------------------------------
 // QuestionDock stories
 // ---------------------------------------------------------------------------
