@@ -1416,6 +1416,8 @@ export const dict = {
   "settings.saveBar.warning.many": "Kilka sesji jest uruchomionych i zostanie przerwanych",
   "settings.saveBar.saveAnyway": "Zapisz mimo to",
   "settings.saveBar.cancel": "Anuluj",
+  "settings.saveBar.saving": "Zapisywanie…",
+  "settings.saveBar.saveFailed": "Nie można zapisać ustawień",
   "notifications.action.next": "Następny",
   "notifications.action.close": "Zamknij",
   "notifications.action.tryModel": "Wypróbuj {{model}}",
