@@ -38,7 +38,7 @@ This summary replaces the earlier conversation history, freeing up context windo
 
 Kilo tracks the total token count for the session — input, output, and cached reads and writes — and compares it to the model's context window. Compaction runs when the total fills the window minus a reserved buffer of headroom kept free for the next turn.
 
-The default buffer is 20,000 tokens, or the model's maximum output size if that is smaller. On models that advertise an output cap of up to 32,000 tokens, Kilo uses that cap as the reserve when no input limit is set. The size of the buffer is the same across models; only the overall window size differs, so larger-context models reach the trigger later in absolute token terms.
+How the buffer is chosen depends on what the model declares. When the model advertises a separate input limit, the buffer defaults to 20,000 tokens (or the model's maximum output size, whichever is smaller). When the model only declares a single context window, Kilo instead reserves the model's full output cap — up to 32,000 tokens.
 
 Custom models that do not declare a context window are not tracked, and auto-compaction does not run for them.
 
@@ -76,11 +76,11 @@ Compaction is configured in your `kilo.jsonc` file:
 }
 ```
 
-| Option                | Type    | Default                        | Description                                                                          |
-| --------------------- | ------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| `compaction.auto`     | boolean | `true`                         | Enable or disable automatic compaction when the usable window is reached             |
-| `compaction.prune`    | boolean | `true`                         | Enable pruning of old tool outputs outside the 40K token recency window              |
-| `compaction.reserved` | number  | `min(20000, model_max_output)` | Token headroom reserved for the next turn; lower values delay the compaction trigger |
+| Option                | Type    | Default                        | Description                                                                                                                                                                                    |
+| --------------------- | ------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compaction.auto`     | boolean | `true`                         | Enable or disable automatic compaction when the usable window is reached                                                                                                                       |
+| `compaction.prune`    | boolean | `true`                         | Enable pruning of old tool outputs outside the 40K token recency window                                                                                                                        |
+| `compaction.reserved` | number  | `min(20000, model_max_output)` | Token headroom reserved for the next turn. Applies only to models that advertise a separate input limit; models with a single context window use their full output cap as the reserve instead. |
 
 ### Use a different model for compaction
 
@@ -127,7 +127,7 @@ This summary replaces the earlier conversation history, freeing up context windo
 
 Kilo tracks the total token count for the session — input, output, and cached reads and writes — and compares it to the model's context window. Compaction runs when the total fills the window minus a reserved buffer of headroom kept free for the next turn.
 
-The default buffer is 20,000 tokens, or the model's maximum output size if that is smaller. On models that advertise an output cap of up to 32,000 tokens, Kilo uses that cap as the reserve when no input limit is set. The size of the buffer is the same across models; only the overall window size differs, so larger-context models reach the trigger later in absolute token terms.
+How the buffer is chosen depends on what the model declares. When the model advertises a separate input limit, the buffer defaults to 20,000 tokens (or the model's maximum output size, whichever is smaller). When the model only declares a single context window, Kilo instead reserves the model's full output cap — up to 32,000 tokens.
 
 [Custom models](/docs/code-with-ai/agents/custom-models) that do not declare a context window are not tracked, and auto-compaction does not run for them.
 
@@ -164,11 +164,11 @@ Compaction is configured in your `kilo.jsonc` file:
 }
 ```
 
-| Option                | Type    | Default                        | Description                                                                          |
-| --------------------- | ------- | ------------------------------ | ------------------------------------------------------------------------------------ |
-| `compaction.auto`     | boolean | `true`                         | Enable or disable automatic compaction when the usable window is reached             |
-| `compaction.prune`    | boolean | `true`                         | Enable pruning of old tool outputs outside the 40K token recency window              |
-| `compaction.reserved` | number  | `min(20000, model_max_output)` | Token headroom reserved for the next turn; lower values delay the compaction trigger |
+| Option                | Type    | Default                        | Description                                                                                                                                                                                    |
+| --------------------- | ------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `compaction.auto`     | boolean | `true`                         | Enable or disable automatic compaction when the usable window is reached                                                                                                                       |
+| `compaction.prune`    | boolean | `true`                         | Enable pruning of old tool outputs outside the 40K token recency window                                                                                                                        |
+| `compaction.reserved` | number  | `min(20000, model_max_output)` | Token headroom reserved for the next turn. Applies only to models that advertise a separate input limit; models with a single context window use their full output cap as the reserve instead. |
 
 ### Use a different model for compaction
 
@@ -274,12 +274,12 @@ If the condensed summary doesn't capture important details:
 
 ### Tuning `compaction.reserved`
 
-The `reserved` value is a trade-off:
+On models that advertise a separate input limit, the `reserved` value is a trade-off:
 
 - **Lower value** (e.g. `10000`) → compaction triggers later, you get more turns out of the raw window, but you risk a mid-turn context overflow if a single response is larger than the buffer.
 - **Higher value** (e.g. `40000`) → compaction triggers earlier, fewer overflow errors, but shorter effective conversations between summaries.
 
-The default of `~20K` is tuned to leave room for a full-size assistant response plus tool output.
+The default of `~20K` is tuned to leave room for a full-size assistant response plus tool output. The setting has no effect on models with a single context window, which always reserve their full output cap instead.
 
 ### Maintaining Context Quality
 
