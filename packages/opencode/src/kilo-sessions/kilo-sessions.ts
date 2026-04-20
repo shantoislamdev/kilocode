@@ -156,7 +156,7 @@ export namespace KiloSessions {
   let remoteSeq = 0
   const focused = new Set<string>()
   const opened = new Set<string>()
-  const statusSyncs = new Map<string, Promise<void>>()
+  const statusSyncs = new Map<string, { running: boolean; dirty: boolean }>()
   const STATUS_TIMEOUT_MS = 3_000
 
   async function deriveStatus(sessionID: string): Promise<"idle" | "busy" | "question" | "permission" | "retry"> {
@@ -172,7 +172,7 @@ export namespace KiloSessions {
   }
 
   async function deriveAndSyncStatus(sessionID: string) {
-    const status = await deriveStatus(sessionID)
+    const status = await withTimeout(deriveStatus(sessionID), STATUS_TIMEOUT_MS)
     await ingest.sync(sessionID, [{ type: "session_status", data: { status } }])
   }
 
@@ -249,19 +249,36 @@ export namespace KiloSessions {
     })
 
     // Session status changes (busy/idle/retry), question lifecycle, permission lifecycle.
-    // withTimeout prevents a hung derive from holding the per-session promise chain open forever.
     const syncStatus = (evt: { properties: { sessionID: string } }) => {
       const sessionID = evt.properties.sessionID
-      const prev = statusSyncs.get(sessionID) ?? Promise.resolve()
-      const next = prev
-        .then(() => withTimeout(deriveAndSyncStatus(sessionID), STATUS_TIMEOUT_MS))
-        .catch((error) => {
-          log.error("status sync failed", { sessionID, error: String(error) })
-        })
-      statusSyncs.set(sessionID, next)
-      void next.finally(() => {
-        if (statusSyncs.get(sessionID) === next) statusSyncs.delete(sessionID)
-      })
+      const current = statusSyncs.get(sessionID)
+      if (current?.running) {
+        current.dirty = true
+        return
+      }
+
+      const state = current ?? { running: false, dirty: false }
+      statusSyncs.set(sessionID, state)
+
+      const fail = (error: unknown) => {
+        const dirty = state.dirty
+        statusSyncs.delete(sessionID)
+        log.error("status sync failed", { sessionID, error: String(error) })
+        if (dirty) syncStatus(evt)
+      }
+
+      const loop = async () => {
+        state.running = true
+        state.dirty = false
+        await deriveAndSyncStatus(sessionID)
+        if (state.dirty) {
+          void loop().catch(fail)
+          return
+        }
+        statusSyncs.delete(sessionID)
+      }
+
+      void loop().catch(fail)
     }
     Bus.subscribe(SessionStatus.Event.Status, syncStatus)
     Bus.subscribe(Question.Event.Asked, syncStatus)
