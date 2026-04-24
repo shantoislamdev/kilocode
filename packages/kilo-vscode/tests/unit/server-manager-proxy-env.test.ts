@@ -7,13 +7,18 @@ type WorkspaceStub = { getConfiguration: (section?: string) => { get: (key: stri
 const workspace = vscode.workspace as unknown as WorkspaceStub
 const originalGetConfiguration = workspace.getConfiguration
 
-function stubHttpConfig(values: { proxy?: unknown; noProxy?: unknown }): void {
+function stubHttpConfig(values: {
+  proxy?: unknown
+  noProxy?: unknown
+  proxySupport?: unknown
+}): void {
   workspace.getConfiguration = (section?: string) => {
     if (section === "http") {
       return {
         get: (key: string) => {
           if (key === "proxy") return values.proxy
           if (key === "noProxy") return values.noProxy
+          if (key === "proxySupport") return values.proxySupport
           return undefined
         },
       }
@@ -79,5 +84,29 @@ describe("buildProxyEnv", () => {
     stubHttpConfig({ noProxy: "localhost" })
 
     expect(buildProxyEnv()).toEqual({})
+  })
+
+  it("explicitly clears env vars when http.proxySupport is off", () => {
+    stubHttpConfig({ proxySupport: "off" })
+
+    expect(buildProxyEnv()).toEqual({
+      HTTP_PROXY: "",
+      HTTPS_PROXY: "",
+      NO_PROXY: "",
+    })
+  })
+
+  it("http.proxySupport=off wins over a configured http.proxy/http.noProxy", () => {
+    stubHttpConfig({
+      proxy: "http://proxy.corp.example:8080",
+      noProxy: ["localhost"],
+      proxySupport: "off",
+    })
+
+    expect(buildProxyEnv()).toEqual({
+      HTTP_PROXY: "",
+      HTTPS_PROXY: "",
+      NO_PROXY: "",
+    })
   })
 })

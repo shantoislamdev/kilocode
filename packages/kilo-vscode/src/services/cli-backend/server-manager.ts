@@ -234,15 +234,25 @@ function stripAnsi(str: string): string {
 }
 
 /**
- * Translate VS Code's `http.proxy` / `http.noProxy` settings into the standard
- * HTTP_PROXY / HTTPS_PROXY / NO_PROXY env vars, so the spawned CLI (and any
- * HTTP client it uses) honors the user's proxy configuration. Returns an empty
- * object when no proxy is configured, so callers can spread unconditionally.
+ * Translate VS Code's `http.proxy` / `http.noProxy` / `http.proxySupport`
+ * settings into the standard HTTP_PROXY / HTTPS_PROXY / NO_PROXY env vars, so
+ * the spawned CLI honors the user's proxy configuration. Returns an empty
+ * object when no override is needed, so callers can spread unconditionally.
+ *
+ * `http.proxySupport: "off"` is VS Code's opt-in way to disable proxy support
+ * entirely; when set, we explicitly clear the env vars so ambient shell
+ * HTTP_PROXY doesn't leak into the spawned child.
  */
 export function buildProxyEnv(): Record<string, string> {
   const httpConfig = vscode.workspace.getConfiguration("http")
   const proxy = httpConfig.get<string>("proxy")
   const noProxy = httpConfig.get<string[]>("noProxy")
+  const proxySupport = httpConfig.get<string>("proxySupport")
+
+  if (proxySupport === "off") {
+    return { HTTP_PROXY: "", HTTPS_PROXY: "", NO_PROXY: "" }
+  }
+
   const env: Record<string, string> = {}
   if (proxy && proxy.trim() !== "") {
     env.HTTP_PROXY = proxy
