@@ -89,7 +89,7 @@ async function lookupBySha(cwd: string, signal: AbortSignal): Promise<Pr | null>
       "pr",
       "list",
       "--state",
-      "all",
+      "open",
       "--search",
       `${head} is:pr`,
       "--limit",
