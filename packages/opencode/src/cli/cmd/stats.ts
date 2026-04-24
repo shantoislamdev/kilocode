@@ -2,7 +2,7 @@ import type { Argv } from "yargs"
 import { cmd } from "./cmd"
 import { Session } from "../../session"
 import { bootstrap } from "../bootstrap"
-import { Database } from "../../storage"
+import { Database, isNull } from "../../storage" // kilocode_change - isNull for root session filter
 import { SessionTable } from "../../session/session.sql"
 import { Project } from "../../project"
 import { Instance } from "../../project/instance"
@@ -89,7 +89,10 @@ async function getCurrentProject(): Promise<Project.Info> {
 }
 
 async function getAllSessions(): Promise<Session.Info[]> {
-  const rows = Database.use((db) => db.select().from(SessionTable).all())
+  // kilocode_change start - exclude subagent (child) sessions; their cost is already propagated into the
+  // parent's tool-wrapper assistant message, so summing both would double-count (#6321)
+  const rows = Database.use((db) => db.select().from(SessionTable).where(isNull(SessionTable.parent_id)).all())
+  // kilocode_change end
   return rows.map((row) => Session.fromRow(row))
 }
 
