@@ -1,14 +1,17 @@
+/** @jsxImportSource solid-js */
+
 /**
  * ChatView component
  * Main chat container that combines all chat components
  */
 
-import { Component, Show, createEffect, createMemo, createSignal, on, onCleanup, onMount } from "solid-js"
+import { type Component, Show, createEffect, createMemo, createSignal, on, onCleanup, onMount } from "solid-js"
 import { Button } from "@kilocode/kilo-ui/button"
 import { Icon } from "@kilocode/kilo-ui/icon"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { showToast } from "@kilocode/kilo-ui/toast"
+import { DropdownMenu } from "@kilocode/kilo-ui/dropdown-menu"
 import { TaskHeader } from "./TaskHeader"
 import { MessageList } from "./MessageList"
 import { PromptInput } from "./PromptInput"
@@ -129,6 +132,128 @@ export const ChatView: Component<ChatViewProps> = (props) => {
     session.respondToPermission(perm.id, response, approvedAlways, deniedAlways)
   }
 
+  const startSession = () => window.dispatchEvent(new CustomEvent("newTaskRequest"))
+
+  const startWorktree = () => vscode.postMessage({ type: "agentManager.createWorktree" })
+
+  const openAgentManager = () => vscode.postMessage({ type: "openAgentManager" })
+
+  const moveToWorktree = () => {
+    const sid = id()
+    if (!sid) return
+    setTransferring(true)
+    setTransferDetail("Capturing changes...")
+    vscode.postMessage({ type: "continueInWorktree", sessionId: sid })
+  }
+
+  const worktreeTooltip =
+    "Create an isolated git worktree to experiment safely, keep changes separated, and run parallel sessions without disrupting your current branch."
+
+  const advancedTooltip =
+    "Open the Agent Manager worktree dialog to choose advanced branch options before creating the worktree."
+
+  const showAdvancedWorktree = () => vscode.postMessage({ type: "openAdvancedWorktree" })
+
+  const renderActions = (hasChat: boolean) => (
+    <div class="new-task-button-wrapper" classList={{ "new-task-button-wrapper--empty": !hasChat }}>
+      <div class="session-actions-row">
+        <Tooltip value="Start a fresh conversation while keeping the current session intact." placement="top">
+          <Button variant="secondary" size="small" onClick={startSession} aria-label="New Session">
+            New Session
+          </Button>
+        </Tooltip>
+        <Show when={isSidebar() && server.gitInstalled()}>
+          <div class="session-worktree-split">
+            <Tooltip value={worktreeTooltip} placement="top">
+              <Button
+                variant="secondary"
+                size="small"
+                class="session-worktree-main"
+                onClick={startWorktree}
+                aria-label="New Worktree"
+              >
+                New Worktree
+              </Button>
+            </Tooltip>
+            <DropdownMenu gutter={4} placement="bottom-end">
+              <Tooltip value={advancedTooltip} placement="top">
+                <DropdownMenu.Trigger class="session-worktree-split-arrow" aria-label="Advanced worktree options">
+                  <Icon name="chevron-down" size="small" />
+                </DropdownMenu.Trigger>
+              </Tooltip>
+              <DropdownMenu.Portal>
+                <DropdownMenu.Content class="session-worktree-split-menu">
+                  <DropdownMenu.Item onSelect={startWorktree}>
+                    <DropdownMenu.ItemLabel>{language.t("agentManager.worktree.new")}</DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                  <DropdownMenu.Item onSelect={showAdvancedWorktree}>
+                    <Icon name="settings-gear" size="small" />
+                    <DropdownMenu.ItemLabel>{language.t("agentManager.dialog.advanced")}</DropdownMenu.ItemLabel>
+                  </DropdownMenu.Item>
+                </DropdownMenu.Content>
+              </DropdownMenu.Portal>
+            </DropdownMenu>
+          </div>
+        </Show>
+        <Show when={!hasChat}></Show>
+        <Show when={hasChat && canContinueInWorktree() && server.gitInstalled()}>
+          <Tooltip
+            value={
+              session.worktreeStats()?.files
+                ? `Move this conversation and ${session.worktreeStats()!.files} changed file${session.worktreeStats()!.files > 1 ? "s" : ""} into a dedicated worktree for isolated follow-up work.`
+                : "Move this conversation and your current local changes into a dedicated worktree for isolated follow-up work."
+            }
+            placement="top"
+          >
+            <Button
+              variant="ghost"
+              size="small"
+              class="session-move-button"
+              classList={{
+                "session-move-button--empty": !session.worktreeStats()?.files,
+                "session-move-button--has-changes": !!session.worktreeStats()?.files,
+              }}
+              disabled={transferring()}
+              onClick={moveToWorktree}
+              aria-label="Move to Worktree"
+            >
+              <Show when={transferring()} fallback={<Icon name="branch" size="small" />}>
+                <Spinner class="chat-spinner-small" />
+              </Show>
+              <span class="session-move-label">{transferring() ? transferDetail() : "Move to Worktree"}</span>
+              <Show when={!transferring() && session.worktreeStats()?.files}>
+                <span class="session-move-tail" aria-hidden="true">
+                  <span class="session-move-divider" />
+                  <span class="session-move-stats">
+                    <Icon name="layers" size="small" />
+                    <span class="session-diff-add">+{session.worktreeStats()!.additions}</span>
+                    <span class="session-diff-del">-{session.worktreeStats()!.deletions}</span>
+                  </span>
+                </span>
+              </Show>
+            </Button>
+          </Tooltip>
+        </Show>
+        <div class="session-agent-manager-slot">
+          <Tooltip
+            value="Open Agent Manager for a full overview of parallel sessions and worktrees, so you can coordinate long-running tasks in one place."
+            placement="top"
+          >
+            <Button
+              variant="secondary"
+              size="small"
+              class="session-agent-manager"
+              onClick={openAgentManager}
+              aria-label="Open Agent Manager"
+            >
+              <Icon name="circuit-board" size="small" />
+            </Button>
+          </Tooltip>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div class="chat-view">
       <TaskHeader readonly={props.readonly} />
@@ -159,70 +284,8 @@ export const ChatView: Component<ChatViewProps> = (props) => {
               />
             )}
           </Show>
-          <Show when={!props.readonly && hasMessages() && idle() && !blocked()}>
-            <div class="new-task-button-wrapper">
-              <div class="session-actions-row">
-                <Tooltip value="Start a new conversation" placement="top">
-                  <Button
-                    variant="secondary"
-                    size="small"
-                    onClick={() => window.dispatchEvent(new CustomEvent("newTaskRequest"))}
-                    aria-label={language.t("command.session.new.task")}
-                  >
-                    {language.t("command.session.new.task")}
-                  </Button>
-                </Tooltip>
-                <Show when={canContinueInWorktree() && server.gitInstalled()}>
-                  <Tooltip value="Continue in isolated worktree" placement="top">
-                    <Button
-                      variant="ghost"
-                      size="small"
-                      disabled={transferring()}
-                      onClick={() => {
-                        const sid = id()
-                        if (!sid) return
-                        setTransferring(true)
-                        setTransferDetail("Capturing changes...")
-                        vscode.postMessage({ type: "continueInWorktree", sessionId: sid })
-                      }}
-                      aria-label="Continue in Worktree"
-                    >
-                      <Show when={transferring()} fallback={<Icon name="branch" size="small" />}>
-                        <Spinner class="chat-spinner-small" />
-                      </Show>
-                      {transferring() ? transferDetail() : "Worktree"}
-                    </Button>
-                  </Tooltip>
-                </Show>
-                <Show when={isSidebar() && server.gitInstalled()}>
-                  <Tooltip
-                    value={
-                      session.worktreeStats()?.files
-                        ? `${session.worktreeStats()!.files} file${session.worktreeStats()!.files > 1 ? "s" : ""} changed · +${session.worktreeStats()!.additions} -${session.worktreeStats()!.deletions}`
-                        : "No file changes"
-                    }
-                    placement="top"
-                    class="session-diff-wrapper"
-                  >
-                    <button
-                      class="session-diff-badge"
-                      classList={{
-                        "session-diff-badge--empty": !session.worktreeStats()?.files,
-                        "session-diff-badge--has-changes": !!session.worktreeStats()?.files,
-                      }}
-                      onClick={() => vscode.postMessage({ type: "openChanges" })}
-                      aria-label={language.t("command.session.show.changes")}
-                    >
-                      <Icon name="layers" size="small" />
-                      <Show when={session.worktreeStats()?.files}>
-                        <span class="session-diff-add">+{session.worktreeStats()!.additions}</span>
-                        <span class="session-diff-del">-{session.worktreeStats()!.deletions}</span>
-                      </Show>
-                    </button>
-                  </Tooltip>
-                </Show>
-              </div>
-            </div>
+          <Show when={!props.readonly && idle() && !blocked() && (hasMessages() || isSidebar())}>
+            {renderActions(hasMessages())}
           </Show>
           <Show when={!props.readonly}>
             <PromptInput

@@ -237,6 +237,9 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     | ((sessionId: string, progress: (status: string, detail?: string, error?: string) => void) => Promise<void>)
     | null = null
 
+  /** Handler for sidebar worktree creation — delegates to AgentManagerProvider. */
+  private createWorktreeHandler: ((baseBranch?: string, branchName?: string) => Promise<void>) | null = null
+
   private diffVirtualProvider: import("./DiffVirtualProvider").DiffVirtualProvider | undefined
   private remoteService: RemoteStatusService | null = null
   private unsubscribeRemote: (() => void) | null = null
@@ -551,6 +554,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     this.continueInWorktreeHandler = handler
   }
 
+  public setCreateWorktreeHandler(handler: (baseBranch?: string, branchName?: string) => Promise<void>): void {
+    this.createWorktreeHandler = handler
+  }
+
   public attachToWebview(
     webview: vscode.Webview,
     options?: { onBeforeMessage?: (msg: Record<string, unknown>) => Promise<Record<string, unknown> | null> },
@@ -699,6 +706,15 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
           break
         case "openMarketplacePanel":
           vscode.commands.executeCommand("kilo-code.new.marketplaceButtonClicked", this.projectDirectory)
+          break
+        case "openAgentManager":
+          vscode.commands.executeCommand("kilo-code.new.agentManagerOpen")
+          break
+        case "openAdvancedWorktree":
+          vscode.commands.executeCommand("kilo-code.new.agentManager.advancedWorktree")
+          break
+        case "agentManager.createWorktree":
+          await this.createWorktreeHandler?.(message.baseBranch, message.branchName)
           break
         case "openChanges":
           vscode.commands.executeCommand("kilo-code.new.showChanges")

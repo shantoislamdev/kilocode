@@ -1,13 +1,27 @@
 /* New Task Button */
 .new-task-button-wrapper {
-  padding: 8px 12px 0;
+  padding: 6px 12px;
   container-type: inline-size;
+}
+
+.new-task-button-wrapper--empty {
+  width: 100%;
+}
+
+.chat-input > .new-task-button-wrapper + .prompt-input-container {
+  margin-top: 0;
+}
+
+:root {
+  --session-action-radius: 6px;
 }
 
 .session-actions-row {
   display: flex;
   gap: 4px;
   align-items: center;
+  flex-wrap: wrap;
+  min-height: 22px;
 }
 
 /* All direct children share extra space equally, but start from their content size */
@@ -24,14 +38,184 @@
 
 .session-actions-row > [data-component="tooltip-trigger"] > [data-component="button"] {
   flex: 1;
+  border-radius: var(--session-action-radius);
+  min-height: 22px;
+  height: auto;
+  padding: 4px 6px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-family: var(--font-family-sans);
+  font-size: 12px;
+  font-style: normal;
+  font-weight: var(--font-weight-medium);
+  line-height: normal;
+  letter-spacing: var(--letter-spacing-normal);
+  color: var(--vscode-descriptionForeground);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.session-actions-row > [data-component="tooltip-trigger"] > [data-component="button"]:hover:not(:disabled),
+.session-actions-row > [data-component="tooltip-trigger"] > [data-component="button"]:focus-visible:not(:disabled),
+.session-actions-row > [data-component="tooltip-trigger"] > [data-component="button"]:active:not(:disabled) {
+  color: var(--vscode-foreground);
+}
+
+.session-worktree-split {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  align-items: stretch;
+  gap: 0;
+  border-radius: var(--session-action-radius);
+  background: transparent;
+  box-shadow: none;
+  overflow: hidden;
+  color: var(--vscode-descriptionForeground);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.session-worktree-split:hover,
+.session-worktree-split:focus-within {
+  background: var(--surface-base-hover);
+  color: var(--vscode-foreground);
+}
+
+.session-worktree-split > [data-component="tooltip-trigger"] {
+  display: flex;
+  flex: 1 1 auto;
+}
+
+.session-worktree-split > [data-component="tooltip-trigger"] > [data-component="button"] {
+  flex: 1 1 auto;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+
+.session-worktree-split > [data-component="tooltip-trigger"] > [data-component="button"]:hover:not(:disabled),
+.session-worktree-split > [data-component="tooltip-trigger"] > [data-component="button"]:focus-visible:not(:disabled),
+.session-worktree-split > [data-component="tooltip-trigger"] > [data-component="button"]:active:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+}
+
+.session-worktree-split-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  padding: 0 4px 0 3px;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.session-worktree-split-arrow:focus-visible {
+  outline: none;
+  background: transparent;
+}
+
+.session-worktree-split > [data-component="tooltip-trigger"] > [data-component="button"],
+.session-worktree-split-arrow {
+  height: 24px;
+}
+
+.session-worktree-main {
+  padding-right: 4px !important;
+}
+
+.session-worktree-split-menu {
+  min-width: 180px;
 }
 
 /* Diff wrapper also stretches evenly (same flex as buttons) */
-.session-diff-wrapper {
-  display: flex !important;
+.session-move-button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: var(--session-action-radius);
+  color: var(--vscode-descriptionForeground);
 }
 
-/* Diff stats badge — fills its flex slot, content centered */
+.session-move-button:hover:not(:disabled),
+.session-move-button:focus-visible:not(:disabled),
+.session-move-button:active:not(:disabled) {
+  color: var(--vscode-foreground);
+}
+
+.session-move-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.session-move-tail {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+  padding-left: 5px;
+}
+
+.session-move-divider {
+  width: 1px;
+  height: 14px;
+  background: color-mix(in srgb, currentColor 25%, transparent);
+  opacity: 0.7;
+}
+
+.session-move-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  font-family: var(--font-family-sans);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-agent-manager-slot {
+  flex: 0 0 auto;
+  min-width: auto;
+  overflow: visible;
+}
+
+.session-agent-manager-slot > [data-component="tooltip-trigger"] {
+  display: flex;
+  flex: 0 0 auto;
+}
+
+.session-agent-manager {
+  width: 24px;
+  padding: 0;
+  gap: 0;
+  flex: 0 0 auto;
+  border-radius: var(--session-action-radius);
+  color: var(--vscode-descriptionForeground);
+}
+
+.session-agent-manager:hover:not(:disabled),
+.session-agent-manager:focus-visible:not(:disabled),
+.session-agent-manager:active:not(:disabled) {
+  color: var(--vscode-foreground);
+}
+
+.session-move-stats [data-component="icon"] {
+  opacity: 0.7;
+}
+
+/* Diff stats badge styles retained for the inline move button stats */
 .session-diff-badge {
   display: flex;
   flex: 1;
@@ -75,18 +259,30 @@
 
 /* Collapse diff stats to icon-only when truly narrow */
 @container (max-width: 300px) {
+  .session-actions-row {
+    gap: 6px;
+  }
+
+  .session-actions-row > *,
+  .session-worktree-split {
+    flex-basis: calc(50% - 3px);
+  }
+
+  .session-move-divider,
   .session-diff-add,
   .session-diff-del {
     display: none;
   }
 
-  .session-diff-badge {
-    padding: 4px 6px;
-    overflow: hidden;
+  .session-move-tail {
+    padding-left: 4px;
   }
 
-  /* Dot indicator on the icon when collapsed and there are changes */
-  .session-diff-badge--has-changes [data-component="icon"]::after {
+  .session-move-stats {
+    position: relative;
+  }
+
+  .session-move-button--has-changes .session-move-stats [data-component="icon"]::after {
     content: "";
     position: absolute;
     top: -2px;

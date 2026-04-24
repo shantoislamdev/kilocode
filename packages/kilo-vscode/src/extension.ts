@@ -112,6 +112,9 @@ export function activate(context: vscode.ExtensionContext) {
   provider.setContinueInWorktreeHandler((sessionId, progress) =>
     agentManagerProvider.continueFromSidebar(sessionId, progress),
   )
+  provider.setCreateWorktreeHandler((baseBranch, branchName) =>
+    agentManagerProvider.createFromSidebar(baseBranch, branchName),
+  )
 
   // Register serializer so Agent Manager restores when VS Code restarts
   context.subscriptions.push(

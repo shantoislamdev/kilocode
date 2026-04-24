@@ -167,6 +167,14 @@ export interface OpenMarketplacePanelRequest {
   type: "openMarketplacePanel"
 }
 
+export interface OpenAgentManagerRequest {
+  type: "openAgentManager"
+}
+
+export interface OpenAdvancedWorktreeRequest {
+  type: "openAdvancedWorktree"
+}
+
 export interface RequestAgentsMessage {
   type: "requestAgents"
 }
@@ -902,6 +910,8 @@ export type WebviewMessage =
   | OpenSettingsPanelRequest
   | OpenVSCodeSettingsRequest
   | OpenMarketplacePanelRequest
+  | OpenAgentManagerRequest
+  | OpenAdvancedWorktreeRequest
   | OpenFileRequest
   | CancelLoginRequest
   | SetOrganizationRequest
