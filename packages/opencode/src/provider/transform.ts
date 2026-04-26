@@ -204,11 +204,13 @@ function normalizeMessages(
   }
   // kilocode_change end
 
-  // kilocode_change start - cherry-picked from anomalyco/opencode#24435
+  // kilocode_change start - cherry-picked from anomalyco/opencode#24435;
+  // also skip @kilocode/kilo-gateway since it wraps @openrouter/ai-sdk-provider internally.
   if (
     typeof model.capabilities.interleaved === "object" &&
     model.capabilities.interleaved.field &&
-    model.api.npm !== "@openrouter/ai-sdk-provider"
+    model.api.npm !== "@openrouter/ai-sdk-provider" &&
+    model.api.npm !== "@kilocode/kilo-gateway"
   ) {
     // kilocode_change end
     const field = model.capabilities.interleaved.field
