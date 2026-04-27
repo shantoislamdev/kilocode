@@ -84,7 +84,7 @@ All fields are optional. When a model ID matches one already in the built-in cat
 | `reasoning`   | `boolean` | Whether the model supports extended thinking                                  |
 | `temperature` | `boolean` | Whether the model supports the temperature parameter                          |
 | `attachment`  | `boolean` | Whether the model supports file attachments                                   |
-| `modalities`  | `object`  | Supported input and output types: `{ input, output }`                         |
+| `modalities`  | `object`  | Optional. Supported input and output types: `{ input, output }`               |
 | `limit`       | `object`  | Token limits: `{ context, output, input? }`                                   |
 | `cost`        | `object`  | Pricing per million tokens: `{ input, output, cache_read?, cache_write? }`    |
 | `options`     | `object`  | Arbitrary provider-specific model options                                     |
@@ -94,12 +94,12 @@ All fields are optional. When a model ID matches one already in the built-in cat
 
 ### Modalities (modalities)
 
-The `modalities` object declares which content types the model can receive and produce. Each array can include `text`, `image`, `audio`, `video`, or `pdf`.
+The `modalities` object declares which content types the model can receive and produce. It is optional — omit it to use defaults from the catalog or fallback to text-only. When `modalities` is provided, both `input` and `output` arrays are required. Each array can include `text`, `image`, `audio`, `video`, or `pdf`.
 
-| Sub-field | Type    | Required | Description                                      |
-| --------- | ------- | -------- | ------------------------------------------------ |
-| `input`   | `array` | Yes      | Content types the model accepts from the user    |
-| `output`  | `array` | Yes      | Content types the model can generate in response |
+| Sub-field | Type    | Required         | Description                                      |
+| --------- | ------- | ---------------- | ------------------------------------------------ |
+| `input`   | `array` | Yes (if present) | Content types the model accepts from the user    |
+| `output`  | `array` | Yes (if present) | Content types the model can generate in response |
 
 For a standard text model that can also inspect images, use:
 
