@@ -2,21 +2,182 @@
 import { Permission } from "@/permission"
 import { NamedError } from "@opencode-ai/shared/util/error"
 import { Glob } from "@opencode-ai/shared/util/glob"
-import { Truncate } from "../../tool"
+import * as Truncate from "../../tool/truncate"
 import { Config } from "../../config"
 import { Instance } from "../../project/instance"
 import { makeRuntime } from "@/effect/run-service"
 import { Telemetry } from "@kilocode/kilo-telemetry"
 import z from "zod"
 import path from "path"
-import { askGuard, bash, planGuard } from "./permissions"
-export { bash, readOnlyBash } from "./permissions"
+import { Global } from "@/global"
 
 import PROMPT_DEBUG from "../../agent/prompt/debug.txt"
 import PROMPT_ORCHESTRATOR from "../../agent/prompt/orchestrator.txt"
 import PROMPT_ASK from "../../agent/prompt/ask.txt"
 import PROMPT_EXPLORE from "../../agent/prompt/explore.txt"
 
+export const bash: Record<string, "allow" | "ask" | "deny"> = {
+  "*": "ask",
+  "cat *": "allow",
+  "head *": "allow",
+  "tail *": "allow",
+  "less *": "allow",
+  "ls *": "allow",
+  "tree *": "allow",
+  "pwd *": "allow",
+  "echo *": "allow",
+  "wc *": "allow",
+  "which *": "allow",
+  "type *": "allow",
+  "file *": "allow",
+  "diff *": "allow",
+  "du *": "allow",
+  "df *": "allow",
+  "date *": "allow",
+  "uname *": "allow",
+  "whoami *": "allow",
+  "printenv *": "allow",
+  "man *": "allow",
+  "grep *": "allow",
+  "rg *": "allow",
+  "ag *": "allow",
+  "sort *": "allow",
+  "uniq *": "allow",
+  "cut *": "allow",
+  "tr *": "allow",
+  "jq *": "allow",
+  "touch *": "allow",
+  "mkdir *": "allow",
+  "cp *": "allow",
+  "mv *": "allow",
+  "tsc *": "allow",
+  "tsgo *": "allow",
+  "tar *": "allow",
+  "unzip *": "allow",
+  "gzip *": "allow",
+  "gunzip *": "allow",
+}
+
+export const readOnlyBash: Record<string, "allow" | "ask" | "deny"> = {
+  "*": "deny",
+  "cat *": "allow",
+  "head *": "allow",
+  "tail *": "allow",
+  "less *": "allow",
+  "ls *": "allow",
+  "tree *": "allow",
+  "pwd *": "allow",
+  "echo *": "allow",
+  "wc *": "allow",
+  "which *": "allow",
+  "type *": "allow",
+  "file *": "allow",
+  "diff *": "allow",
+  "du *": "allow",
+  "df *": "allow",
+  "date *": "allow",
+  "uname *": "allow",
+  "whoami *": "allow",
+  "printenv *": "allow",
+  "man *": "allow",
+  "grep *": "allow",
+  "rg *": "allow",
+  "ag *": "allow",
+  "sort *": "allow",
+  "uniq *": "allow",
+  "cut *": "allow",
+  "tr *": "allow",
+  "jq *": "allow",
+  "git *": "deny",
+  "git log *": "allow",
+  "git show *": "allow",
+  "git diff *": "allow",
+  "git status *": "allow",
+  "git blame *": "allow",
+  "git rev-parse *": "allow",
+  "git rev-list *": "allow",
+  "git ls-files *": "allow",
+  "git ls-tree *": "allow",
+  "git ls-remote *": "allow",
+  "git shortlog *": "allow",
+  "git describe *": "allow",
+  "git cat-file *": "allow",
+  "git name-rev *": "allow",
+  "git stash list *": "allow",
+  "git tag -l *": "allow",
+  "git branch --list *": "allow",
+  "git branch -a *": "allow",
+  "git branch -r *": "allow",
+  "git remote -v *": "allow",
+  "gh *": "ask",
+  "*>*": "deny",
+  "* > *": "deny",
+  "*>>*": "deny",
+  "* >> *": "deny",
+  "*>|*": "deny",
+  "* >| *": "deny",
+  "sort -o *": "deny",
+  "sort * -o *": "deny",
+}
+
+function askGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
+  return Permission.fromConfig({
+    "*": "deny",
+    bash: readOnlyBash,
+    read: {
+      "*": "allow",
+      "*.env": "ask",
+      "*.env.*": "ask",
+      "*.env.example": "allow",
+    },
+    grep: "allow",
+    glob: "allow",
+    list: "allow",
+    question: "allow",
+    webfetch: "allow",
+    websearch: "allow",
+    codesearch: "allow",
+    codebase_search: "allow",
+    external_directory: {
+      [Truncate.GLOB]: "allow",
+    },
+    ...mcp,
+  })
+}
+
+function planGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
+  return Permission.fromConfig({
+    "*": "deny",
+    question: "allow",
+    suggest: "allow",
+    plan_exit: "allow",
+    bash: readOnlyBash,
+    read: {
+      "*": "allow",
+      "*.env": "ask",
+      "*.env.*": "ask",
+      "*.env.example": "allow",
+    },
+    grep: "allow",
+    glob: "allow",
+    list: "allow",
+    webfetch: "allow",
+    websearch: "allow",
+    codesearch: "allow",
+    codebase_search: "allow",
+    external_directory: {
+      [Truncate.GLOB]: "allow",
+      [path.join(Global.Path.data, "plans", "*")]: "allow",
+    },
+    edit: {
+      "*": "deny",
+      [path.join(".kilo", "plans", "*.md")]: "allow",
+      [path.join(".opencode", "plans", "*.md")]: "allow",
+      [path.relative(Instance.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
+    },
+    ...mcp,
+  })
+}
 
 // Generate per-server MCP wildcard rules that allow MCP tools with user approval.
 export function getMcpRules(cfg: Config.Info): Record<string, "allow" | "ask" | "deny"> {
