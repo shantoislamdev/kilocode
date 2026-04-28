@@ -451,7 +451,7 @@ export const { use: useLocal, provider: LocalProvider } = createSimpleContext({
       },
     }
 
-    // Validate configured agent model when agent changes
+    // kilocode_change - validate configured agent model when agent changes
     createEffect(() => {
       // kilocode_change start - configured models resolve directly without persistence
       if (!model.ready) return
