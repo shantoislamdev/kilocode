@@ -50,6 +50,7 @@ class ConnectionPanelTest : SessionControllerTestBase() {
         assertFalse(panel.toggleExpanded())
         assertFalse(panel.detailsVisible())
         assertEquals("stderr line\nconfig: HTTP 500: broken", panel.detailsText())
+        assertEquals(UIUtil.getLabelForeground(), panel.detailsColor())
         assertTrue(panel.retryVisible())
         assertFalse(panel.retryFocusable())
 

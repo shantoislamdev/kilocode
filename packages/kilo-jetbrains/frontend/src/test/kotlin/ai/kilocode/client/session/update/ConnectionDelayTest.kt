@@ -93,7 +93,7 @@ class ConnectionDelayTest : SessionControllerTestBase() {
         pause(80)
 
         val event = events.filterIsInstance<SessionControllerEvent.ConnectionChanged.ShowError>().single()
-        assertEquals("CLI startup failed", event.summary)
+        assertEquals("Connection failed", event.summary)
         assertEquals("stderr line\nconfig: HTTP 500", event.detail)
     }
 
@@ -111,7 +111,8 @@ class ConnectionDelayTest : SessionControllerTestBase() {
         pause(150)
 
         val errors = events.filterIsInstance<SessionControllerEvent.ConnectionChanged.ShowError>()
-        assertEquals(listOf("second"), errors.map { it.summary })
+        assertEquals(listOf("Connection failed"), errors.map { it.summary })
+        assertEquals(listOf("second"), errors.map { it.detail })
     }
 
     fun `test persistent workspace error is delayed`() {
@@ -122,15 +123,19 @@ class ConnectionDelayTest : SessionControllerTestBase() {
         flush()
         events.clear()
 
-        projectRpc.state.value = KiloWorkspaceStateDto(KiloWorkspaceStatusDto.ERROR, error = "workspace failed")
+        projectRpc.state.value = KiloWorkspaceStateDto(
+            status = KiloWorkspaceStatusDto.ERROR,
+            error = "workspace failed",
+            errors = listOf(LoadErrorDto(resource = "providers", detail = "bad provider json")),
+        )
         pause(20)
         assertFalse(events.any { it is SessionControllerEvent.ConnectionChanged.ShowError })
 
         pause(80)
 
         val event = events.filterIsInstance<SessionControllerEvent.ConnectionChanged.ShowError>().single()
-        assertEquals("workspace failed", event.summary)
-        assertNull(event.detail)
+        assertEquals("Workspace loading failed", event.summary)
+        assertEquals("providers: bad provider json", event.detail)
     }
 
     fun `test ready hides visible delayed connection banner immediately`() {

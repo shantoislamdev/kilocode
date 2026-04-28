@@ -287,7 +287,7 @@ class KiloBackendAppService private constructor(
                     notifications = notifs
                     sessions.start(connection.api!!, connection.apiClient!!, connection.port, connection.events)
                     chat.start(connection.apiClient!!, connection.port, connection.events)
-                    workspaces.start(connection.api!!, connection.events)
+                    workspaces.start(connection.api!!, connection.apiClient!!, connection.port, connection.events)
                     setAppReady(
                         AppData(
                             profile = prof,

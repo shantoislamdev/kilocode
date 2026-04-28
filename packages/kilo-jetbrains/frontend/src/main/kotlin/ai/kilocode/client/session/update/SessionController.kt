@@ -686,15 +686,15 @@ class SessionController(
 
         if (app.status == KiloAppStatusDto.ERROR) {
             return SessionControllerEvent.ConnectionChanged.ShowError(
-                app.error ?: KiloBundle.message("session.connection.error.unknown"),
-                app.errors.toErrorText(),
+                KiloBundle.message("session.connection.error.app"),
+                app.errors.toErrorText() ?: app.error,
             )
         }
 
         if (workspace.status == KiloWorkspaceStatusDto.ERROR) {
             return SessionControllerEvent.ConnectionChanged.ShowError(
-                workspace.error ?: KiloBundle.message("session.connection.error.unknown"),
-                null,
+                KiloBundle.message("session.connection.error.workspace"),
+                workspace.errors.toErrorText() ?: workspace.error,
                 "workspace",
             )
         }

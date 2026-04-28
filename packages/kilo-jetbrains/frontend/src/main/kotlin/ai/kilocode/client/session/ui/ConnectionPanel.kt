@@ -78,7 +78,7 @@ class ConnectionPanel(
         isOpaque = false
         lineWrap = true
         wrapStyleWord = true
-        foreground = UIUtil.getContextHelpForeground()
+        foreground = UIUtil.getLabelForeground()
     }
 
     private val scroll = JBScrollPane(details).apply {
@@ -226,6 +226,8 @@ class ConnectionPanel(
     internal fun summaryColor() = label.foreground
 
     internal fun detailsText() = details.text
+
+    internal fun detailsColor() = details.foreground
 
     internal fun retryVisible() = retry.isVisible
 
