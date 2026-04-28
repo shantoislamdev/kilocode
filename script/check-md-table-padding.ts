@@ -46,6 +46,9 @@ function tracked() {
 function skip(file: string) {
   const norm = file.replaceAll("\\", "/").toLowerCase()
   if (norm.startsWith(".changeset/")) return true
+  // Glossary tables are maintained as aligned prose tables for translator
+  // readability; the churn cost is low since they're rarely edited.
+  if (norm.startsWith(".opencode/glossary/")) return true
   if (norm === "changelog.md" || norm.endsWith("/changelog.md")) return true
   if (norm.includes("node_modules/")) return true
   const parts = norm.split("/")

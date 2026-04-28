@@ -16,13 +16,13 @@
 
 These are PR-backed corrections and may evolve.
 
-| English / Context | Preferred | Notes |
-|---|---|---|
-| Save (data persistence action) | `Lagre` | Prefer over `Spare` |
-| Disabled (feature/state) | `deaktivert` | Prefer over `funksjonshemmet` |
-| API keys | `API Nøkler` | Prefer over `API Taster` |
-| Cost (noun) | `Kostnad` | Prefer over verb form `Koste` |
-| Show/View (imperative button label) | `Vis` | Prefer over `Utsikt` |
+| English / Context                   | Preferred    | Notes                         |
+| ----------------------------------- | ------------ | ----------------------------- |
+| Save (data persistence action)      | `Lagre`      | Prefer over `Spare`           |
+| Disabled (feature/state)            | `deaktivert` | Prefer over `funksjonshemmet` |
+| API keys                            | `API Nøkler` | Prefer over `API Taster`      |
+| Cost (noun)                         | `Kostnad`    | Prefer over verb form `Koste` |
+| Show/View (imperative button label) | `Vis`        | Prefer over `Utsikt`          |
 
 ## Guidance
 

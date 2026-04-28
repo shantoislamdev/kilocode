@@ -15,11 +15,11 @@
 
 These are PR-backed locale naming preferences and may evolve.
 
-| English / Context | Preferred | Notes |
-|---|---|---|
-| Bosnian language label (UI) | `Bosanski` | PR #12283 tested switching language to `Bosanski` |
-| Repo locale slug (code/config) | `bs` | Preserve in code, config, paths, and examples |
-| Browser locale detection (Bosnian) | `bs` | PR #12283 added `bs` locale auto-detection |
+| English / Context                  | Preferred  | Notes                                             |
+| ---------------------------------- | ---------- | ------------------------------------------------- |
+| Bosnian language label (UI)        | `Bosanski` | PR #12283 tested switching language to `Bosanski` |
+| Repo locale slug (code/config)     | `bs`       | Preserve in code, config, paths, and examples     |
+| Browser locale detection (Bosnian) | `bs`       | PR #12283 added `bs` locale auto-detection        |
 
 ## Guidance
 

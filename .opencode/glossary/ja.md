@@ -16,9 +16,9 @@
 
 These are PR-backed wording preferences and may evolve.
 
-| English / Context | Preferred | Notes |
-|---|---|---|
-| WSL integration (UI label) | `WSL連携` | PR #13160 prefers this over `WSL統合` |
+| English / Context           | Preferred               | Notes                                 |
+| --------------------------- | ----------------------- | ------------------------------------- |
+| WSL integration (UI label)  | `WSL連携`               | PR #13160 prefers this over `WSL統合` |
 | WSL integration description | `WindowsのWSL環境で...` | PR #13160 improved phrasing naturally |
 
 ## Guidance

@@ -16,17 +16,17 @@
 
 These are preferred terms for docs/UI prose and may evolve.
 
-| English | Preferred | Notes |
-|---|---|---|
-| prompt | 提示词 | Keep `--prompt` unchanged in flags/code |
-| session | 会话 |  |
-| provider | 提供商 |  |
-| share link / shared URL | 分享链接 | Prefer `分享` for user-facing share actions |
-| headless (server) | 无界面 | Docs wording |
-| authentication | 认证 | Prefer in auth/OAuth contexts |
-| cache | 缓存 |  |
-| keybind / shortcut | 快捷键 | User-facing docs wording |
-| workflow | 工作流 | e.g. GitHub Actions workflow |
+| English                 | Preferred | Notes                                       |
+| ----------------------- | --------- | ------------------------------------------- |
+| prompt                  | 提示词    | Keep `--prompt` unchanged in flags/code     |
+| session                 | 会话      |                                             |
+| provider                | 提供商    |                                             |
+| share link / shared URL | 分享链接  | Prefer `分享` for user-facing share actions |
+| headless (server)       | 无界面    | Docs wording                                |
+| authentication          | 认证      | Prefer in auth/OAuth contexts               |
+| cache                   | 缓存      |                                             |
+| keybind / shortcut      | 快捷键    | User-facing docs wording                    |
+| workflow                | 工作流    | e.g. GitHub Actions workflow                |
 
 ## Guidance
 

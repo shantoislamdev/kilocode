@@ -15,13 +15,13 @@
 
 These are PR-backed wording preferences and may evolve.
 
-| English / Context | Preferred | Notes |
-|---|---|---|
-| available in beta | `beta olarak mevcut` | Prefer this over `beta olarak kullanılabilir` |
-| privacy-first | `Gizlilik öncelikli tasarlandı` | Prefer this over `Önce gizlilik için tasarlandı` |
-| connect your local models | `yerel modellerinizi bağlayabilirsiniz` | Use the fuller, more direct action phrase |
-| `<TAB>` key label | `Tab` | Use `Tab` in prose; keep `<TAB>` in literal UI or code blocks |
-| cross-platform | `cross-platform (tüm platformlarda)` | Keep the English term, add a short clarification when helpful |
+| English / Context         | Preferred                               | Notes                                                         |
+| ------------------------- | --------------------------------------- | ------------------------------------------------------------- |
+| available in beta         | `beta olarak mevcut`                    | Prefer this over `beta olarak kullanılabilir`                 |
+| privacy-first             | `Gizlilik öncelikli tasarlandı`         | Prefer this over `Önce gizlilik için tasarlandı`              |
+| connect your local models | `yerel modellerinizi bağlayabilirsiniz` | Use the fuller, more direct action phrase                     |
+| `<TAB>` key label         | `Tab`                                   | Use `Tab` in prose; keep `<TAB>` in literal UI or code blocks |
+| cross-platform            | `cross-platform (tüm platformlarda)`    | Keep the English term, add a short clarification when helpful |
 
 ## Guidance
 

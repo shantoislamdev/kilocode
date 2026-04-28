@@ -16,10 +16,10 @@
 
 These are PR-backed preferences and may evolve.
 
-| English / Context | Preferred | Notes |
-|---|---|---|
-| Thai language label in language lists | `ไทย` | PR #10809 standardized this across locales |
-| Language names in language pickers | Native names (static) | PR #11496: keep names like `English`, `Deutsch`, `ไทย` consistent across locales |
+| English / Context                     | Preferred             | Notes                                                                            |
+| ------------------------------------- | --------------------- | -------------------------------------------------------------------------------- |
+| Thai language label in language lists | `ไทย`                 | PR #10809 standardized this across locales                                       |
+| Language names in language pickers    | Native names (static) | PR #11496: keep names like `English`, `Deutsch`, `ไทย` consistent across locales |
 
 ## Guidance
 

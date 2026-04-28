@@ -15,11 +15,11 @@
 
 These are PR-backed locale naming preferences and may evolve.
 
-| English / Context | Preferred | Notes |
-|---|---|---|
-| Brazilian Portuguese (prose locale name) | `pt-BR` | Use standard locale naming in prose when helpful |
-| Repo locale slug (code/config) | `br` | PR #10086 uses `br` for consistency/simplicity |
-| Browser locale detection | `pt`, `pt-br`, `pt-BR` -> `br` | Preserve this mapping in docs/examples about locale detection |
+| English / Context                        | Preferred                      | Notes                                                         |
+| ---------------------------------------- | ------------------------------ | ------------------------------------------------------------- |
+| Brazilian Portuguese (prose locale name) | `pt-BR`                        | Use standard locale naming in prose when helpful              |
+| Repo locale slug (code/config)           | `br`                           | PR #10086 uses `br` for consistency/simplicity                |
+| Browser locale detection                 | `pt`, `pt-br`, `pt-BR` -> `br` | Preserve this mapping in docs/examples about locale detection |
 
 ## Guidance
 
