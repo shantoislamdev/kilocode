@@ -4,6 +4,7 @@
  */
 
 import { $ } from "bun"
+import { matches } from "./match"
 
 export interface ConflictReport {
   timestamp: string
@@ -119,7 +120,7 @@ export function classifyFile(path: string): ConflictFile["type"] {
  * Check if a file should be skipped (not added from upstream)
  */
 function shouldSkipFile(path: string, skipPatterns: string[]): boolean {
-  return skipPatterns.some((pattern) => path === pattern || path.includes(pattern))
+  return matches(path, skipPatterns)
 }
 
 /**
