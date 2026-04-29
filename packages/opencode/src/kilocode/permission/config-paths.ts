@@ -105,7 +105,7 @@ export namespace ConfigProtection {
       if (request.metadata?.access === "read") return false
       for (const pattern of request.patterns) {
         const dir = pattern.replace(/[\\/]\*$/, "")
-        if (path.isAbsolute(dir) && isAbsolute(dir)) return true
+        if (isAbsolute(dir)) return true
       }
       return false
     }
