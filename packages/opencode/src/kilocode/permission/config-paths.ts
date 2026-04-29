@@ -71,6 +71,17 @@ export namespace ConfigProtection {
     ).filter(Boolean)
   }
 
+  function fallback(p: string): boolean {
+    if (process.platform !== "win32") return false
+    return keys(p).some(
+      (key) =>
+        key.endsWith("/config/kilo") ||
+        key.includes("/config/kilo/") ||
+        key.endsWith("/.config/kilo") ||
+        key.includes("/.config/kilo/"),
+    )
+  }
+
   /** Check if `child` is equal to or nested inside `parent`. */
   function within(child: string, parent: string): boolean {
     const sep = process.platform === "win32" ? "/" : path.sep
@@ -81,6 +92,8 @@ export namespace ConfigProtection {
 
   /** Check if an absolute path is inside a known CLI config directory. */
   export function isAbsolute(filepath: string): boolean {
+    if (fallback(filepath)) return true
+
     // ~/.config/kilo/ (XDG config)
     for (const dir of configs()) {
       if (within(filepath, dir)) return true
