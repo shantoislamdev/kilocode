@@ -166,8 +166,8 @@ describe("external_directory allow config protection", () => {
     })
   })
 
-  for (const pattern of variants(configGlob)) {
-    test(`keeps unknown bash external_directory requests for global config paths protected [${pattern}]`, async () => {
+  test("keeps unknown bash external_directory requests for global config paths protected", async () => {
+    for (const pattern of variants(configGlob)) {
       await using tmp = await tmpdir({ git: true })
       await Instance.provide({
         directory: tmp.path,
@@ -193,8 +193,8 @@ describe("external_directory allow config protection", () => {
           await expect(pending).rejects.toBeInstanceOf(Permission.RejectedError)
         },
       })
-    })
-  }
+    }
+  })
 })
 
 describe("bash external_directory access metadata", () => {
@@ -292,17 +292,16 @@ describe("bash external_directory access metadata", () => {
       fn: async () => {
         const bash = await init()
         const file = path.join(outer.path, "hello.txt")
-        const commands = [
-          `cat ${quote(file)} && rm ${quote(file)}`,
-          `cat ${quote(file)} && printf x > ${quote(file)}`,
-        ]
+        const commands = [`cat ${quote(file)} && rm ${quote(file)}`, `cat ${quote(file)} && printf x > ${quote(file)}`]
 
         for (const command of commands) {
           const err = new Error("stop after external permission")
           const requests: Array<Omit<Permission.Request, "id" | "sessionID" | "tool">> = []
 
           await expect(
-            Effect.runPromise(bash.execute({ command, description: "Read then write external file" }, capture(requests, err))),
+            Effect.runPromise(
+              bash.execute({ command, description: "Read then write external file" }, capture(requests, err)),
+            ),
           ).rejects.toThrow(err.message)
 
           const req = requests.find((item) => item.permission === "external_directory")
