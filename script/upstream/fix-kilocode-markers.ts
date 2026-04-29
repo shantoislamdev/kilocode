@@ -476,17 +476,20 @@ function annotate(file: string, clean: Clean, found: Range[]) {
 
   for (const range of expand(found, marks).reverse()) {
     const mode = context(file, text, range)
-    if (range.start === range.end && inline(file, text.lines, range, mode)) {
+    const prior = saved(marks, range)
+    const before = prior?.before ?? marks.starts.get(range.start)
+    const after = prior?.after ?? marks.ends.get(range.end)
+
+    if (!before && !after && range.start === range.end && inline(file, text.lines, range, mode)) {
       lines[range.start] = `${lines[range.start]}${marks.inline.get(range.start) ?? note(mode)}`
       continue
     }
 
     const pad = indent(text.lines[range.start] ?? "")
     const fallback = block(mode, pad)
-    const prior = saved(marks, range)
     const pair = {
-      start: prior?.before ?? marks.starts.get(range.start) ?? fallback.start,
-      end: prior?.after ?? marks.ends.get(range.end) ?? fallback.end,
+      start: before ?? fallback.start,
+      end: after ?? fallback.end,
     }
     lines.splice(range.end + 1, 0, pair.end)
     lines.splice(range.start, 0, pair.start)
