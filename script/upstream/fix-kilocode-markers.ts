@@ -15,6 +15,13 @@ import path from "node:path"
 import { compareVersions, parseVersion, type VersionInfo } from "./utils/version"
 import { isAncestor } from "./utils/git"
 import { error, header, info, success, warn } from "./utils/logger"
+import { transformI18nContent } from "./transforms/transform-i18n"
+import { applyBrandingTransforms } from "./transforms/transform-take-theirs"
+import { applyScriptTransforms } from "./transforms/transform-scripts"
+import { applyTauriTransforms } from "./transforms/transform-tauri"
+import { applyExtensionTransforms } from "./transforms/transform-extensions"
+import { applyWebTransforms } from "./transforms/transform-web"
+import { applyPackageNameTransforms } from "./transforms/package-names"
 
 interface Args {
   file?: string
@@ -58,6 +65,7 @@ const styles = new Map<string, Style>([
   [".bash", "hash"],
   [".zsh", "hash"],
 ])
+const workflows = [".github/workflows/publish.yml", ".github/workflows/beta.yml"]
 const url = "https://github.com/anomalyco/opencode.git"
 const exempt = ["script/upstream/"]
 
@@ -66,8 +74,9 @@ function usage() {
 
 Rebuilds kilocode_change markers by:
   1. Finding the newest upstream tag whose commit is already merged into HEAD.
-  2. Comparing that upstream version of the file with the current working tree file.
-  3. Removing existing kilocode_change markers and adding fresh markers around changed lines.
+  2. Applying upstream merge branding transforms to that upstream file.
+  3. Comparing the transformed upstream file with the current working tree file.
+  4. Removing existing kilocode_change markers and adding fresh markers around remaining changed lines.
 
 Options:
   --dry-run  Show what would change without writing the file.
@@ -111,6 +120,30 @@ function supported(file: string, text: string) {
 
 function annotates(file: string) {
   return !exempt.some((scope) => file.startsWith(scope))
+}
+
+async function translate(file: string, text: string) {
+  const names = applyPackageNameTransforms(text).result
+  const script = applyScriptTransforms(names).result
+  const branded = applyBrandingTransforms(script).result
+  const i18n = transformI18nContent(branded).result
+  const tauri = applyTauriTransforms(i18n, file).result
+  const ext = applyExtensionTransforms(tauri, file).result
+  const web = applyWebTransforms(ext).result
+
+  return workflow(file, web)
+}
+
+function workflow(file: string, text: string) {
+  if (!workflows.includes(file)) return text
+  return text
+    .replace(/github\.repository == 'anomalyco\/opencode'/g, "github.repository == 'Kilo-Org/kilocode'")
+    .replace(/github\.repository == "anomalyco\/opencode"/g, 'github.repository == "Kilo-Org/kilocode"')
+    .replace(/\bopencode-ai\b/g, "@kilocode/cli")
+    .replace(
+      /GH_REPO:\s*\$\{\{ \(github\.ref_name == 'beta' && 'anomalyco\/opencode-beta'\) \|\| github\.repository \}\}/g,
+      "GH_REPO: ${{ github.repository }}",
+    )
 }
 
 function split(text: string): Text {
@@ -424,7 +457,8 @@ async function main() {
 
   const base = await upstream(version.commit, file)
   const head = clean(file, current)
-  const diff = base === null ? null : await changed(clean(file, base), head)
+  const baseText = base === null ? null : await translate(file, base)
+  const diff = baseText === null ? null : await changed(clean(file, baseText), head)
   const found = ranges(diff?.lines ?? new Set())
   const next = base === null ? fresh(file, head) : annotate(file, head, found)
 
