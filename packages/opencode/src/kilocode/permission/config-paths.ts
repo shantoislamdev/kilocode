@@ -53,21 +53,30 @@ export namespace ConfigProtection {
     return CONFIG_ROOT_FILES.has(normalized)
   }
 
+  function keys(p: string): string[] {
+    const resolved = path.resolve(p)
+    if (process.platform !== "win32") return [resolved]
+
+    const full = resolved.replaceAll("\\", "/").toLowerCase()
+    return Array.from(new Set([full, full.replace(/^[a-z]:/, "")]))
+  }
+
   /** Check if `child` is equal to or nested inside `parent`. */
   function within(child: string, parent: string): boolean {
-    return child === parent || child.startsWith(parent + path.sep)
+    const sep = process.platform === "win32" ? "/" : path.sep
+    return keys(child).some((child) =>
+      keys(parent).some((parent) => child === parent || child.startsWith(parent + sep)),
+    )
   }
 
   /** Check if an absolute path is inside a known CLI config directory. */
   export function isAbsolute(filepath: string): boolean {
-    const resolved = path.resolve(filepath)
-
     // ~/.config/kilo/ (XDG config)
-    if (within(resolved, path.resolve(Global.Path.config))) return true
+    if (within(filepath, Global.Path.config)) return true
 
     // ~/.kilo/ and ~/.kilocode/ (legacy global dirs)
     for (const dir of KilocodePaths.globalDirs()) {
-      if (within(resolved, path.resolve(dir))) return true
+      if (within(filepath, dir)) return true
     }
 
     return false
