@@ -26,7 +26,7 @@ class ProgressPanel(
 
     private val label = JBLabel().apply {
         foreground = SessionStyle.Colors.weak()
-        font = com.intellij.util.ui.JBUI.Fonts.label()
+        font = SessionStyle.Fonts.uiFont()
     }
 
     init {

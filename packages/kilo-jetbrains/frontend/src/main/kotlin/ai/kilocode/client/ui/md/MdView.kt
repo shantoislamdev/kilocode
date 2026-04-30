@@ -80,6 +80,10 @@ abstract class MdView private constructor() {
     private class HtmlImpl : MdView() {
         companion object {
             private val LOG = KiloLog.create(HtmlImpl::class.java)
+            private val TAGS = listOf(
+                "body", "p", "div", "span", "ul", "ol", "li", "table", "thead", "tbody", "tr", "th", "td",
+                "blockquote", "h1", "h2", "h3", "h4", "h5", "h6", "a", "tt", "code", "samp", "pre",
+            )
 
             private fun hex(c: Color): String = String.format("#%02x%02x%02x", c.red, c.green, c.blue)
 
@@ -286,13 +290,19 @@ abstract class MdView private constructor() {
         private fun buildOverrideRulesString(): String {
             val rules = StringBuilder()
 
-            val body = mutableListOf<String>()
-            foregroundOverride?.let { body.add("color: ${hex(it)}") }
-            if (!opaqueState) body.add("background: transparent")
+            val text = mutableListOf<String>()
+            foregroundOverride?.let { text.add("color: ${hex(it)}") }
             fontOverride?.let {
-                body.add("font-family: '${css(it.family)}', sans-serif")
-                body.add("font-size: ${it.size}pt")
+                text.add("font-family: '${css(it.name)}', sans-serif")
+                text.add("font-size: ${it.size}pt")
             }
+            if (text.isNotEmpty()) {
+                val rule = text.joinToString("; ")
+                for (tag in TAGS) rules.append("$tag { $rule } ")
+            }
+
+            val body = mutableListOf<String>()
+            if (!opaqueState) body.add("background: transparent")
             if (body.isNotEmpty()) rules.append("body { ${body.joinToString("; ")} } ")
 
             linkColorOverride?.let { rules.append("a { color: ${hex(it)} } ") }

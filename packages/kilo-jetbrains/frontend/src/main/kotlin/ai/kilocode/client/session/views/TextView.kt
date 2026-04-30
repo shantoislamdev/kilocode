@@ -2,6 +2,7 @@ package ai.kilocode.client.session.views
 
 import ai.kilocode.client.session.model.Content
 import ai.kilocode.client.session.model.Text
+import ai.kilocode.client.session.ui.SessionStyle
 import ai.kilocode.client.ui.md.MdView
 import java.awt.BorderLayout
 
@@ -19,6 +20,8 @@ class TextView(text: Text) : PartView() {
     init {
         layout = BorderLayout()
         isOpaque = false
+        md.font = SessionStyle.Fonts.transcriptFont()
+        md.codeFont = SessionStyle.Fonts.editorFamily()
         add(md.component, BorderLayout.CENTER)
         if (text.content.isNotEmpty()) md.set(text.content.toString())
     }

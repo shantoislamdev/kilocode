@@ -117,7 +117,7 @@ class EmptySessionPanel(
             alignmentX = CENTER_ALIGNMENT
             add(JBLabel(KiloBundle.message("session.empty.recent")).apply {
                 foreground = UIUtil.getContextHelpForeground()
-                font = SessionStyle.Fonts.small()
+                font = SessionStyle.Fonts.smallUiFont()
                 border = JBUI.Borders.emptyLeft(SessionStyle.Space.LG)
             }, BorderLayout.NORTH)
             add(list, BorderLayout.CENTER)

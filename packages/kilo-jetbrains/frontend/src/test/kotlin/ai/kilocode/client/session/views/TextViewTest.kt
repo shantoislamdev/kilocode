@@ -1,6 +1,7 @@
 package ai.kilocode.client.session.views
 
 import ai.kilocode.client.session.model.Text
+import ai.kilocode.client.session.ui.SessionStyle
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
@@ -74,6 +75,14 @@ class TextViewTest : BasePlatformTestCase() {
     fun `test component is non-null and is the MdView component`() {
         val view = TextView(Text("p1"))
         assertNotNull(view.md.component)
+    }
+
+    fun `test markdown uses editor font settings`() {
+        val view = TextView(Text("p1"))
+        val sheet = view.md.overrideSheet()
+
+        assertTrue(sheet.contains(SessionStyle.Fonts.editorFamily()))
+        assertTrue(sheet.contains("${SessionStyle.Fonts.editorSize()}pt"))
     }
 
     // ---- markdown is rendered ------

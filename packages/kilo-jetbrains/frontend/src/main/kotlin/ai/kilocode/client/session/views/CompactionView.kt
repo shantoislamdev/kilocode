@@ -33,7 +33,7 @@ class CompactionView(@Suppress("UNUSED_PARAMETER") compaction: Compaction) : Par
 
         val text = JBLabel(KiloBundle.message("session.part.compaction")).apply {
             foreground = SessionStyle.Colors.weak()
-            font = SessionStyle.Fonts.small()
+            font = SessionStyle.Fonts.smallUiFont()
             horizontalAlignment = SwingConstants.CENTER
             border = JBUI.Borders.empty(0, SessionStyle.Gap.regular())
         }

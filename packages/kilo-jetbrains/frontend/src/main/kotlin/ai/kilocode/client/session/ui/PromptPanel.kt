@@ -49,10 +49,13 @@ class PromptPanel(
     val model = LabelPicker()
 
     private val editor = EditorTextField(project, PlainTextFileType.INSTANCE).apply {
+        font = SessionStyle.Fonts.transcriptFont()
+        setFontInheritedFromLAF(false)
         setPlaceholder(KiloBundle.message("prompt.placeholder"))
         setShowPlaceholderWhenFocused(true)
         setOneLineMode(false)
         addSettingsProvider { ed ->
+            SessionStyle.Fonts.applyToEditor(ed)
             ed.settings.isUseSoftWraps = true
             ed.settings.isAdditionalPageAtBottom = false
             ed.scrollPane.horizontalScrollBarPolicy =
@@ -119,6 +122,8 @@ class PromptPanel(
     }
 
     fun text(): String = editor.text.trim()
+
+    internal fun inputFont() = editor.font
 
     fun clear() {
         editor.text = ""

@@ -3,6 +3,7 @@ package ai.kilocode.client.session.views
 import ai.kilocode.client.session.model.Content
 import ai.kilocode.client.session.model.Tool
 import ai.kilocode.client.session.model.ToolExecState
+import ai.kilocode.client.session.ui.SessionStyle
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
 /**
@@ -120,6 +121,22 @@ class ToolViewTest : BasePlatformTestCase() {
         assertFalse(view.isExpanded())
     }
 
+    fun `test bash output uses editor font settings`() {
+        val view = ToolView(tool("p1", "bash", ToolExecState.COMPLETED))
+
+        assertEditorFont(view.bodyFont())
+        assertEditorFont(view.previewFont())
+    }
+
+    fun `test tool header uses editor-derived fonts`() {
+        val view = ToolView(tool("p1", "bash", ToolExecState.COMPLETED))
+
+        assertEditorFont(view.titleFont())
+        assertTrue(view.titleFont().isBold)
+        assertSmallEditorFont(view.subtitleFont())
+        assertSmallEditorFont(view.stateFont())
+    }
+
     // ---- update ------
 
     fun `test update changes state icon`() {
@@ -154,4 +171,14 @@ class ToolViewTest : BasePlatformTestCase() {
 
     private fun tool(id: String, name: String, state: ToolExecState, title: String? = null): Tool =
         Tool(id, name).also { it.state = state; it.title = title }
+
+    private fun assertEditorFont(font: java.awt.Font) {
+        assertEquals(SessionStyle.Fonts.editorFamily(), font.name)
+        assertEquals(SessionStyle.Fonts.editorSize(), font.size)
+    }
+
+    private fun assertSmallEditorFont(font: java.awt.Font) {
+        assertEquals(SessionStyle.Fonts.editorFamily(), font.name)
+        assertTrue(font.size < SessionStyle.Fonts.editorSize())
+    }
 }

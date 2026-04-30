@@ -10,7 +10,6 @@ import com.intellij.openapi.ide.CopyPasteManager
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
-import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.datatransfer.StringSelection
@@ -41,14 +40,14 @@ class ToolView(tool: Tool) : PartView() {
         border = SessionStyle.Insets.header()
     }
     private val glyph = JBLabel()
-    private val title = JBLabel().apply { font = JBUI.Fonts.label().asBold() }
+    private val title = JBLabel().apply { font = SessionStyle.Fonts.boldEditorFont() }
     private val sub = JBLabel().apply {
         foreground = SessionStyle.Colors.weak()
-        font = SessionStyle.Fonts.small()
+        font = SessionStyle.Fonts.smallEditorFont()
     }
     private val state = JBLabel().apply {
         foreground = SessionStyle.Colors.weak()
-        font = SessionStyle.Fonts.small()
+        font = SessionStyle.Fonts.smallEditorFont()
     }
     private val arrow = JBLabel()
     private val copy = JButton(AllIcons.Actions.Copy).apply {
@@ -62,7 +61,7 @@ class ToolView(tool: Tool) : PartView() {
         wrapStyleWord = false
         foreground = SessionStyle.Colors.fg()
         background = SessionStyle.Colors.surface()
-        font = SessionStyle.Fonts.mono()
+        font = SessionStyle.Fonts.transcriptFont()
         border = SessionStyle.Insets.body()
     }
     private val mini = JBTextArea().apply {
@@ -71,7 +70,7 @@ class ToolView(tool: Tool) : PartView() {
         wrapStyleWord = false
         foreground = SessionStyle.Colors.weak()
         background = SessionStyle.Colors.surface()
-        font = SessionStyle.Fonts.mono(small = true)
+        font = SessionStyle.Fonts.transcriptFont()
         border = SessionStyle.Insets.body()
     }
     private val scroll = JBScrollPane(text).apply {
@@ -140,6 +139,16 @@ class ToolView(tool: Tool) : PartView() {
     fun isExpanded(): Boolean = open
 
     fun hasToggle(): Boolean = arrow.isVisible
+
+    internal fun bodyFont() = text.font
+
+    internal fun previewFont() = mini.font
+
+    internal fun titleFont() = title.font
+
+    internal fun subtitleFont() = sub.font
+
+    internal fun stateFont() = state.font
 
     fun toggle() {
         if (mode != "bash") return

@@ -41,7 +41,7 @@ class ReasoningView(reasoning: Reasoning) : PartView() {
     }
     private val title = JBLabel(KiloBundle.message("session.part.reasoning")).apply {
         foreground = SessionStyle.Colors.weak()
-        font = SessionStyle.Fonts.small()
+        font = SessionStyle.Fonts.smallEditorFont()
     }
     private val icon = JBLabel(AllIcons.General.InspectionsEye).apply {
         foreground = SessionStyle.Colors.weak()
@@ -82,8 +82,12 @@ class ReasoningView(reasoning: Reasoning) : PartView() {
         icon.addMouseListener(click)
         arrow.addMouseListener(click)
 
+        md.font = SessionStyle.Fonts.transcriptFont()
+        md.codeFont = SessionStyle.Fonts.editorFamily()
         md.foreground = SessionStyle.Colors.weak()
         md.opaque = false
+        preview.font = SessionStyle.Fonts.transcriptFont()
+        preview.codeFont = SessionStyle.Fonts.editorFamily()
         preview.foreground = SessionStyle.Colors.weak()
         preview.opaque = false
         body.add(md.component, BorderLayout.CENTER)
@@ -115,11 +119,15 @@ class ReasoningView(reasoning: Reasoning) : PartView() {
 
     fun previewMarkdown(): String = preview.markdown()
 
+    internal fun previewSheet(): String = preview.overrideSheet()
+
     fun isExpanded(): Boolean = open
 
     fun hasToggle(): Boolean = arrow.isVisible
 
     fun headerText(): String = title.text
+
+    internal fun headerFont() = title.font
 
     fun toggle() {
         if (!canExpand()) return

@@ -1,6 +1,7 @@
 package ai.kilocode.client.session.ui
 
 import com.intellij.openapi.editor.colors.EditorColorsManager
+import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.ui.JBColor
 import com.intellij.ui.RoundedLineBorder
 import com.intellij.util.ui.JBFont
@@ -13,6 +14,7 @@ import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.UIManager
 import javax.swing.border.Border
+import kotlin.math.roundToInt
 
 /** Shared styling tokens for JetBrains session Swing surfaces. */
 object SessionStyle {
@@ -129,12 +131,47 @@ object SessionStyle {
     }
 
     object Fonts {
-        fun small(): JBFont = JBFont.small()
+        private fun scheme() = EditorColorsManager.getInstance().globalScheme
 
-        fun mono(small: Boolean = false): Font {
-            val scheme = EditorColorsManager.getInstance().globalScheme
-            val size = if (small) JBFont.small().size else scheme.editorFontSize
-            return Font(scheme.editorFontName, Font.PLAIN, size)
+        /** Editor font size is the accessibility baseline for all session chat text. */
+        fun editorSize(): Int = scheme().editorFontSize
+
+        /** Editor font family is used for transcript text, reasoning text, and tool output. */
+        fun editorFamily(): String = scheme().editorFontName
+
+        /** Plain editor-family font for user prompts, assistant text, reasoning, and tool output. */
+        fun transcriptFont(): Font = editorFont(Font.PLAIN, editorSize())
+
+        /** Editor-family font scaled down from the editor size for secondary transcript chrome. */
+        fun smallEditorFont(): Font = editorFont(Font.PLAIN, scaledSize(JBFont.small()))
+
+        /** Bold editor-family font at editor size for primary tool and reasoning labels. */
+        fun boldEditorFont(): Font = editorFont(Font.BOLD, editorSize())
+
+        /** IDE UI label font family resized to the editor font size for session chrome. */
+        fun uiFont(): Font = JBUI.Fonts.label().deriveFont(editorSize().toFloat())
+
+        /** IDE UI small font proportions scaled from the editor font size baseline. */
+        fun smallUiFont(): Font {
+            val font = JBFont.small()
+            return font.deriveFont(scaledSize(font).toFloat())
+        }
+
+        /** Bold IDE UI font resized to the editor font size for prominent chrome labels. */
+        fun boldUiFont(): Font = uiFont().deriveFont(Font.BOLD)
+
+        /** Apply the global editor scheme to embedded editor components used by the chat UI. */
+        fun applyToEditor(editor: EditorEx) {
+            editor.setColorsScheme(scheme())
+            editor.setFontSize(editorSize())
+        }
+
+        private fun editorFont(style: Int, size: Int): Font = Font(editorFamily(), style, size)
+
+        private fun scaledSize(font: Font): Int {
+            val base = JBUI.Fonts.label().size.coerceAtLeast(1)
+            val ratio = font.size.toFloat() / base
+            return (editorSize() * ratio).roundToInt().coerceAtLeast(1)
         }
     }
 

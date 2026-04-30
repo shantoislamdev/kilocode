@@ -19,7 +19,7 @@ class GenericView(content: Generic) : PartView() {
 
     private val label = JBLabel("[${content.type}]").apply {
         foreground = SessionStyle.Colors.weak()
-        font = SessionStyle.Fonts.small()
+        font = SessionStyle.Fonts.smallUiFont()
         border = com.intellij.util.ui.JBUI.Borders.empty(SessionStyle.Space.XS, 0)
     }
 
