@@ -7,6 +7,8 @@
 #   ======= (separator)
 #   >>>>>>> (theirs end)
 #
+# Requires ripgrep (rg).
+#
 # Usage:
 #   script/upstream/find-conflict-markers.sh <file>
 set -euo pipefail
@@ -23,26 +25,18 @@ if [ ! -f "$file" ]; then
   exit 2
 fi
 
+if ! command -v rg >/dev/null 2>&1; then
+  echo "error: ripgrep (rg) is required but not installed" >&2
+  exit 2
+fi
+
 # Match the four conflict marker line shapes. `=======` must be the whole line;
 # the others may have trailing content (branch name, commit hash, etc.).
-#
-# Prefer ripgrep when available (matches the historical invocation), fall back
-# to POSIX grep so the script works in minimal environments.
-if command -v rg >/dev/null 2>&1; then
-  rg -n '^(<{7}|\|{7}|={7}$|>{7})' "$file" || {
-    status=$?
-    # rg exits 1 when no matches are found; treat that as success (clean file).
-    if [ "$status" -eq 1 ]; then
-      exit 0
-    fi
-    exit "$status"
-  }
-else
-  grep -nE '^(<{7}|\|{7}|={7}$|>{7})' "$file" || {
-    status=$?
-    if [ "$status" -eq 1 ]; then
-      exit 0
-    fi
-    exit "$status"
-  }
-fi
+# rg exits 1 when no matches are found; treat that as success (clean file).
+rg -n '^(<{7}|\|{7}|={7}$|>{7})' "$file" || {
+  status=$?
+  if [ "$status" -eq 1 ]; then
+    exit 0
+  fi
+  exit "$status"
+}
