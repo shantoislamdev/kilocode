@@ -86,6 +86,7 @@ export const dict = {
   "ui.messagePart.mcp.output": "Çıkış",
   "ui.messagePart.title.edit": "Düzenle",
   "ui.messagePart.title.write": "Yaz",
+  "ui.messagePart.openInDiffViewer": "Fark görüntüleyicide aç",
   "ui.messagePart.option.typeOwnAnswer": "Kendi cevabınızı yazın",
   "ui.messagePart.review.title": "Cevapları inceleyin",
 

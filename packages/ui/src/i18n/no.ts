@@ -83,6 +83,7 @@ export const dict: Record<Keys, string> = {
   "ui.messagePart.mcp.output": "Utdata",
   "ui.messagePart.title.edit": "Rediger",
   "ui.messagePart.title.write": "Skriv",
+  "ui.messagePart.openInDiffViewer": "Åpne i diff-viser",
   "ui.messagePart.option.typeOwnAnswer": "Skriv ditt eget svar",
   "ui.messagePart.review.title": "Gjennomgå svarene dine",
 

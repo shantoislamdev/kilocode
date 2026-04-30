@@ -80,6 +80,7 @@ export const dict = {
   "ui.messagePart.mcp.output": "الإخراج",
   "ui.messagePart.title.edit": "تحرير",
   "ui.messagePart.title.write": "كتابة",
+  "ui.messagePart.openInDiffViewer": "فتح في عارض الفروقات",
   "ui.messagePart.option.typeOwnAnswer": "اكتب إجابتك الخاصة",
   "ui.messagePart.review.title": "مراجعة إجاباتك",
 

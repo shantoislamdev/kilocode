@@ -79,6 +79,7 @@ export const dict = {
   "ui.messagePart.mcp.output": "Вывод",
   "ui.messagePart.title.edit": "Редактировать",
   "ui.messagePart.title.write": "Написать",
+  "ui.messagePart.openInDiffViewer": "Открыть в просмотрщике различий",
   "ui.messagePart.option.typeOwnAnswer": "Введите свой ответ",
   "ui.messagePart.review.title": "Проверьте ваши ответы",
 

@@ -80,6 +80,7 @@ export const dict = {
   "ui.messagePart.mcp.output": "출력",
   "ui.messagePart.title.edit": "편집",
   "ui.messagePart.title.write": "작성",
+  "ui.messagePart.openInDiffViewer": "Diff 뷰어에서 열기",
   "ui.messagePart.option.typeOwnAnswer": "직접 답변 입력",
   "ui.messagePart.review.title": "답변 검토",
 
