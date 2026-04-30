@@ -84,7 +84,6 @@ export const dict = {
   "ui.messagePart.mcp.output": "輸出",
   "ui.messagePart.title.edit": "編輯",
   "ui.messagePart.title.write": "寫入",
-  "ui.messagePart.openInDiffViewer": "在差異檢視器中開啟",
   "ui.messagePart.option.typeOwnAnswer": "輸入自己的答案",
   "ui.messagePart.review.title": "檢查你的答案",
 

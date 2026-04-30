@@ -84,7 +84,6 @@ export const dict = {
   "ui.messagePart.mcp.output": "Izlaz",
   "ui.messagePart.title.edit": "Uredi",
   "ui.messagePart.title.write": "Napiši",
-  "ui.messagePart.openInDiffViewer": "Otvori u pregledniku razlika",
   "ui.messagePart.option.typeOwnAnswer": "Unesi svoj odgovor",
   "ui.messagePart.review.title": "Pregledaj svoje odgovore",
 

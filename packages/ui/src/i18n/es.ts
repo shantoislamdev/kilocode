@@ -80,7 +80,6 @@ export const dict = {
   "ui.messagePart.mcp.output": "Salida",
   "ui.messagePart.title.edit": "Editar",
   "ui.messagePart.title.write": "Escribir",
-  "ui.messagePart.openInDiffViewer": "Abrir en el visor de diferencias",
   "ui.messagePart.option.typeOwnAnswer": "Escribe tu propia respuesta",
   "ui.messagePart.review.title": "Revisa tus respuestas",
 

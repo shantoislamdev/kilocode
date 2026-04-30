@@ -79,7 +79,6 @@ export const dict = {
   "ui.messagePart.mcp.output": "Wyjście",
   "ui.messagePart.title.edit": "Edycja",
   "ui.messagePart.title.write": "Pisanie",
-  "ui.messagePart.openInDiffViewer": "Otwórz w podglądzie różnic",
   "ui.messagePart.option.typeOwnAnswer": "Wpisz własną odpowiedź",
   "ui.messagePart.review.title": "Przejrzyj swoje odpowiedzi",
 
