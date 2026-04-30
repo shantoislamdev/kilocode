@@ -836,6 +836,31 @@ RelativeFont.BOLD.install(label)
 
 Avoid `Font("...")`, raw font sizes, and `deriveFont(14f)` style examples.
 
+## Kilo Session Styling
+
+For session/chat UI under `packages/kilo-jetbrains/frontend/src/main/kotlin/ai/kilocode/client/session/`, keep general UI chrome separate from transcript styling.
+
+- Use `ai.kilocode.client.ui.UiStyle` for general UI helpers: `Colors`, `Borders`, `Insets`, `Gap`, `Space`, `Size`, and `Buttons`.
+- Use `ai.kilocode.client.session.ui.SessionStyle` for session transcript/content styling that follows editor settings or live transcript configuration.
+- `SessionStyle` is for user/assistant transcript text, reasoning text, tool output, prompt editor text, and markdown renderer fields such as `font`, `codeFont`, and future link/code-block styles.
+- Long-lived session components should implement or propagate `SessionStyleTarget.applyStyle(style)` instead of reading editor globals once in constructors.
+- Do not call `EditorColorsManager.getInstance().globalScheme` directly from individual views unless extending `SessionStyle.current()`.
+- New transcript renderers must apply the current `SessionStyle` snapshot and ensure child parts created after a style change receive the queued style.
+- Keep non-transcript IDE chrome on platform/UI style unless it is intentionally part of the transcript reading experience.
+
+Use `UiStyle` for the surrounding card chrome and `SessionStyle` for transcript content inside it:
+
+```kotlin
+class ExamplePartView : PartView() {
+    override fun applyStyle(style: SessionStyle) {
+        md.font = style.transcriptFont
+        md.codeFont = style.editorFamily
+        revalidate()
+        repaint()
+    }
+}
+```
+
 ## Borders, Insets, and Spacing
 
 - Always create borders via `JBUI.Borders.empty(top, left, bottom, right)` and insets via `JBUI.insets()` so they are DPI-aware and auto-update on zoom.
