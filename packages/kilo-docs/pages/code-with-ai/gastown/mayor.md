@@ -63,16 +63,53 @@ The Mayor can modify town settings on your behalf through natural language.
 
 ## Mayor Tools
 
-The Mayor has access to specialized tools for town management:
+The Mayor has access to 21 specialized tools for town management:
+
+### Work Creation
 
 | Tool | What it does |
 |---|---|
-| `gt_sling` | Create a bead or convoy |
-| `gt_convoy_close` | Force-close a stuck convoy |
-| `gt_agent_reset` | Reset a stuck agent |
-| `gt_bead_delete` | Delete beads (single or bulk) |
-| `gt_report_bug` | File a bug report about town behavior |
-| `gt_done` | Mark work as complete |
+| `gt_sling` | Delegate a single task to a polecat agent in a specific rig |
+| `gt_sling_batch` | Create a multi-bead convoy with dependency ordering, merge mode, and staging options |
+
+### Convoy Management
+
+| Tool | What it does |
+|---|---|
+| `gt_convoy_status` | Show detailed status of a convoy — each bead's progress and assignee |
+| `gt_convoy_start` | Start a staged convoy — begin agent dispatch |
+| `gt_convoy_close` | Force-close a convoy and optionally its tracked beads |
+| `gt_convoy_update` | Edit convoy metadata (merge mode, feature branch) |
+| `gt_convoy_add_bead` | Add an existing bead to a convoy's tracking |
+| `gt_convoy_remove_bead` | Remove a bead from a convoy |
+| `gt_list_convoys` | List active convoys with progress counts |
+
+### Bead Management
+
+| Tool | What it does |
+|---|---|
+| `gt_bead_update` | Edit a bead's status, title, body, priority, labels, or dependencies |
+| `gt_bead_reassign` | Reassign a bead to a different agent |
+| `gt_bead_delete` | Delete one or more beads (supports bulk — up to 5000) |
+| `gt_list_beads` | List beads in a rig, filterable by status and type |
+
+### Agent Management
+
+| Tool | What it does |
+|---|---|
+| `gt_agent_reset` | Force-reset an agent to idle, unhooking it from any bead |
+| `gt_nudge` | Send a real-time nudge to a polecat (immediate, wait-idle, or queued) |
+| `gt_list_agents` | List all agents in a rig with their roles and status |
+| `gt_mail_send` | Send a persistent mail message to any agent in any rig |
+
+### Town & UI
+
+| Tool | What it does |
+|---|---|
+| `gt_list_rigs` | List all rigs (repositories) in the town |
+| `gt_ui_action` | Trigger UI actions — open drawers, navigate pages, highlight items |
+| `gt_escalation_acknowledge` | Acknowledge an escalation as reviewed |
+| `gt_report_bug` | File a bug report on the Gastown GitHub repo (checks for duplicates first) |
 
 These tools are used automatically when you make requests — you don't need to invoke them directly.
 

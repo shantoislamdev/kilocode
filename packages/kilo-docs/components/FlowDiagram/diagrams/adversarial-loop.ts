@@ -83,7 +83,7 @@ const nodes: Node[] = [
     position: { x: 240, y: 220 },
     data: { label: "Polecat revises" },
     sourcePosition: "right" as Position,
-    targetPosition: "left" as Position,
+    targetPosition: "top" as Position,
     style: {
       ...baseStyle,
       background: "rgba(59,130,246,0.1)",

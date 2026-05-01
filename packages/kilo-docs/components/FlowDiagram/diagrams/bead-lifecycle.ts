@@ -12,14 +12,16 @@ const nodeBase = {
     textAlign: "center" as const,
     minWidth: "120px",
   },
-}
+} as const satisfies Pick<Node, "style">
 
-const nodes: Node[] = [
+const nodes = [
   {
     id: "open",
-    position: { x: 0, y: 100 },
+    position: { x: 0, y: 120 },
     data: { label: "open" },
-    sourcePosition: "top" as Position,
+    // not sure why, but using Position.Top results in everything breaking at runtime
+    // we just settle for casing as Position instead
+    sourcePosition: "right" as Position,
     targetPosition: "top" as Position,
     style: {
       ...nodeBase.style,
@@ -30,9 +32,9 @@ const nodes: Node[] = [
   },
   {
     id: "in_progress",
-    position: { x: 200, y: 100 },
+    position: { x: 200, y: 120 },
     data: { label: "in_progress" },
-    sourcePosition: "top" as Position,
+    sourcePosition: "right" as Position,
     targetPosition: "top" as Position,
     style: {
       ...nodeBase.style,
@@ -43,9 +45,9 @@ const nodes: Node[] = [
   },
   {
     id: "in_review",
-    position: { x: 420, y: 100 },
+    position: { x: 420, y: 120 },
     data: { label: "in_review" },
-    sourcePosition: "top" as Position,
+    sourcePosition: "right" as Position,
     targetPosition: "top" as Position,
     style: {
       ...nodeBase.style,
@@ -56,7 +58,7 @@ const nodes: Node[] = [
   },
   {
     id: "closed",
-    position: { x: 640, y: 100 },
+    position: { x: 640, y: 120 },
     data: { label: "closed" },
     sourcePosition: "top" as Position,
     targetPosition: "top" as Position,
@@ -69,7 +71,7 @@ const nodes: Node[] = [
   },
   {
     id: "failed",
-    position: { x: 310, y: 240 },
+    position: { x: 310, y: 280 },
     data: { label: "failed" },
     sourcePosition: "top" as Position,
     targetPosition: "top" as Position,
@@ -80,14 +82,14 @@ const nodes: Node[] = [
       color: "#ef4444",
     },
   },
-]
+] as const satisfies Node[]
 
 const edgeBase = {
   style: { strokeWidth: 2 },
   animated: true,
 }
 
-const edges: Edge[] = [
+const edges = [
   {
     id: "open-progress",
     source: "open",
@@ -104,7 +106,7 @@ const edges: Edge[] = [
     target: "in_review",
     type: "smoothstep",
     label: "work complete",
-    labelStyle: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fill: "#888" },
+    labelStyle: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fill: "#888", zIndex: 10 },
     ...edgeBase,
     style: { ...edgeBase.style, stroke: "#fbbf24" },
   },
@@ -119,27 +121,19 @@ const edges: Edge[] = [
     style: { ...edgeBase.style, stroke: "#8b5cf6" },
   },
   {
-    id: "review-open",
-    source: "in_review",
-    target: "open",
-    type: "smoothstep",
-    label: "review rejected",
-    labelStyle: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fill: "#888" },
-    style: { strokeWidth: 2, stroke: "#f97316", strokeDasharray: "5 3" },
-  },
-  {
     id: "progress-failed",
     source: "in_progress",
     target: "failed",
     type: "smoothstep",
     label: "max retries",
-    labelStyle: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fill: "#888" },
-    style: { strokeWidth: 2, stroke: "#ef4444", strokeDasharray: "5 3" },
+    labelStyle: { fontSize: 10, fontFamily: "'JetBrains Mono', monospace", fill: "#888", marginTop: "100px" },
+    ...edgeBase,
+    style: { ...edgeBase.style, strokeWidth: 2, stroke: "#ef4444", strokeDasharray: "5 3" },
   },
-]
+] as const satisfies Edge[]
 
-export const beadLifecycle: DiagramDefinition = {
+export const beadLifecycle = {
   nodes,
   edges,
   caption: "The bead lifecycle — from open to closed, with adversarial review in between",
-}
+} as const satisfies DiagramDefinition
