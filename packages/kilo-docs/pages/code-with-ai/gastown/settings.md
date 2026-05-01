@@ -16,19 +16,12 @@ Access settings from your town dashboard → **Settings**.
 The primary model used by all agents (polecats, refinery, mayor). This affects quality, speed, and cost.
 
 Popular choices:
-- **Claude Sonnet** — fast, good for most tasks (default)
-- **Claude Opus** — highest quality, best for complex work
-- **Kilo Auto Free** — free tier, great for trying things out
+- **Kilo Auto Frontier** — highest quality models, best results (recommended)
+- **Kilo Auto Balanced** — good balance of quality and cost (minimum for Gas Town)
 
 ### Role-Specific Models
 
-Override the default model for specific agent roles:
-
-| Role | Recommended | Why |
-|---|---|---|
-| Polecat | Claude Sonnet / Opus | Balance of speed and quality for code generation |
-| Refinery | Claude Opus | Higher reasoning for thorough review |
-| Mayor | Claude Sonnet | Fast responses for conversational coordination |
+Override the default model for specific agent roles. By default, all roles use the town-level model. You can override per-role if you want to optimize cost vs quality for different tasks (e.g., a faster model for the mayor, a stronger model for the refinery).
 
 ### Small Model
 

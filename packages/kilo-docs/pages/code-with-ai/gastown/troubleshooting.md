@@ -16,8 +16,7 @@ Gas Town is a complex system with multiple agents, containers, and external inte
 | Cause | Fix |
 |---|---|
 | All polecats at max dispatch attempts | Ask the Mayor: *"Reset agent dispatch attempts"* |
-| Container not running | Check container status in the admin panel. The Mayor can confirm: *"Is the container running?"* |
-| Reconciler paused (draining) | Wait for drain to complete, or cancel it in settings |
+| Reconciler paused (draining) | Wait for drain to complete |
 | No available polecats | Check `max_polecats_per_rig` — you may need to increase it |
 
 **Quick fix:** Ask the Mayor: *"Why aren't beads getting picked up?"* — it can diagnose and often resolve the issue.
@@ -82,7 +81,7 @@ Beads automatically escalate after 3 failed review cycles. If a bead is genuinel
 **Fix:**
 1. Wait 30 seconds — the container may be waking from sleep
 2. If persistent: go to Settings → refresh the container token
-3. If still failing: check that your Kilo account is active and the town's billing is current
+3. If still failing: go to settings, force container shutdown
 
 ## Convoy Stuck / Never Completes
 
@@ -125,7 +124,7 @@ Beads automatically escalate after 3 failed review cycles. If a bead is genuinel
 **Fix:**
 1. Review failed bead descriptions — make them more specific
 2. Ensure the repo builds cleanly (agents struggle with pre-existing broken builds)
-3. Consider upgrading the model (Sonnet → Opus for complex work)
+3. Consider upgrading the model (Auto Balanced → Auto Frontier for complex work)
 4. Add custom instructions to guide agents: test commands, build steps, conventions
 
 ## Getting Help

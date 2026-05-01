@@ -55,7 +55,7 @@ The Mayor can inspect agent status messages, review feedback, and container logs
 
 ### Updating Configuration
 
-> *"Switch the model to Claude Opus for this town"*
+> *"Switch the model to Auto Frontier for this town"*
 > *"Set max polecats to 4"*
 > *"Add a custom instruction: always use TypeScript strict mode"*
 
