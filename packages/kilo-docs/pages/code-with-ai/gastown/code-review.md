@@ -87,7 +87,7 @@ Convoys add an additional review layer beyond per-bead review:
 
 ## Combining with Kilo Code Review
 
-Gas Town's refinery works independently, but combining it with [Kilo Code Review](/code-with-ai/platforms/cloud-agent) creates an even stronger pipeline:
+Gas Town's refinery works independently, but combining it with [Kilo Code Review](/docs/code-with-ai/platforms/cloud-agent) creates an even stronger pipeline:
 
 1. **Agent writes** → agent-level refinery reviews (fast, automated)
 2. **Code lands as PR** → Kilo Code Review provides human-readable review (deeper, contextual)
