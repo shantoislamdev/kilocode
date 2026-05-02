@@ -36,8 +36,6 @@ internal class ModelPickerRenderer(
     private val favorites: () -> Set<String>,
 ) : JPanel(BorderLayout()), ListCellRenderer<ModelPickerRow> {
     companion object {
-        const val MAX_ROWS = 10
-
         val checked: Icon = AllIcons.Actions.Checked
         val empty: Icon = EmptyIcon.create(checked)
 
@@ -54,7 +52,7 @@ internal class ModelPickerRenderer(
     private val sep = GroupHeaderSeparator(JBUI.CurrentTheme.Popup.separatorLabelInsets())
     private val top = JPanel(BorderLayout()).apply {
         border = JBUI.Borders.empty()
-        add(sep, BorderLayout.CENTER)
+        add(sep, BorderLayout.NORTH)
     }
     private val check = JBLabel().apply {
         horizontalAlignment = SwingConstants.CENTER
@@ -110,7 +108,8 @@ internal class ModelPickerRenderer(
         val fg = UIUtil.getListForeground(selected, focus)
         val bg = if (selected) UIUtil.getListBackground(true, focus) else list.background
         val weak = if (selected) fg else UiStyle.Colors.weak()
-        val section = modelPickerSectionTitle(model.items, index)
+        val current = model.items.getOrNull(index)
+        val section = if (current === value) modelPickerSectionTitle(model.items, index) else null
 
         background = list.background
         top.background = list.background
@@ -140,7 +139,8 @@ internal class ModelPickerRenderer(
             selected -> AllIcons.Nodes.NotFavoriteOnHover
             else -> EmptyIcon.ICON_16
         }
-        star.toolTipText = KiloBundle.message(if (fav) "model.picker.favorite.remove" else "model.picker.favorite.add")
+
+        top.invalidate()
 
         return this
     }

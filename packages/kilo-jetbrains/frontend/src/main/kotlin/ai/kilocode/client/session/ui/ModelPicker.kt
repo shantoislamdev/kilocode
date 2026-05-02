@@ -23,6 +23,7 @@ import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
+import java.awt.Dimension
 import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -39,6 +40,11 @@ import javax.swing.event.DocumentEvent
 
 private val popupBackground: Color
     get() = if (ExperimentalUI.isNewUI()) JBUI.CurrentTheme.Popup.BACKGROUND else UIUtil.getListBackground()
+
+private const val MODEL_PICKER_MIN_WIDTH = 420
+private const val MODEL_PICKER_MAX_WIDTH = 760
+private const val MODEL_PICKER_MAX_VISIBLE_ROWS = 10
+private const val MODEL_PICKER_EMPTY_LIST_HEIGHT = 120
 
 class ModelPicker : JBLabel() {
 
@@ -103,12 +109,12 @@ class ModelPicker : JBLabel() {
     }
 
     private fun showPopup() {
-        val model = CollectionListModel<ModelPickerRow>(emptyList())
+        val rows = modelPickerRows(items, favorites(), "")
+        val model = CollectionListModel(rows)
         val list = JBList(model).apply {
             selectionMode = ListSelectionModel.SINGLE_SELECTION
-            visibleRowCount = ModelPickerRenderer.MAX_ROWS
+            isFocusable = false
             emptyText.text = KiloBundle.message("model.picker.no.matches")
-            fixedCellWidth = JBUI.scale(UiStyle.Size.WIDTH)
             background = popupBackground
             border = JBUI.Borders.empty(PopupUtil.getListInsets(false, false))
         }
@@ -234,17 +240,12 @@ class ModelPicker : JBLabel() {
             background = popupBackground
             viewport.background = popupBackground
             viewport.isOpaque = true
-            preferredSize = JBUI.size(
-                JBUI.scale(UiStyle.Size.WIDTH) + UIUtil.getScrollBarWidth(),
-                JBUI.scale(300),
-            )
         }
         val content = JPanel(BorderLayout()).apply {
             background = popupBackground
             border = JBUI.Borders.empty()
             add(search, BorderLayout.NORTH)
             add(scroll, BorderLayout.CENTER)
-            preferredSize = scroll.preferredSize
         }
         PopupUtil.applyNewUIBackground(list)
         list.background = popupBackground
@@ -252,6 +253,7 @@ class ModelPicker : JBLabel() {
         search.background = popupBackground
 
         sync(selected?.key)
+        content.preferredSize = computeInitialPopupSize(list, scroll, search)
         popup = JBPopupFactory.getInstance()
             .createComponentPopupBuilder(content, search.textEditor)
             .setRequestFocus(true)
@@ -280,6 +282,48 @@ internal data class ModelPickerRow(
     val section: String?,
     val favorite: Boolean,
 )
+
+private fun computeInitialPopupSize(
+    list: JList<ModelPickerRow>,
+    scroll: JScrollPane,
+    search: SearchTextField,
+): Dimension {
+    val width = computeListPreferredWidth(list)
+    list.fixedCellWidth = width
+
+    val height = computeListPreferredHeight(list)
+    val bar = if (list.model.size > MODEL_PICKER_MAX_VISIBLE_ROWS) scroll.verticalScrollBar.preferredSize.width else 0
+    val content = Dimension(width + bar, search.preferredSize.height + height)
+    scroll.preferredSize = Dimension(content.width, height)
+    return content
+}
+
+private fun computeListPreferredWidth(list: JList<ModelPickerRow>): Int {
+    val renderer = list.cellRenderer ?: return JBUI.scale(MODEL_PICKER_MIN_WIDTH)
+    val model = list.model
+    val max = (0 until model.size).maxOfOrNull { idx ->
+        val value = model.getElementAt(idx)
+        renderer.getListCellRendererComponent(list, value, idx, false, false).preferredSize.width
+    } ?: 0
+    val insets = list.insets
+    return (max + insets.left + insets.right).coerceIn(
+        JBUI.scale(MODEL_PICKER_MIN_WIDTH),
+        JBUI.scale(MODEL_PICKER_MAX_WIDTH),
+    )
+}
+
+private fun computeListPreferredHeight(list: JList<ModelPickerRow>): Int {
+    val renderer = list.cellRenderer ?: return JBUI.scale(MODEL_PICKER_EMPTY_LIST_HEIGHT)
+    val model = list.model
+    val count = model.size.coerceAtMost(MODEL_PICKER_MAX_VISIBLE_ROWS)
+    if (count <= 0) return JBUI.scale(MODEL_PICKER_EMPTY_LIST_HEIGHT)
+    val height = (0 until count).sumOf { idx ->
+        val value = model.getElementAt(idx)
+        renderer.getListCellRendererComponent(list, value, idx, false, false).preferredSize.height
+    }
+    val insets = list.insets
+    return height + insets.top + insets.bottom
+}
 
 private fun repaintRow(list: JList<*>, index: Int) {
     if (index < 0) return

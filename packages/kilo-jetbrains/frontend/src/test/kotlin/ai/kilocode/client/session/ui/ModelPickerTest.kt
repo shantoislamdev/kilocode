@@ -148,5 +148,6 @@ class ModelPickerTest : BasePlatformTestCase() {
         provider: String,
         name: String,
         index: Double? = null,
-    ) = ModelPicker.Item(id, display, provider, name, index)
+        free: Boolean = false,
+    ) = ModelPicker.Item(id, display, provider, name, index, free = free)
 }
