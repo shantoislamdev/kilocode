@@ -8,7 +8,7 @@ import ai.kilocode.client.session.model.SessionModelEvent
 import ai.kilocode.client.session.model.SessionState
 import ai.kilocode.client.session.ui.ConnectionPanel
 import ai.kilocode.client.session.ui.EmptySessionPanel
-import ai.kilocode.client.session.ui.LabelPicker
+import ai.kilocode.client.session.ui.ReasoningPicker
 import ai.kilocode.client.session.ui.mode.ModePicker
 import ai.kilocode.client.session.ui.model.ModelPicker
 import ai.kilocode.client.session.ui.PermissionPanel
@@ -219,7 +219,7 @@ class SessionUi private constructor(
                     val selected =
                         m.model?.let { full -> items.firstOrNull { it.key == full }?.key }
                     prompt.model.setItems(items, selected)
-                    prompt.reasoning.setItems(m.variants.map { LabelPicker.Item(it, variantTitle(it)) }, m.variant)
+                    prompt.reasoning.setItems(m.variants.map { ReasoningPicker.Item(it, variantTitle(it)) }, m.variant)
                     prompt.setResetVisible(m.modelOverride)
                     prompt.setReady(m.isReady())
                 }

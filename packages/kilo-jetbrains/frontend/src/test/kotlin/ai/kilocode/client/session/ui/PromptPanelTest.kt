@@ -1,6 +1,8 @@
 package ai.kilocode.client.session.ui
 
+import com.intellij.icons.AllIcons
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import com.intellij.util.ui.EmptyIcon
 
 @Suppress("UnstableApiUsage")
 class PromptPanelTest : BasePlatformTestCase() {
@@ -36,10 +38,24 @@ class PromptPanelTest : BasePlatformTestCase() {
     fun `test reasoning picker shows selected variant`() {
         val panel = PromptPanel(project, {}, {})
 
-        panel.reasoning.setItems(listOf(LabelPicker.Item("low", "Low"), LabelPicker.Item("high", "High")), "high")
+        panel.reasoning.setItems(listOf(ReasoningPicker.Item("low", "Low"), ReasoningPicker.Item("high", "High")), "high")
 
         assertTrue(panel.reasoning.isVisible)
         assertEquals("high", panel.reasoning.selectedForTest()?.id)
+    }
+
+    fun `test reasoning picker aligns unchecked rows`() {
+        val picker = ReasoningPicker()
+        val low = ReasoningPicker.Item("low", "Low")
+        val high = ReasoningPicker.Item("high", "High")
+
+        picker.setItems(listOf(low, high), "high")
+
+        val icon = picker.iconForTest(low)
+        assertTrue(icon is EmptyIcon)
+        assertSame(AllIcons.Actions.Checked, picker.iconForTest(high))
+        assertEquals(AllIcons.Actions.Checked.iconWidth, icon.iconWidth)
+        assertEquals(AllIcons.Actions.Checked.iconHeight, icon.iconHeight)
     }
 
     fun `test reset visibility can be toggled`() {

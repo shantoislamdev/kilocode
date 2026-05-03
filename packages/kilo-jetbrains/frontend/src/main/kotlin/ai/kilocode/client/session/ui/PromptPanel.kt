@@ -51,7 +51,7 @@ class PromptPanel(
 
     val mode = ModePicker()
     val model = ModelPicker()
-    val reasoning = LabelPicker()
+    val reasoning = ReasoningPicker()
     var onReset: () -> Unit = {}
     private var style = SessionStyle.current()
 
