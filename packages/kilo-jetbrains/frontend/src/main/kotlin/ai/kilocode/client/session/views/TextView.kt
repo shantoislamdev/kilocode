@@ -38,8 +38,10 @@ class TextView(text: Text) : PartView() {
     fun markdown(): String = md.markdown()
 
     override fun applyStyle(style: SessionStyle) {
-        md.font = style.transcriptFont
-        md.codeFont = style.editorFamily
+        val changed = md.font != style.transcriptFont || md.codeFont != style.editorFamily
+        if (md.font != style.transcriptFont) md.font = style.transcriptFont
+        if (md.codeFont != style.editorFamily) md.codeFont = style.editorFamily
+        if (!changed) return
         revalidate()
         repaint()
     }

@@ -67,6 +67,7 @@ class CompactionView(@Suppress("UNUSED_PARAMETER") compaction: Compaction) : Par
     override fun update(content: Content) {}  // compaction has no mutable state
 
     override fun applyStyle(style: SessionStyle) {
+        if (text.font == style.smallUiFont) return
         text.font = style.smallUiFont
         revalidate()
         repaint()

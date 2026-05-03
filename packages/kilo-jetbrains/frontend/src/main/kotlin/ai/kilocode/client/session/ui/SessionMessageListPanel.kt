@@ -31,7 +31,7 @@ import com.intellij.openapi.Disposable
 class SessionMessageListPanel(
     private val model: SessionModel,
     parent: Disposable,
-) : SessionLayoutPanel(), SessionStyleTarget {
+) : SessionLayoutPanel(UiStyle.Card.groupGap()), SessionStyleTarget {
 
     private val turnViews = LinkedHashMap<String, TurnView>()
     private val msgToTurn = HashMap<String, TurnView>()

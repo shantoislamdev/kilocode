@@ -36,6 +36,7 @@ class GenericView(content: Generic) : PartView() {
     fun labelText(): String = label.text
 
     override fun applyStyle(style: SessionStyle) {
+        if (label.font == style.smallUiFont) return
         label.font = style.smallUiFont
         revalidate()
         repaint()

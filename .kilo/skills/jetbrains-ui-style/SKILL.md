@@ -566,6 +566,92 @@ Preferred manual Swing rules:
 - Keep custom components small and focused.
 - For painting, use theme-aware colors and `JBUI.scale(...)` for pixel values.
 
+## Swing Component State
+
+Swing is retained-mode UI, not React-style declarative rendering. For dynamic Swing surfaces such as session cards, transcript parts, hover rows, and collapsible panels, build a stable component tree once and then mutate existing components in response to model or interaction changes.
+
+- Do not use a React-style `state -> render()` loop for Swing components.
+- Avoid card-level `render()` methods that remove/recreate headers, text areas, markdown views, controls, or scroll panes after every click, hover, or model update.
+- Give each renderer an `update(model)` method that applies model changes directly to existing UI components.
+- In `update(model)`, compare before assigning when practical: label text, icons, foregrounds, fonts, body text, visibility, cursor, and containment.
+- Do not duplicate state in booleans when Swing component state already answers the question.
+- Derive expanded state from containment, such as `scroll.parent === root`, rather than maintaining an `open` boolean.
+- Derive hover state from the current header background or other component property, rather than maintaining a `hover` boolean.
+- Expand/collapse should attach or detach the existing body component and update controls only if attachment changed.
+- Hover should update only the affected component, usually the header background, and repaint only that component when the effective color changed.
+- Lazy-create expensive bodies such as `JBTextArea`, `JBScrollPane`, markdown panes, and HTML panes on first expansion or first direct access.
+- Keep source/model text separately only when needed to initialize a lazy component before it exists.
+- Store the current style snapshot so lazily-created children receive the latest `SessionStyle` when they are first created.
+- Parent containers should refresh for add/remove/reorder operations, not automatically after every delegated child update or streaming delta.
+- Child views should call `revalidate()`/`repaint()` only when they changed preferred size, visibility, containment, or paint output.
+- Empty deltas, identical text, unchanged styles, repeated hover values, and no-op toggles should not repaint the whole card.
+- Private helpers named `render()` in Swing views tend to invite full tree rebuilds. Prefer names that describe the mutation, such as `syncBody()`, `syncArrow()`, `syncHtml()`, or `applyModel()`.
+- It is fine for markdown internals to call library APIs such as `renderer.render(...)`; the problem is UI-level rerendering that rebuilds Swing component trees.
+
+Avoid this React-style pattern:
+
+```kotlin
+private var open = false
+
+fun toggle() {
+    open = !open
+    render()
+}
+
+private fun render() {
+    root.removeAll()
+    header.removeAll()
+    header.add(title)
+    if (open) root.add(JBScrollPane(JBTextArea(text)), BorderLayout.CENTER)
+    revalidate()
+    repaint()
+}
+```
+
+Prefer mutating stable Swing components and deriving state from the UI:
+
+```kotlin
+fun isExpanded(): Boolean = scroll?.parent === root
+
+fun toggle() {
+    if (!canExpand()) return
+    val changed = if (isExpanded()) collapse() else expand()
+    if (!changed) return
+    syncArrow()
+    revalidate()
+    repaint()
+}
+
+private fun expand(): Boolean {
+    if (isExpanded()) return false
+    root.add(scroll(), BorderLayout.CENTER)
+    return true
+}
+
+private fun collapse(): Boolean {
+    val pane = scroll ?: return false
+    if (pane.parent !== root) return false
+    root.remove(pane)
+    return true
+}
+
+private fun scroll(): JBScrollPane {
+    scroll?.let { return it }
+    val pane = JBScrollPane(body())
+    scroll = pane
+    return pane
+}
+```
+
+For tests around dynamic Swing components, assert retained component behavior instead of only final text:
+
+- Collapsed components start unattached, and expensive bodies are not created until first expansion.
+- First expansion creates the body once, collapse detaches it, and re-expansion reuses the same instance.
+- `isExpanded()` agrees with actual containment.
+- `update(model)` changes existing labels/body text without duplicating components.
+- Updates while collapsed do not eagerly create lazy bodies unless direct body access requires it.
+- No-op updates, empty deltas, repeated hover values, and toggling non-expandable cards do not repaint/revalidate the whole view.
+
 ## Platform Spacing and Insets
 
 Use semantic spacing APIs before inventing numbers. Do not copy fallback values from IntelliJ source into generated UI code; those values are defaults behind theme keys and may change by UI theme, New UI, OS, or IDE version.
@@ -878,8 +964,16 @@ Use `UiStyle` for the surrounding card chrome and `SessionStyle` for transcript 
 ```kotlin
 class ExamplePartView : PartView() {
     override fun applyStyle(style: SessionStyle) {
-        md.font = style.transcriptFont
-        md.codeFont = style.editorFamily
+        var changed = false
+        if (md.font != style.transcriptFont) {
+            md.font = style.transcriptFont
+            changed = true
+        }
+        if (md.codeFont != style.editorFamily) {
+            md.codeFont = style.editorFamily
+            changed = true
+        }
+        if (!changed) return
         revalidate()
         repaint()
     }
