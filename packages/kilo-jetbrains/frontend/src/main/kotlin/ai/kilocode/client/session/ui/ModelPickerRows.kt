@@ -44,9 +44,12 @@ internal fun modelPickerRows(
 
 internal fun modelPickerIndex(rows: List<ModelPickerRow>, key: String?): Int {
     if (key == null) return -1
-    return rows.indexOfFirst { it.item.key == key && !it.favorite }
-        .takeIf { it >= 0 }
-        ?: rows.indexOfFirst { it.item.key == key }
+    return rows.indexOfFirst { it.item.key == key }
+}
+
+internal fun modelPickerIndex(rows: List<ModelPickerRow>, index: Int): Int {
+    if (rows.isEmpty()) return -1
+    return index.coerceIn(0, rows.lastIndex)
 }
 
 internal fun modelPickerSectionTitle(rows: List<ModelPickerRow>, index: Int): String? {

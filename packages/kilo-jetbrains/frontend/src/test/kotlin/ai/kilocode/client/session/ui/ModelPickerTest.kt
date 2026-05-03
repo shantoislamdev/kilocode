@@ -57,13 +57,32 @@ class ModelPickerTest : BasePlatformTestCase() {
         assertEquals(listOf("Kilo", "OpenAI", "Anthropic"), rows.indices.mapNotNull { modelPickerSectionTitle(rows, it) })
     }
 
-    fun `test index prefers normal row over favorite duplicate`() {
+    fun `test index prefers favorite row over normal duplicate`() {
         val rows = listOf(
             ModelPickerRow(item("a", "A", "openai", "OpenAI"), "Favorites", true),
             ModelPickerRow(item("a", "A", "openai", "OpenAI"), "OpenAI", false),
         )
 
-        assertEquals(1, modelPickerIndex(rows, "openai/a"))
+        assertEquals(0, modelPickerIndex(rows, "openai/a"))
+    }
+
+    fun `test index keeps same row after favorite insertion`() {
+        val rows = modelPickerRows(listOf(
+            item("a", "A", "openai", "OpenAI"),
+            item("b", "B", "openai", "OpenAI"),
+        ), listOf(ModelSelectionDto("openai", "b")), "")
+
+        assertEquals(1, modelPickerIndex(rows, 1))
+        assertEquals("openai/a", rows[modelPickerIndex(rows, 1)].item.key)
+    }
+
+    fun `test index caps after favorite removal`() {
+        val rows = modelPickerRows(listOf(
+            item("a", "A", "openai", "OpenAI"),
+        ), emptyList(), "")
+
+        assertEquals(0, modelPickerIndex(rows, 1))
+        assertEquals(-1, modelPickerIndex(emptyList(), 1))
     }
 
     fun `test item keeps reasoning variants`() {

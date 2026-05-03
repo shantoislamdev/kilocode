@@ -136,10 +136,11 @@ class ModelPicker : JBLabel() {
             ScrollingUtil.ensureIndexIsVisible(list, idx, 0)
         }
 
-        fun sync(prefer: String? = activeKey()) {
+        fun sync(prefer: String? = activeKey(), at: Int? = null) {
             val rows = modelPickerRows(items, favorites(), search.text)
             model.replaceAll(rows)
-            val idx = modelPickerIndex(rows, prefer).takeIf { it >= 0 }
+            val idx = at?.let { modelPickerIndex(rows, it) }?.takeIf { it >= 0 }
+                ?: modelPickerIndex(rows, prefer).takeIf { it >= 0 }
                 ?: modelPickerIndex(rows, selected?.key).takeIf { it >= 0 }
                 ?: rows.indices.firstOrNull()
                 ?: -1
@@ -163,10 +164,10 @@ class ModelPicker : JBLabel() {
         }
 
         fun toggle(row: ModelPickerRow) {
+            val idx = list.selectedIndex
             onFavoriteToggle(row.item)
-            sync(row.item.key)
-            val idx = modelPickerIndex(model.items, row.item.key)
-            if (idx >= 0) repaintRow(list, idx)
+            sync(at = idx)
+            list.selectedIndex.takeIf { it >= 0 }?.let { repaintRow(list, it) }
         }
 
         search.textEditor.document.addDocumentListener(object : DocumentAdapter() {
