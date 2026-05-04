@@ -45,6 +45,7 @@ The Auto Approve tab lists the following tool-specific permissions. Some tools a
 | `glob` | File pattern matching / searching by name |
 | `grep` | Searching file contents by regex |
 | `task` | Launching sub-agents |
+| `agent_manager` | Starting Agent Manager local or worktree sessions |
 | `skill` | Loading specialized skills |
 | `lsp` | Language server protocol operations |
 | `todoread` / `todowrite` | Reading and updating the todo list |
@@ -64,6 +65,8 @@ When a tool is set to `"ask"`, Kilo pauses and displays a permission prompt with
 Use the shield button in the prompt controls to toggle runtime auto-approve for permission prompts without opening Settings. When enabled, the shield is highlighted and pending permission prompts are approved automatically. The runtime state stays synced across the sidebar, open Kilo tabs, and Agent Manager session views.
 
 Expand **Manage Auto-Approve Rules** to add commands or patterns to your allowed or denied lists. These rules are then appended to the bottom of the approval rules in settings and the config file.
+
+For the experimental `agent_manager` tool, runtime approvals use the requested mode as the pattern: `worktree` or `local`.
 
 ## MCP Tool Permissions
 
