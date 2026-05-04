@@ -15,13 +15,13 @@ Start the CLI from this branch with `bun install` if dependencies are missing, t
 - Ask it to use two subagents, changing settings first if needed to trigger a permission prompt:
 
   ```text
-  Use two subagents in parallel. Have one subagent run git status, and have the other subagent run ls.
+  Use two subagents in parallel. Have one subagent run date, and have the other subagent run whoami.
   ```
 
-  If `ls` does not trigger a permission prompt, use:
+  If `date` and `whoami` do not trigger a permission prompt, use:
 
   ```text
-  Use two subagents in parallel. Have one subagent run git status, and have the other subagent run npm install.
+  Use two subagents in parallel. Have one subagent run date, and have the other subagent run npm install.
   ```
 
 - Quickly ask a simple follow-up question to verify queued messages work:
@@ -78,7 +78,7 @@ Run all CLI verification steps in the VS Code extension, then verify the extensi
 - Run permissions on a subagent in a worktree:
 
   ```text
-  Use a subagent to run git status in this worktree.
+  Use a subagent to run whoami in this worktree.
   ```
 
 - Ask it to read and edit a file by adding a random line:
