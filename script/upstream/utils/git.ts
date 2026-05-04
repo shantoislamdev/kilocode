@@ -15,6 +15,12 @@ export interface RemoteInfo {
   url: string
 }
 
+export interface CompatBase {
+  commit: string
+  upstream: string
+  message: string
+}
+
 export async function getCurrentBranch(): Promise<string> {
   const result = await $`git rev-parse --abbrev-ref HEAD`.text()
   return result.trim()
@@ -175,6 +181,55 @@ export async function getCommitMessage(ref: string): Promise<string> {
 export async function getCommitHash(ref: string): Promise<string> {
   const result = await $`git rev-parse ${ref}`.text()
   return result.trim()
+}
+
+export async function getCommitParents(ref: string): Promise<string[]> {
+  const result = await $`git show --no-patch --format=%P ${ref}`.text()
+  return result
+    .trim()
+    .split(/\s+/)
+    .filter((parent) => parent.length > 0)
+}
+
+export async function writeTree(): Promise<string> {
+  const result = await $`git write-tree`.text()
+  return result.trim()
+}
+
+export async function commitTree(tree: string, message: string, parents: string[]): Promise<string> {
+  const args = parents.flatMap((parent) => ["-p", parent])
+  const result = await $`git commit-tree ${tree} ${args} -m ${message}`.text()
+  return result.trim()
+}
+
+export async function updateBranch(name: string, commit: string): Promise<void> {
+  await $`git update-ref refs/heads/${name} ${commit}`
+}
+
+export async function findLatestCompatCommit(base: string, target: string): Promise<CompatBase | null> {
+  const grep = "^refactor: kilo compat for "
+  const result = await $`git log --format=%H%x00%s --grep=${grep} ${base}`.quiet().nothrow()
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to search compatibility commits: ${result.stderr.toString()}`)
+  }
+
+  const lines = result.stdout
+    .toString()
+    .trim()
+    .split("\n")
+    .filter((line) => line.length > 0)
+
+  for (const line of lines) {
+    const [commit, message = ""] = line.split("\0")
+    if (!commit) continue
+
+    const parents = await getCommitParents(commit)
+    for (const parent of parents) {
+      if (await isAncestor(parent, target)) return { commit, upstream: parent, message }
+    }
+  }
+
+  return null
 }
 
 /**
