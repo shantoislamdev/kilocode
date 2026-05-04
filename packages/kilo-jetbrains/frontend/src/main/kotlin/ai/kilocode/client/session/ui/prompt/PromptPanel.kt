@@ -13,8 +13,13 @@ import ai.kilocode.log.KiloLog
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.IdeActions
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.editor.event.DocumentEvent
 import com.intellij.openapi.editor.event.DocumentListener
+import com.intellij.openapi.keymap.Keymap
+import com.intellij.openapi.keymap.KeymapManagerListener
+import com.intellij.openapi.keymap.KeymapUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.IconLoader
 import com.intellij.util.ui.JBValue
@@ -22,7 +27,9 @@ import com.intellij.util.ui.JBDimension
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
+import com.intellij.util.messages.MessageBusConnection
 import java.awt.BorderLayout
+import java.awt.Cursor
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
@@ -61,11 +68,12 @@ class PromptPanel(
     var onReset: () -> Unit = {}
     private var style = SessionStyle.current()
     private val shell = PromptShell()
+    private var bus: MessageBusConnection? = null
 
     private val editor = PromptEditorTextField(project, this).apply {
         border = JBUI.Borders.empty()
         setFontInheritedFromLAF(false)
-        setPlaceholder(KiloBundle.message("prompt.placeholder"))
+        setPlaceholder(placeholder())
         setShowPlaceholderWhenFocused(true)
         setOneLineMode(false)
         addDocumentListener(object : DocumentListener {
@@ -221,6 +229,17 @@ class PromptPanel(
         editor.requestFocusInWindow()
     }
 
+    override fun addNotify() {
+        super.addNotify()
+        bindKeymap()
+    }
+
+    override fun removeNotify() {
+        bus?.disconnect()
+        bus = null
+        super.removeNotify()
+    }
+
     private fun submit(src: String) {
         if (!isSendEnabled) return
         val txt = text()
@@ -234,6 +253,34 @@ class PromptPanel(
         button.active = busy || isSendEnabled
     }
 
+    private fun bindKeymap() {
+        if (bus != null) return
+        val connection = ApplicationManager.getApplication().messageBus.connect()
+        bus = connection
+        connection.subscribe(KeymapManagerListener.TOPIC, object : KeymapManagerListener {
+            override fun activeKeymapChanged(keymap: Keymap?) {
+                editor.setPlaceholder(placeholder())
+            }
+
+            override fun shortcutsChanged(keymap: Keymap, actionIds: Collection<String>, fromSettings: Boolean) {
+                if (SendPromptAction.ID in actionIds || IdeActions.ACTION_EDITOR_START_NEW_LINE in actionIds) {
+                    editor.setPlaceholder(placeholder())
+                }
+            }
+        })
+    }
+
+    private fun placeholder(): String {
+        val send = KeymapUtil.getFirstKeyboardShortcutText(SendPromptAction.ID)
+        val line = KeymapUtil.getFirstKeyboardShortcutText(IdeActions.ACTION_EDITOR_START_NEW_LINE)
+        if (send.isNotEmpty() && line.isNotEmpty()) {
+            return KiloBundle.message("prompt.placeholder.with.shortcuts", send, line)
+        }
+        if (send.isNotEmpty()) return KiloBundle.message("prompt.placeholder.with.send", send)
+        if (line.isNotEmpty()) return KiloBundle.message("prompt.placeholder.with.newline", line)
+        return KiloBundle.message("prompt.placeholder")
+    }
+
     private inner class SendButton : JButton() {
         private var over = false
         var active = false
@@ -245,6 +292,7 @@ class PromptPanel(
 
         init {
             UiStyle.Buttons.icon(this)
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             addMouseListener(object : MouseAdapter() {
                 override fun mouseEntered(e: MouseEvent) {
                     sync(true)

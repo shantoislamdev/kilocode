@@ -71,6 +71,7 @@ class ModelPicker : UiStyle.Pickers.Label() {
     init {
         isEnabled = false
         text = " "
+        toolTipText = KiloBundle.message("model.picker.tooltip")
 
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {

@@ -1,5 +1,6 @@
 package ai.kilocode.client.session.ui.mode
 
+import ai.kilocode.client.plugin.KiloBundle
 import ai.kilocode.client.ui.UiStyle
 import com.intellij.openapi.ui.popup.JBPopupFactory
 import com.intellij.openapi.ui.popup.PopupShowOptions
@@ -27,6 +28,7 @@ class ModePicker : UiStyle.Pickers.Label() {
     init {
         isEnabled = false
         text = " "
+        toolTipText = KiloBundle.message("mode.picker.tooltip")
 
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {

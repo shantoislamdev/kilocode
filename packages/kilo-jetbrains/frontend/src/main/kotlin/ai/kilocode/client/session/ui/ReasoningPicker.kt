@@ -1,5 +1,6 @@
 package ai.kilocode.client.session.ui
 
+import ai.kilocode.client.plugin.KiloBundle
 import ai.kilocode.client.ui.UiStyle
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.ui.popup.JBPopupFactory
@@ -40,6 +41,7 @@ class ReasoningPicker : UiStyle.Pickers.Label() {
         isEnabled = false
         isVisible = false
         text = " "
+        toolTipText = KiloBundle.message("reasoning.picker.tooltip")
 
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
