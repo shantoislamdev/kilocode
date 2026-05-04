@@ -200,9 +200,8 @@ export async function writeTree(): Promise<string> {
   return result.trim()
 }
 
-export async function commitTree(tree: string, message: string, parents: string[]): Promise<string> {
-  const args = parents.flatMap((parent) => ["-p", parent])
-  const result = await $`git commit-tree ${tree} ${args} -m ${message}`.text()
+export async function createMergeCommit(tree: string, message: string, first: string, second: string): Promise<string> {
+  const result = await $`git commit-tree ${tree} -p ${first} -p ${second} -m ${message}`.text()
   return result.trim()
 }
 

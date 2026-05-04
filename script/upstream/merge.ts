@@ -520,7 +520,7 @@ async function main() {
   const compatMessage = `refactor: kilo compat for ${targetVersion.tag}`
   if (prior) {
     const tree = await git.writeTree()
-    const commit = await git.commitTree(tree, compatMessage, [targetVersion.commit, prior.commit])
+    const commit = await git.createMergeCommit(tree, compatMessage, targetVersion.commit, prior.commit)
     await git.updateBranch(opencodeBranch, commit)
     await git.checkout(opencodeBranch)
   } else {
