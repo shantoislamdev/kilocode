@@ -3,6 +3,7 @@ package ai.kilocode.client.session.ui
 import com.intellij.icons.AllIcons
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.util.ui.EmptyIcon
+import javax.swing.SwingUtilities
 
 @Suppress("UnstableApiUsage")
 class PromptPanelTest : BasePlatformTestCase() {
@@ -64,5 +65,15 @@ class PromptPanelTest : BasePlatformTestCase() {
         panel.setResetVisible(true)
 
         assertTrue(panel.resetVisibleForTest())
+    }
+
+    fun `test pickers belong to rounded shell`() {
+        val panel = PromptPanel(project, {}, {})
+        val shell = panel.shellForTest()
+
+        assertTrue(SwingUtilities.isDescendingFrom(panel.mode, shell))
+        assertTrue(SwingUtilities.isDescendingFrom(panel.model, shell))
+        assertTrue(SwingUtilities.isDescendingFrom(panel.reasoning, shell))
+        assertSame(shell, panel.mode.parent.parent)
     }
 }
