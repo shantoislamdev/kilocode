@@ -17,13 +17,6 @@ export class AutocompleteModel {
   }
 
   /**
-   * Set the connection service (can be called after construction when service becomes available)
-   */
-  public setConnectionService(service: KiloConnectionService): void {
-    this.connectionService = service
-  }
-
-  /**
    * Generate a FIM (Fill-in-the-Middle) completion via the CLI backend.
    * Uses the SDK's kilo.fim() SSE endpoint which handles auth and streaming.
    *

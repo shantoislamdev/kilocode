@@ -25,17 +25,6 @@ describe("AutocompleteModel", () => {
     mockClient.kilo.fim.mockReset()
   })
 
-  describe("setConnectionService", () => {
-    it("sets the connection service after construction", () => {
-      const model = new AutocompleteModel()
-      expect(model.hasValidCredentials()).toBe(false)
-
-      const connection = createMockConnectionService("connected")
-      model.setConnectionService(connection)
-      expect(model.hasValidCredentials()).toBe(true)
-    })
-  })
-
   describe("hasValidCredentials", () => {
     it("returns true when connected", () => {
       const connection = createMockConnectionService("connected")
