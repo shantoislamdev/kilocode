@@ -889,7 +889,9 @@ export namespace Config {
       Object.assign(permission, agent.permission)
 
       // Convert legacy maxSteps to steps
-      const steps = agent.steps ?? agent.maxSteps
+      // kilocode_change start - preserve null delete sentinel
+      const steps = agent.steps !== undefined ? agent.steps : agent.maxSteps
+      // kilocode_change end
 
       return { ...agent, options, permission, steps } as typeof agent & {
         options?: Record<string, unknown>
