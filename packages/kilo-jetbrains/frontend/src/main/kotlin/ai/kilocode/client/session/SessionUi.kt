@@ -99,6 +99,8 @@ class SessionUi private constructor(
         condense = Registry.`is`("kilo.session.condense", true),
         displayMs = displayMs,
         open = open,
+        beforeUpdate = ::atBottom,
+        afterUpdate = ::followBottom,
     )
 
 
@@ -254,8 +256,7 @@ class SessionUi private constructor(
                 is SessionModelEvent.TurnUpdated,
                 is SessionModelEvent.ContentAdded,
                 is SessionModelEvent.ContentDelta,
-                is SessionModelEvent.HistoryLoaded -> scrollToBottom()
-
+                is SessionModelEvent.HistoryLoaded,
                 is SessionModelEvent.TurnRemoved,
                 is SessionModelEvent.MessageAdded,
                 is SessionModelEvent.MessageUpdated,
@@ -307,7 +308,25 @@ class SessionUi private constructor(
             }
         }
         refresh()
+    }
+
+    internal fun atBottom(): Boolean {
+        val bar = scroll.verticalScrollBar
+        if (bar.maximum <= bar.visibleAmount) return true
+        return bar.value + bar.visibleAmount >= bar.maximum - JBUI.scale(32)
+    }
+
+    internal fun followBottom(follow: Boolean) {
+        if (!follow) return
+        showBody(messageBody)
         scrollToBottom()
+        ApplicationManager.getApplication().invokeLater {
+            scroll.viewport.view?.revalidate()
+            scroll.viewport.view?.doLayout()
+            scroll.revalidate()
+            scroll.doLayout()
+            scrollToBottom()
+        }
     }
 
     private fun scrollToBottom() {
