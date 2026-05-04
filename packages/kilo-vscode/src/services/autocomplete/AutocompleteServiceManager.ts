@@ -83,6 +83,7 @@ export class AutocompleteServiceManager {
     this.inlineCompletionProvider = new AutocompleteInlineCompletionProvider(
       this.context,
       this.model,
+      connectionService,
       this.updateCostTracking.bind(this),
       () => this.settings,
       workspacePath,

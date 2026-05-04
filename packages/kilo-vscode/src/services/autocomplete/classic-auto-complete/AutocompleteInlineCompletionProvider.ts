@@ -24,6 +24,7 @@ import {
 } from "./inline-utils"
 import { FimPromptBuilder } from "./FillInTheMiddle"
 import { AutocompleteModel } from "../AutocompleteModel"
+import type { KiloConnectionService } from "../../cli-backend"
 import { ContextRetrievalService } from "../continuedev/core/autocomplete/context/ContextRetrievalService"
 import { VsCodeIde } from "../continuedev/core/vscode-test-harness/src/VSCodeIde"
 import { RecentlyVisitedRangesService } from "../continuedev/core/vscode-test-harness/src/autocomplete/RecentlyVisitedRangesService"
@@ -121,6 +122,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   private pendingRequests: PendingRequest[] = []
   private fimPromptBuilder: FimPromptBuilder
   private model: AutocompleteModel
+  private connectionService: KiloConnectionService
   private costTrackingCallback: CostTrackingCallback
   private getSettings: () => AutocompleteServiceSettings | null
   private recentlyVisitedRangesService: RecentlyVisitedRangesService
@@ -149,6 +151,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   constructor(
     context: vscode.ExtensionContext,
     model: AutocompleteModel,
+    connectionService: KiloConnectionService,
     costTrackingCallback: CostTrackingCallback,
     getSettings: () => AutocompleteServiceSettings | null,
     workspacePath: string,
@@ -157,6 +160,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
   ) {
     this.telemetry = telemetry
     this.model = model
+    this.connectionService = connectionService
     this.costTrackingCallback = costTrackingCallback
     this.getSettings = getSettings
     this.onFatalError = onFatalError ?? null
@@ -364,8 +368,7 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
       // instead of sending a probe FIM request. If the user has added credits,
       // reset the backoff so autocomplete resumes.
       if (this.backoff.getFatalStatus() === 402 && this.backoff.shouldProbe()) {
-        const funded = await this.model.hasBalance()
-        if (funded) {
+        if (await this.hasBalance()) {
           this.backoff.reset()
           this.fatalNotified = false
         }
@@ -652,6 +655,21 @@ export class AutocompleteInlineCompletionProvider implements vscode.InlineComple
         this.fatalNotified = true
         this.onFatalError?.(this.backoff.getFatalStatus())
       }
+    }
+  }
+
+  /**
+   * Check the user's credit balance via the profile endpoint.
+   * Returns true if the user has a positive balance, false otherwise.
+   * Returns false on any error (not connected, fetch failed, etc.).
+   */
+  private async hasBalance(): Promise<boolean> {
+    try {
+      const client = await this.connectionService.getClientAsync()
+      const result = await client.kilo.profile().catch(() => null)
+      return (result?.data?.balance?.balance ?? 0) > 0
+    } catch {
+      return false
     }
   }
 }

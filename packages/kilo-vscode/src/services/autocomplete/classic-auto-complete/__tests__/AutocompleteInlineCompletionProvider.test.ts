@@ -763,6 +763,7 @@ describe("AutocompleteInlineCompletionProvider", () => {
   let mockContext: vscode.InlineCompletionContext
   let mockToken: vscode.CancellationToken
   let mockModel: AutocompleteModel
+  let mockConnectionService: any
   let mockCostTrackingCallback: CostTrackingCallback
   let mockSettings: { enableAutoTrigger: boolean } | null
   let mockExtensionContext: vscode.ExtensionContext
@@ -853,6 +854,9 @@ describe("AutocompleteInlineCompletionProvider", () => {
       getProviderDisplayName: vi.fn().mockReturnValue("test-provider"),
       hasValidCredentials: vi.fn().mockReturnValue(true), // Default to true for tests
     } as unknown as AutocompleteModel
+    mockConnectionService = {
+      getClientAsync: vi.fn().mockResolvedValue({ kilo: { profile: vi.fn().mockResolvedValue({ data: null }) } }),
+    }
     mockCostTrackingCallback = vi.fn() as CostTrackingCallback
     mockClineProvider = { cwd: "/test/workspace" }
     mockTelemetry = new AutocompleteTelemetry()
@@ -860,6 +864,7 @@ describe("AutocompleteInlineCompletionProvider", () => {
     provider = new AutocompleteInlineCompletionProvider(
       mockExtensionContext,
       mockModel,
+      mockConnectionService,
       mockCostTrackingCallback,
       () => mockSettings,
       mockClineProvider as any,
@@ -2462,6 +2467,7 @@ describe("AutocompleteInlineCompletionProvider", () => {
       const testProvider = new AutocompleteInlineCompletionProvider(
         mockExtensionContext,
         mockModel,
+        mockConnectionService,
         mockCostTrackingCallback,
         () => mockSettings,
         mockClineProvider as any,
@@ -2500,6 +2506,7 @@ describe("AutocompleteInlineCompletionProvider", () => {
       const testProvider = new AutocompleteInlineCompletionProvider(
         mockExtensionContext,
         mockModel,
+        mockConnectionService,
         mockCostTrackingCallback,
         () => mockSettings,
         mockClineProvider as any,
