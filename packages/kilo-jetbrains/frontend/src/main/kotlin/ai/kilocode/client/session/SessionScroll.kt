@@ -15,7 +15,6 @@ import com.intellij.ui.svg.SvgAttributePatcher
 import com.intellij.util.SVGLoader
 import com.intellij.util.ui.JBUI
 import java.awt.Color
-import java.awt.Container
 import java.awt.Cursor
 import java.awt.Point
 import java.awt.Rectangle
@@ -86,7 +85,6 @@ internal class SessionScroll(
         if (component.viewport.view === panel) return
         (panel as? SessionStyleTarget)?.applyStyle(style)
         component.viewport.setView(panel)
-        component.revalidate()
         component.repaint()
         updateJump()
     }
@@ -121,7 +119,6 @@ internal class SessionScroll(
         show(messages)
         auto = false
         val id = ++seq
-        revalidateScroll()
         ApplicationManager.getApplication().invokeLater {
             openPass(id, OPEN_PASSES, done)
         }
@@ -135,7 +132,8 @@ internal class SessionScroll(
         this.style = style
         jump.icon = patchedIcon(ICON)
         messages.applyStyle(style)
-        (component.viewport.view as? SessionStyleTarget)?.applyStyle(style)
+        val view = component.viewport.view
+        if (view !== messages) (view as? SessionStyleTarget)?.applyStyle(style)
         refresh()
     }
 
@@ -196,32 +194,7 @@ internal class SessionScroll(
     }
 
     private fun layoutScroll() {
-        revalidateScroll()
-        layoutTree(root)
-        host.doLayout()
-        component.validate()
-        component.doLayout()
-        component.viewport.validate()
-        component.viewport.doLayout()
-        layoutTree(component.viewport.view)
-        component.validate()
-        component.doLayout()
-        component.viewport.validate()
-        component.viewport.doLayout()
-    }
-
-    private fun revalidateScroll() {
-        root.revalidate()
-        host.revalidate()
-        component.viewport.view?.revalidate()
-        component.viewport.revalidate()
-        component.revalidate()
-    }
-
-    private fun layoutTree(comp: java.awt.Component?) {
-        if (comp !is Container) return
-        comp.doLayout()
-        for (child in comp.components) layoutTree(child)
+        root.validate()
     }
 
     private fun scrollToBottom() {
