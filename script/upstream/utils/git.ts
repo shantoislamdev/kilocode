@@ -205,6 +205,16 @@ export async function updateBranch(name: string, commit: string): Promise<void> 
   await $`git update-ref refs/heads/${name} ${commit}`
 }
 
+export async function recordAncestor(ref: string, message: string): Promise<boolean> {
+  if (await isAncestor(ref, "HEAD")) return false
+
+  const result = await $`git merge -s ours --no-ff ${ref} -m ${message}`.nothrow()
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to record ancestor ${ref}: ${result.stderr.toString()}`)
+  }
+  return true
+}
+
 async function compatUpstream(message: string): Promise<string | null> {
   const prefix = "refactor: kilo compat for "
   if (!message.startsWith(prefix)) return null

@@ -3,7 +3,16 @@ import { mkdtemp, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { $ } from "bun"
-import { createCommit, findLatestCompatCommit, getCommitHash, getCommitParents, updateBranch, writeTree } from "./git"
+import {
+  createCommit,
+  findLatestCompatCommit,
+  getCommitHash,
+  getCommitParents,
+  isAncestor,
+  recordAncestor,
+  updateBranch,
+  writeTree,
+} from "./git"
 
 const cwd = process.cwd()
 let dir = ""
@@ -51,8 +60,21 @@ test("finds previous compatibility commit for transformed base", async () => {
   const tree = await writeTree()
   const next = await createCommit(tree, "refactor: kilo compat for v1.0.1", prior)
   await updateBranch("opencode-v1.0.1", next)
-
   const base = (await $`git merge-base main opencode-v1.0.1`.text()).trim()
   expect(base).toBe(prior)
   expect(await getCommitParents(next)).toEqual([prior])
+
+  await $`git checkout main`.quiet()
+  expect(await recordAncestor(target, "merge: record upstream v1.0.1")).toBe(true)
+  const link = await getCommitHash("HEAD")
+  expect(await getCommitParents(link)).toEqual([prior, target])
+  expect(await isAncestor(target, link)).toBe(true)
+
+  const linked = (await $`git merge-base main opencode-v1.0.1`.text()).trim()
+  expect(linked).toBe(prior)
+
+  await $`git merge opencode-v1.0.1`.quiet()
+  const head = await getCommitHash("HEAD")
+  expect(await getCommitParents(head)).toEqual([link, next])
+  expect(await isAncestor(target, head)).toBe(true)
 })

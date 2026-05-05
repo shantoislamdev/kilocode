@@ -548,6 +548,10 @@ async function main() {
   logger.step(7, 8, "Merging into Kilo branch...")
 
   await git.checkout(kiloBranch)
+  if (prior) {
+    const linked = await git.recordAncestor(targetVersion.commit, `merge: record upstream ${targetVersion.tag}`)
+    if (linked) logger.info(`Recorded upstream ${targetVersion.tag} as Kilo branch ancestry`)
+  }
   const mergeResult = await git.merge(opencodeBranch)
 
   if (!mergeResult.success) {
