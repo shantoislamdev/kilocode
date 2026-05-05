@@ -619,6 +619,13 @@ class KiloCliDataParserTest {
         assertTrue(result.contains("""line1\nline2\t\"quoted\""""))
     }
 
+    @Test
+    fun `buildSummarizeJson - writes provider and model`() {
+        val result = KiloCliDataParser.buildSummarizeJson(ModelSelectionDto("anthropic", "claude-4"))
+
+        assertEquals("""{"providerID":"anthropic","modelID":"claude-4"}""", result)
+    }
+
     // ================================================================
     // buildConfigPartial
     // ================================================================
@@ -864,6 +871,32 @@ class KiloCliDataParserTest {
         val result = KiloCliDataParser.parseChatEvent("session.compacted", data)
         assertNotNull(result)
         assertTrue(result is ChatEventDto.SessionCompacted)
+    }
+
+    @Test
+    fun `parseChatEvent - session updated`() {
+        val data = globalEvent("""
+            "type": "session.updated",
+            "properties": {
+                "sessionID": "ses_1",
+                "info": {
+                    "id": "ses_1",
+                    "projectID": "proj_1",
+                    "directory": "/tmp/project",
+                    "title": "Updated title",
+                    "version": "1",
+                    "time": { "created": 1.0, "updated": 2.0 },
+                    "summary": { "additions": 3, "deletions": 1, "files": 2 }
+                }
+            }
+        """)
+
+        val result = KiloCliDataParser.parseChatEvent("session.updated", data)
+        assertNotNull(result)
+        assertTrue(result is ChatEventDto.SessionUpdated)
+        assertEquals("ses_1", result.sessionID)
+        assertEquals("Updated title", result.session.title)
+        assertEquals(2, result.session.summary?.files)
     }
 
     @Test

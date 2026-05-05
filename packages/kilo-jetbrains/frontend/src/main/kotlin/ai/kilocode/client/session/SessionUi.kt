@@ -66,6 +66,7 @@ class SessionUi private constructor(
     displayMs: Long,
     open: (SessionDto) -> Unit,
     private val loading: Boolean,
+    session: SessionDto? = null,
 ) : JPanel(BorderLayout()), Disposable, SessionStyleTarget {
 
     constructor(
@@ -77,7 +78,8 @@ class SessionUi private constructor(
         id: String? = null,
         displayMs: Long = SessionController.DISPLAY_DELAY_MS,
         open: (SessionDto) -> Unit = {},
-    ) : this(project, workspace, sessions, app, cs, id, displayMs, open, id == null)
+        session: SessionDto? = null,
+    ) : this(project, workspace, sessions, app, cs, session?.id ?: id, displayMs, open, id == null, session)
 
     internal constructor(
         project: Project,
@@ -89,7 +91,8 @@ class SessionUi private constructor(
         displayMs: Long = SessionController.DISPLAY_DELAY_MS,
         loading: Boolean,
         open: (SessionDto) -> Unit = {},
-    ) : this(project, workspace, sessions, app, cs, id, displayMs, open, loading)
+        session: SessionDto? = null,
+    ) : this(project, workspace, sessions, app, cs, id, displayMs, open, loading, session)
 
     companion object {
         private val LOG = KiloLog.create(SessionUi::class.java)
@@ -109,6 +112,7 @@ class SessionUi private constructor(
         flushMs = flushMs,
         condense = Registry.`is`("kilo.session.condense", true),
         displayMs = displayMs,
+        session = session,
         open = open,
         beforeUpdate = ::atBottom,
         afterUpdate = ::followBottom,
@@ -302,6 +306,8 @@ class SessionUi private constructor(
                 is SessionModelEvent.ContentRemoved,
                 is SessionModelEvent.DiffUpdated,
                 is SessionModelEvent.TodosUpdated,
+                is SessionModelEvent.SessionUpdated,
+                is SessionModelEvent.HeaderUpdated,
                 is SessionModelEvent.Compacted,
                 is SessionModelEvent.Cleared -> Unit
             }

@@ -174,6 +174,13 @@ object KiloCliDataParser {
                 ChatEventDto.SessionStatusChanged(sid, dto)
             }
 
+            "session.updated" -> {
+                val info = props["info"]?.jsonObject ?: return null
+                val dto = parseSessionObject(info)
+                val sid = props.str("sessionID") ?: dto.id.takeIf { it.isNotBlank() } ?: return null
+                ChatEventDto.SessionUpdated(sid, dto)
+            }
+
             "session.idle" -> {
                 val sid = props.str("sessionID") ?: return null
                 ChatEventDto.SessionIdle(sid)
@@ -315,6 +322,12 @@ object KiloCliDataParser {
         sb.append("}")
         return sb.toString()
     }
+
+    /**
+     * Build the JSON body for `POST /session/{id}/summarize`.
+     */
+    fun buildSummarizeJson(model: ModelSelectionDto): String =
+        """{"providerID":${escape(model.providerID)},"modelID":${escape(model.modelID)}}"""
 
     /**
      * Build the partial JSON body for `PATCH /global/config`.

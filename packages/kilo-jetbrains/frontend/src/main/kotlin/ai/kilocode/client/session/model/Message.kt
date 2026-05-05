@@ -2,6 +2,48 @@ package ai.kilocode.client.session.model
 
 import ai.kilocode.rpc.dto.MessageDto
 import ai.kilocode.rpc.dto.PartTimeDto
+import ai.kilocode.rpc.dto.TodoDto
+import ai.kilocode.rpc.dto.TokensDto
+
+data class SessionHeaderSnapshot(
+    val visible: Boolean,
+    val title: String,
+    val cost: Double?,
+    val context: ContextUsage?,
+    val tokens: TokensDto?,
+    val timeline: List<TimelineItem>,
+    val todos: TodoSummary,
+    val canCompact: Boolean,
+)
+
+data class ContextUsage(
+    val tokens: Long,
+    val percentage: Int?,
+    val limit: Long?,
+    val output: Long?,
+)
+
+data class TimelineItem(
+    val id: String,
+    val kind: String,
+    val tool: String?,
+    val title: String,
+    val weight: Int,
+    val durationMs: Long?,
+    val active: Boolean,
+)
+
+data class TodoSummary(
+    val total: Int,
+    val completed: Int,
+    val items: List<TodoDto>,
+)
+
+data class ModelLimitItem(
+    val context: Long = 0,
+    val input: Long? = null,
+    val output: Long = 0,
+)
 
 /** A single message with its typed contents. */
 class Message(

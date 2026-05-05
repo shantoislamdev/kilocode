@@ -10,7 +10,10 @@ import ai.kilocode.rpc.dto.MessageTimeDto
 import ai.kilocode.rpc.dto.MessageWithPartsDto
 import ai.kilocode.rpc.dto.PartDto
 import ai.kilocode.rpc.dto.PartTimeDto
+import ai.kilocode.rpc.dto.SessionDto
+import ai.kilocode.rpc.dto.SessionTimeDto
 import ai.kilocode.rpc.dto.TodoDto
+import ai.kilocode.rpc.dto.TokensDto
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.UsefulTestCase
@@ -26,7 +29,9 @@ class SessionModelTest : UsefulTestCase() {
         parent = Disposer.newDisposable("test")
         model = SessionModel()
         events = mutableListOf()
-        model.addListener(parent) { events.add(it) }
+        model.addListener(parent) {
+            if (it !is SessionModelEvent.HeaderUpdated) events.add(it)
+        }
     }
 
     override fun tearDown() {
@@ -622,7 +627,9 @@ class SessionModelTest : UsefulTestCase() {
         Disposer.register(parent, child)
 
         val extra = mutableListOf<SessionModelEvent>()
-        model.addListener(child) { extra.add(it) }
+        model.addListener(child) {
+            if (it !is SessionModelEvent.HeaderUpdated) extra.add(it)
+        }
 
         model.addMessage(msg("m1", "user"))
         assertEquals(2, extra.size)  // MessageAdded + TurnAdded
@@ -634,11 +641,101 @@ class SessionModelTest : UsefulTestCase() {
         assertTrue(extra.isEmpty())
     }
 
-    private fun msg(id: String, role: String) = MessageDto(
+    fun `test header snapshot hidden with no messages`() {
+        assertFalse(model.header.visible)
+        assertEquals("New Session", model.header.title)
+        assertFalse(model.header.canCompact)
+    }
+
+    fun `test header snapshot totals assistant cost only`() {
+        model.model = "kilo/gpt-5"
+        model.upsertMessage(msg("u1", "user", cost = 10.0))
+        model.upsertMessage(msg("a1", "assistant", cost = 0.25))
+        model.upsertMessage(msg("a2", "assistant", cost = 0.75))
+
+        assertTrue(model.header.visible)
+        assertEquals(1.0, model.header.cost)
+        assertTrue(model.header.canCompact)
+    }
+
+    fun `test header snapshot uses last assistant tokens and model limit`() {
+        model.models = listOf(ModelItem(
+            id = "gpt-5",
+            display = "GPT-5",
+            provider = "kilo",
+            providerName = "Kilo",
+            recommendedIndex = null,
+            free = false,
+            variants = emptyList(),
+            limit = ModelLimitItem(context = 1000, input = 800, output = 200),
+        ))
+        model.model = "kilo/gpt-5"
+        model.upsertMessage(msg("a1", "assistant", tokens = TokensDto(100, 50, 25, 25, 0)))
+        model.upsertMessage(msg("a2", "assistant", tokens = TokensDto(200, 100, 0, 0, 0)))
+
+        assertEquals(300L, model.header.context?.tokens)
+        assertEquals(30, model.header.context?.percentage)
+        assertEquals(1000L, model.header.context?.limit)
+        assertEquals(200L, model.header.context?.output)
+        assertEquals(200L, model.header.tokens?.input)
+    }
+
+    fun `test header snapshot tracks todo summary`() {
+        model.upsertMessage(msg("a1", "assistant"))
+        model.setTodos(listOf(
+            TodoDto("Write tests", "completed", "high"),
+            TodoDto("Ship it", "pending", "medium"),
+        ))
+
+        assertEquals(2, model.header.todos.total)
+        assertEquals(1, model.header.todos.completed)
+        assertEquals("Write tests", model.header.todos.items[0].content)
+    }
+
+    fun `test header snapshot tracks session title and timeline`() {
+        model.setSession(session("Updated title"))
+        model.upsertMessage(msg("a1", "assistant"))
+        model.updateContent("a1", part("t1", "a1", "tool", tool = "bash", state = "running", title = "Run tests", time = PartTimeDto(1.0, 3.0)))
+
+        val item = model.header.timeline.single()
+        assertEquals("Updated title", model.header.title)
+        assertEquals("tool", item.kind)
+        assertEquals("bash", item.tool)
+        assertEquals("Run tests", item.title)
+        assertEquals(2000L, item.durationMs)
+        assertTrue(item.active)
+    }
+
+    fun `test loadHistory and clear reset header state`() {
+        model.setSession(session("Old title"))
+        model.upsertMessage(msg("a1", "assistant", cost = 1.0))
+
+        model.loadHistory(emptyList())
+        assertFalse(model.header.visible)
+        assertEquals("New Session", model.header.title)
+
+        model.upsertMessage(msg("a2", "assistant", cost = 1.0))
+        model.clear()
+        assertFalse(model.header.visible)
+        assertNull(model.header.cost)
+    }
+
+    private fun msg(id: String, role: String, cost: Double? = null, tokens: TokensDto? = null) = MessageDto(
         id = id,
         sessionID = "ses",
         role = role,
         time = MessageTimeDto(created = 0.0),
+        cost = cost,
+        tokens = tokens,
+    )
+
+    private fun session(title: String) = SessionDto(
+        id = "ses",
+        projectID = "proj",
+        directory = "/test",
+        title = title,
+        version = "1",
+        time = SessionTimeDto(created = 0.0, updated = 0.0),
     )
 
     private fun part(

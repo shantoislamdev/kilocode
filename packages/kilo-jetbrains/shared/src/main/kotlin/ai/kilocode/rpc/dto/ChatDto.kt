@@ -197,6 +197,13 @@ sealed class ChatEventDto {
     ) : ChatEventDto()
 
     @Serializable
+    @SerialName("session.updated")
+    data class SessionUpdated(
+        val sessionID: String,
+        val session: SessionDto,
+    ) : ChatEventDto()
+
+    @Serializable
     @SerialName("session.idle")
     data class SessionIdle(
         val sessionID: String,
