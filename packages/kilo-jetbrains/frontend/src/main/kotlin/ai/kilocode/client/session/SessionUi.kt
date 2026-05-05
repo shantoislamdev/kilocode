@@ -44,6 +44,7 @@ import kotlinx.coroutines.CoroutineScope
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Cursor
+import java.awt.Point
 import java.awt.Rectangle
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -139,6 +140,9 @@ class SessionUi private constructor(
     private lateinit var prompt: PromptPanel
     private lateinit var loadingLabel: JBLabel
     private var style = SessionStyle.current()
+    private var tail = true
+    private var auto = false
+    private var seq = 0
 
     init {
         buildUi()
@@ -232,7 +236,7 @@ class SessionUi private constructor(
         prompt.onReset = { controller.clearModelOverride() }
         prompt.model.favorites = { app.favorites.value }
         prompt.model.onFavoriteToggle = { item -> app.toggleModelFavorite(item.provider, item.id) }
-        scroll.verticalScrollBar.addAdjustmentListener { updateJump() }
+        scroll.verticalScrollBar.addAdjustmentListener { onScroll() }
 
         controller.addListener(this) { event ->
             when (event) {
@@ -355,43 +359,75 @@ class SessionUi private constructor(
     }
 
     internal fun atBottom(): Boolean {
+        if (scroll.viewport.view !== messageBody) return tail
         val bar = scroll.verticalScrollBar
         if (bar.maximum <= bar.visibleAmount) return true
         return bar.value + bar.visibleAmount >= bar.maximum - JBUI.scale(32)
     }
 
     internal fun followBottom(follow: Boolean) {
-        if (!follow) return
-        showBody(messageBody)
-        scrollToBottom()
-        updateJump()
-        ApplicationManager.getApplication().invokeLater {
-            scroll.viewport.view?.revalidate()
-            scroll.viewport.view?.doLayout()
-            scroll.revalidate()
-            scroll.doLayout()
-            scrollToBottom()
+        if (!follow) {
+            seq++
             updateJump()
+            return
         }
+        tail = true
+        auto = true
+        showBody(messageBody)
+        auto = false
+        followPass(++seq, 2)
     }
 
     private fun jumpBottom() {
+        tail = true
+        auto = true
         showBody(messageBody)
-        scrollToBottom()
-        updateJump()
-        ApplicationManager.getApplication().invokeLater {
-            scroll.viewport.view?.revalidate()
-            scroll.viewport.view?.doLayout()
-            scroll.revalidate()
-            scroll.doLayout()
+        auto = false
+        followPass(++seq, 2)
+    }
+
+    private fun followPass(id: Int, remaining: Int) {
+        if (id != seq || !tail) return
+        auto = true
+        try {
+            layoutScroll()
             scrollToBottom()
             updateJump()
+        } finally {
+            auto = false
+        }
+        if (remaining <= 0) return
+        ApplicationManager.getApplication().invokeLater {
+            followPass(id, remaining - 1)
         }
     }
 
+    private fun layoutScroll() {
+        scroll.viewport.view?.revalidate()
+        scroll.viewport.view?.doLayout()
+        scroll.revalidate()
+        scroll.doLayout()
+    }
+
     private fun scrollToBottom() {
+        val view = scroll.viewport.view ?: return
+        val y = (view.height - scroll.viewport.extentSize.height).coerceAtLeast(0)
+        scroll.viewport.viewPosition = Point(0, y)
+        (view as? JComponent)?.scrollRectToVisible(Rectangle(0, view.height.coerceAtLeast(1) - 1, 1, 1))
         val bar = scroll.verticalScrollBar
-        bar.value = bar.maximum
+        bar.value = (bar.maximum - bar.visibleAmount).coerceAtLeast(bar.minimum)
+    }
+
+    private fun onScroll() {
+        if (auto) {
+            updateJump()
+            return
+        }
+        if (scroll.viewport.view === messageBody) {
+            tail = atBottom()
+            if (!tail) seq++
+        }
+        updateJump()
     }
 
     private fun updateJump() {

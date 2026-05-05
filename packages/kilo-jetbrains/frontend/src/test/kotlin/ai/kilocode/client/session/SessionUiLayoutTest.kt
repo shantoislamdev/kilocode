@@ -334,6 +334,37 @@ class SessionUiLayoutTest : BasePlatformTestCase() {
         assertEquals(value, bar.value)
     }
 
+    fun `test user scroll cancels pending follow`() {
+        showMessages()
+        fillTranscript(24)
+        val bar = scrollBar()
+        setBottom(bar)
+
+        emit(ChatEventDto.MessageUpdated("ses_test", message("tail_pending")), flush = false)
+        forceFlushWithoutDispatch()
+        setValue(bar, bottom(bar) / 2)
+        val value = bar.value
+        drainScroll()
+
+        assertEquals(value, bar.value)
+    }
+
+    fun `test stale follow does not override later non follow`() {
+        showMessages()
+        fillTranscript(24)
+        val bar = scrollBar()
+        setBottom(bar)
+
+        emit(ChatEventDto.MessageUpdated("ses_test", message("tail_stale1")), flush = false)
+        forceFlushWithoutDispatch()
+        setValue(bar, bottom(bar) / 2)
+        val value = bar.value
+        emit(ChatEventDto.MessageUpdated("ses_test", message("tail_stale2")))
+        drainScroll()
+
+        assertEquals(value, bar.value)
+    }
+
     fun `test user returning to bottom between updates resumes following`() {
         showMessages()
         fillTranscript(24)
@@ -350,6 +381,46 @@ class SessionUiLayoutTest : BasePlatformTestCase() {
         drainScroll()
 
         assertBottom(bar)
+    }
+
+    fun `test part delta follows bottom after height growth`() {
+        showMessages()
+        fillTranscript(24)
+        val bar = scrollBar()
+        val id = "stream_bottom"
+        emit(ChatEventDto.MessageUpdated("ses_test", message(id)), flush = false)
+        emit(ChatEventDto.PartUpdated("ses_test", part("stream_part", id, "text", "start\n")), flush = false)
+        forceFlush()
+        setBottom(bar)
+
+        repeat(40) { i ->
+            emit(ChatEventDto.PartDelta("ses_test", id, "stream_part", "text", "line $i\n"), flush = false)
+        }
+        forceFlush()
+        drainScroll()
+
+        assertBottom(bar)
+        assertFalse(jumpButton().isVisible)
+    }
+
+    fun `test part delta preserves middle scroll position`() {
+        showMessages()
+        fillTranscript(24)
+        val bar = scrollBar()
+        val id = "stream_middle"
+        emit(ChatEventDto.MessageUpdated("ses_test", message(id)), flush = false)
+        emit(ChatEventDto.PartUpdated("ses_test", part("stream_part", id, "text", "start\n")), flush = false)
+        forceFlush()
+        setValue(bar, bottom(bar) / 2)
+        val value = bar.value
+
+        repeat(40) { i ->
+            emit(ChatEventDto.PartDelta("ses_test", id, "stream_part", "text", "line $i\n"), flush = false)
+        }
+        forceFlush()
+        drainScroll()
+
+        assertEquals(value, bar.value)
     }
 
     fun `test batched update samples scroll once before model changes`() {
@@ -508,6 +579,10 @@ class SessionUiLayoutTest : BasePlatformTestCase() {
     private fun forceFlush() {
         controller().flushEvents()
         com.intellij.util.ui.UIUtil.dispatchAllInvocationEvents()
+    }
+
+    private fun forceFlushWithoutDispatch() {
+        controller().flushEvents()
     }
 
     private fun drainScroll() {
