@@ -153,7 +153,7 @@ approval flow.
 
 ### 7. Verify each resolution before moving on
 
-- confirm `grep -c "^<<<<<<<\|^|||||||\|^=======$\|^>>>>>>>" <file>` returns 0
+- confirm `script/upstream/find-conflict-markers.sh <file>` prints nothing
 - read the final file region (the new shape after edit) and sanity-check imports
 - for apparently-unused symbols upstream introduced, `grep` the file and the
   rest of the package before deleting — they may be called from non-conflicted
