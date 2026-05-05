@@ -33,8 +33,10 @@ test("finds previous compatibility commit for transformed base", async () => {
 
   await Bun.write("brand.txt", "opencode B\n")
   const target = await commit("release: v1.0.1")
+  await $`git tag v1.0.1 ${target}`.quiet()
 
   await $`git checkout -b main ${old}`.quiet()
+  await $`git tag v1.0.0 ${old}`.quiet()
   await Bun.write("brand.txt", "kilo A\n")
   const prior = await commit("refactor: kilo compat for v1.0.0")
 

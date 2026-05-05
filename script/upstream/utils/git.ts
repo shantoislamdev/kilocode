@@ -205,6 +205,19 @@ export async function updateBranch(name: string, commit: string): Promise<void> 
   await $`git update-ref refs/heads/${name} ${commit}`
 }
 
+async function compatUpstream(message: string): Promise<string | null> {
+  const prefix = "refactor: kilo compat for "
+  if (!message.startsWith(prefix)) return null
+
+  const tag = message.slice(prefix.length).trim().split(/\s+/)[0]
+  if (!tag) return null
+
+  const ref = `${tag}^{commit}`
+  const result = await $`git rev-parse ${ref}`.quiet().nothrow()
+  if (result.exitCode !== 0) return null
+  return result.stdout.toString().trim()
+}
+
 export async function findLatestCompatCommit(base: string, target: string): Promise<CompatBase | null> {
   const grep = "^refactor: kilo compat for "
   const result = await $`git log --format=%H%x00%s --grep=${grep} ${base}`.quiet().nothrow()
@@ -221,6 +234,9 @@ export async function findLatestCompatCommit(base: string, target: string): Prom
   for (const line of lines) {
     const [commit, message = ""] = line.split("\0")
     if (!commit) continue
+
+    const upstream = await compatUpstream(message)
+    if (upstream && (await isAncestor(upstream, target))) return { commit, upstream, message }
 
     const parents = await getCommitParents(commit)
     for (const parent of parents) {
