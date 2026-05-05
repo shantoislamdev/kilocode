@@ -316,11 +316,15 @@ async function merge() {
       const extracted = extract(content)
       if (extracted) {
         suites.push(extracted)
-        // kilocode_change start - count nested suites without matching the root testsuites tag.
-        counts.tests += sum(extracted, "tests")
-        counts.failures += sum(extracted, "failures")
-        counts.errors += sum(extracted, "errors")
-        // kilocode_change end
+        // Counts come from the outer <testsuites ...> root attributes, not from
+        // regex-scanning the inner content, so nested <testsuite> blocks (bun
+        // emits one per `describe`) don't get double-counted.
+        const root = content.match(/<testsuites\b([^>]*)>/)
+        if (root) {
+          counts.tests += attr(root[1], "tests")
+          counts.failures += attr(root[1], "failures")
+          counts.errors += attr(root[1], "errors")
+        }
         continue
       }
     }
@@ -357,31 +361,23 @@ async function merge() {
   await Bun.write(path.join(dir, "junit.xml"), body)
 }
 
-function extract(content: string, from = 0): string {
-  const close = "</testsuite>"
-  const s = open(content, from) // kilocode_change
-  if (s === -1) return ""
-  const e = content.indexOf(close, s)
-  if (e === -1) return ""
-  const suite = content.slice(s, e + close.length)
-  const rest = extract(content, e + close.length)
-  return rest ? suite + "\n" + rest : suite
+// Grab everything between the outer <testsuites ...> and </testsuites> of a
+// per-file JUnit XML. Preserves nested <testsuite> blocks verbatim — the
+// previous hand-rolled walker matched the first </testsuite> it found, which
+// closed an inner suite and left the outer one dangling in the merged output.
+function extract(content: string): string {
+  const open = content.match(/<testsuites\b[^>]*>/)
+  if (!open) return ""
+  const start = open.index! + open[0].length
+  const end = content.lastIndexOf("</testsuites>")
+  if (end === -1 || end <= start) return ""
+  return content.slice(start, end).trim()
 }
 
-// kilocode_change start
-function open(content: string, from: number): number {
-  const tag = "<testsuite"
-  const s = content.indexOf(tag, from)
-  if (s === -1) return -1
-  const ch = content[s + tag.length]
-  if (ch === ">" || /\s/.test(ch)) return s
-  return open(content, s + 1)
+function attr(attrs: string, name: string): number {
+  const m = attrs.match(new RegExp(`\\b${name}="(\\d+)"`))
+  return m ? Number(m[1]) : 0
 }
-
-function sum(content: string, name: string): number {
-  return Array.from(content.matchAll(new RegExp(`${name}="(\\d+)"`, "g"))).reduce((n, m) => n + Number(m[1]), 0)
-}
-// kilocode_change end
 
 function esc(s: string): string {
   return s
