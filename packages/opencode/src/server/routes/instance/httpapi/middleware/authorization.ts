@@ -31,9 +31,11 @@ function validateCredential<A, E, R>(
   return Effect.gen(function* () {
     if (!Flag.KILO_SERVER_PASSWORD) return yield* effect
 
-    if (credential.username !== (Flag.KILO_SERVER_USERNAME ?? "opencode")) {
+    // kilocode_change start - default to "kilo" to match Hono AuthMiddleware (middleware.ts:47)
+    if (credential.username !== (Flag.KILO_SERVER_USERNAME ?? "kilo")) {
       return yield* new Unauthorized({ message: "Unauthorized" })
     }
+    // kilocode_change end
     if (Redacted.value(credential.password) !== Flag.KILO_SERVER_PASSWORD) {
       return yield* new Unauthorized({ message: "Unauthorized" })
     }
