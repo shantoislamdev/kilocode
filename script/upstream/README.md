@@ -301,9 +301,15 @@ After running the merge script, you may have remaining conflicts. To resolve:
    discovered from the repository root. It is available when Kilo is started in
    the merge worktree; it will not appear if Kilo is started from one of the
    reference worktrees under `.worktrees/opencode-merge/`.
-5. Resolve conflicts, keeping Kilo-specific changes and favoring upstream code
-   and architecture when it is compatible with Kilo behavior.
-6. Stage and commit:
+5. Resolve conflicts one file at a time. For each manual file, first present
+   the intended strategy and wait for user approval. Keep Kilo-specific changes
+   and favor upstream code and architecture when it is compatible with Kilo
+   behavior.
+6. Verify each resolved file before moving on: confirm conflict markers are
+   gone, compare against the reference worktrees when present, run the smallest
+   practical check for the touched area, summarize the tradeoff and result, and
+   get user approval for the resolved file.
+7. Stage and commit:
    ```bash
    git add -A
    git commit -m "resolve merge conflicts"

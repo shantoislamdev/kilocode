@@ -22,7 +22,10 @@ Workflow:
    - expected resolution kind: `hybrid`, `take-ours`, `take-theirs`, `regenerated`, `removed`, `renamed`, or `other`
    - risk level: `low`, `medium`, or `high`
    - verification commands you expect to run
-3. Resolve each conflict carefully.
+3. Ask the user to approve the plan before applying any manual conflict
+   resolution. Do not resolve a file until the user has approved that file's
+   strategy.
+4. Resolve each conflict carefully, one file at a time.
 
    **Reference worktrees when present:**
    - `.worktrees/opencode-merge/opencode` is the pristine upstream opencode tree
@@ -43,21 +46,27 @@ Workflow:
    - if upstream deleted a file, analyze whether the Kilo behavior should be ported elsewhere or removed rather than restoring the deleted file
    - if tests fail only because upstream intentionally removed behavior, remove or update the obsolete tests rather than adding the old file back
    - do not modify unrelated files
-4. Run the appropriate checks:
+5. After each file is resolved, verify the decision before moving on:
+   - inspect the resolved file and confirm it has no conflict markers
+   - compare against the opencode, kilo-main, and auto-merge references when present
+   - run the smallest relevant check for that file when practical
+   - summarize the exact resolution, tradeoff, and verification result in chat
+   - ask the user to approve the resolved file before staging it or resolving the next file
+6. Run the appropriate checks:
    - stage resolved files with `git add -A` so git no longer reports unmerged paths
    - if `packages/opencode/` shared files changed, run `bun run script/check-opencode-annotations.ts`
    - run targeted typechecks/tests when practical for touched packages
    - run `bun run typecheck` from the repo root before declaring the merge ready
-5. Finish with:
+7. Finish with:
    - files resolved
    - resolution choices and rationale
    - checks run and results
    - any remaining high-risk areas for reviewer attention
 
-Only ask the user before proceeding if a decision is destructive, changes auth,
-billing, data deletion, public API compatibility, config schema behavior,
-migrations, provider routing, or security posture in a way that cannot be
-safely inferred from the existing Kilo changes.
+Every manual merge decision requires explicit user approval before applying and
+again after verification. Be especially cautious when a decision is destructive,
+changes auth, billing, data deletion, public API compatibility, config schema
+behavior, migrations, provider routing, or security posture.
 
 Read `script/upstream/README.md` -> `Common Pitfalls` before resolving. Watch
 for auto-merged code referencing conflict-block declarations, related sibling
