@@ -43,6 +43,7 @@ import { DialogSkill } from "../dialog-skill"
 import { DialogWorkspaceCreate, restoreWorkspaceSession } from "../dialog-workspace-create"
 import { DialogWorkspaceUnavailable } from "../dialog-workspace-unavailable"
 import { useArgs } from "@tui/context/args"
+import { KiloSessionTuiSync } from "@/kilocode/session/tui-sync" // kilocode_change
 
 export type PromptProps = {
   sessionID?: string
@@ -236,6 +237,7 @@ export function Prompt(props: PromptProps) {
     const sessionID = props.sessionID
     const msg = lastUserMessage()
     if (!sessionID || !msg) return
+    if (!KiloSessionTuiSync.model(msg)) return // kilocode_change
 
     const key = [sessionID, msg.id].join(":")
     if (key === syncedKey) return
