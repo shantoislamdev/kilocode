@@ -196,8 +196,8 @@ export async function writeTree(): Promise<string> {
   return result.trim()
 }
 
-export async function createMergeCommit(tree: string, message: string, first: string, second: string): Promise<string> {
-  const result = await $`git commit-tree ${tree} -p ${first} -p ${second} -m ${message}`.text()
+export async function createCommit(tree: string, message: string, parent: string): Promise<string> {
+  const result = await $`git commit-tree ${tree} -p ${parent} -m ${message}`.text()
   return result.trim()
 }
 

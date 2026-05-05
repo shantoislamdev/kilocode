@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { $ } from "bun"
-import { createMergeCommit, findLatestCompatCommit, getCommitHash, updateBranch, writeTree } from "./git"
+import { createCommit, findLatestCompatCommit, getCommitHash, getCommitParents, updateBranch, writeTree } from "./git"
 
 const cwd = process.cwd()
 let dir = ""
@@ -27,7 +27,7 @@ afterEach(async () => {
   await rm(dir, { recursive: true, force: true })
 })
 
-test("finds previous compatibility commit for transformed merge base", async () => {
+test("finds previous compatibility commit for transformed base", async () => {
   await Bun.write("brand.txt", "opencode A\n")
   const old = await commit("release: v1.0.0")
 
@@ -47,9 +47,10 @@ test("finds previous compatibility commit for transformed merge base", async () 
   await Bun.write("brand.txt", "kilo B\n")
   await $`git add -A`.quiet()
   const tree = await writeTree()
-  const next = await createMergeCommit(tree, "refactor: kilo compat for v1.0.1", target, prior)
+  const next = await createCommit(tree, "refactor: kilo compat for v1.0.1", prior)
   await updateBranch("opencode-v1.0.1", next)
 
   const base = (await $`git merge-base main opencode-v1.0.1`.text()).trim()
   expect(base).toBe(prior)
+  expect(await getCommitParents(next)).toEqual([prior])
 })
