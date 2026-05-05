@@ -21,7 +21,6 @@ import ai.kilocode.client.session.ui.SessionStyleTarget
 import ai.kilocode.client.session.update.EVENT_FLUSH_MS
 import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.session.update.SessionControllerEvent
-import ai.kilocode.client.ui.UiStyle
 import ai.kilocode.rpc.dto.SessionDto
 import ai.kilocode.log.ChatLogSummary
 import ai.kilocode.log.KiloLog
@@ -31,26 +30,13 @@ import com.intellij.openapi.editor.colors.EditorColorsListener
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.util.registry.Registry
-import com.intellij.ui.icons.CachedImageIcon
-import com.intellij.ui.svg.SvgAttributePatcher
 import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBScrollPane
-import com.intellij.util.SVGLoader
 import com.intellij.util.ui.Centerizer
-import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Cursor
-import java.awt.Point
-import java.awt.Rectangle
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
 import javax.swing.BoxLayout
 import javax.swing.BoxLayout.Y_AXIS
-import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.JPanel
 
@@ -97,7 +83,6 @@ class SessionUi private constructor(
 
     companion object {
         private val LOG = KiloLog.create(SessionUi::class.java)
-        private val SCROLL_ICON = IconLoader.getIcon("/icons/scroll-bottom.svg", SessionUi::class.java)
     }
 
     private val project = project
@@ -114,8 +99,8 @@ class SessionUi private constructor(
         condense = Registry.`is`("kilo.session.condense", true),
         displayMs = displayMs,
         open = open,
-        beforeUpdate = ::atBottom,
-        afterUpdate = ::followBottom,
+        beforeUpdate = { scroll.atBottom() },
+        afterUpdate = { scroll.followBottom(it) },
     )
 
 
@@ -129,9 +114,7 @@ class SessionUi private constructor(
 
     private lateinit var messageBody: SessionMessageListPanel
 
-    private lateinit var scroll: JBScrollPane
-
-    private lateinit var jump: JBLabel
+    internal lateinit var scroll: SessionScroll
 
     private lateinit var question: QuestionPanel
     private lateinit var permission: PermissionPanel
@@ -140,16 +123,13 @@ class SessionUi private constructor(
     private lateinit var prompt: PromptPanel
     private lateinit var loadingLabel: JBLabel
     private var style = SessionStyle.current()
-    private var tail = true
-    private var auto = false
-    private var seq = 0
 
     init {
         buildUi()
         bindUi()
         bindStyle()
         applyStyle(style)
-        showBody(if (loading) progressBody else blankBody)
+        scroll.show(if (loading) progressBody else blankBody)
     }
 
     internal val blank: Boolean get() = controller.blank
@@ -179,21 +159,7 @@ class SessionUi private constructor(
         }
         messageBody = SessionMessageListPanel(controller.model, this)
 
-        scroll = JBScrollPane(blankBody).apply {
-            border = JBUI.Borders.empty()
-            verticalScrollBarPolicy = JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED
-            horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
-        }
-        jump = JBLabel(patchedIcon(SCROLL_ICON)).apply {
-            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            toolTipText = KiloBundle.message("session.scroll.bottom")
-            isVisible = false
-            addMouseListener(object : MouseAdapter() {
-                override fun mouseClicked(e: MouseEvent) {
-                    jumpBottom()
-                }
-            })
-        }
+        scroll = SessionScroll(root, sessionContent, messageBody, blankBody)
         question = QuestionPanel(controller)
         permission = PermissionPanel(controller)
         connection = ConnectionPanel(this, controller)
@@ -204,7 +170,7 @@ class SessionUi private constructor(
             onAbort = { controller.abort() },
         )
 
-        sessionContent.add(scroll, BorderLayout.CENTER)
+        sessionContent.add(scroll.component, BorderLayout.CENTER)
         root.content.add(sessionContent, BorderLayout.CENTER)
         // Dock panels stay in normal flow so each visible state takes layout space
         // above the prompt.
@@ -215,17 +181,6 @@ class SessionUi private constructor(
             add(connection)
             add(prompt)
         }, BorderLayout.SOUTH)
-        root.addOverlay(jump) { _, child ->
-            val size = child.preferredSize
-            val gap = JBUI.scale(UiStyle.Space.PAD)
-            Rectangle(
-                sessionContent.x + sessionContent.width - size.width - gap,
-                sessionContent.y + sessionContent.height - size.height - gap,
-                size.width,
-                size.height,
-            )
-        }
-
         add(root, BorderLayout.CENTER)
     }
 
@@ -236,7 +191,6 @@ class SessionUi private constructor(
         prompt.onReset = { controller.clearModelOverride() }
         prompt.model.favorites = { app.favorites.value }
         prompt.model.onFavoriteToggle = { item -> app.toggleModelFavorite(item.provider, item.id) }
-        scroll.verticalScrollBar.addAdjustmentListener { onScroll() }
 
         controller.addListener(this) { event ->
             when (event) {
@@ -270,16 +224,16 @@ class SessionUi private constructor(
                 }
 
                 is SessionControllerEvent.ViewChanged.ShowProgress -> {
-                    showBody(progressBody)
+                    scroll.show(progressBody)
                 }
 
                 is SessionControllerEvent.ViewChanged.ShowRecents -> {
                     val panel = EmptySessionPanel(this, controller, event.recents)
-                    showBody(panel)
+                    scroll.show(panel)
                 }
 
                 is SessionControllerEvent.ViewChanged.ShowSession -> {
-                    showBody(messageBody)
+                    scroll.show(messageBody)
                 }
 
                 is SessionControllerEvent.AppChanged,
@@ -331,7 +285,9 @@ class SessionUi private constructor(
     private fun sendPrompt(text: String) {
         if (text.isBlank()) return
         LOG.debug {
-            "${ChatLogSummary.prompt(text)} agent=${controller.model.agent ?: "none"} model=${controller.model.model ?: "none"} ready=${controller.ready}"
+            val agent = controller.model.agent ?: "none"
+            val model = controller.model.model ?: "none"
+            "${ChatLogSummary.prompt(text)} agent=$agent model=$model ready=${controller.ready}"
         }
         controller.prompt(text)
         prompt.clear()
@@ -358,138 +314,21 @@ class SessionUi private constructor(
         refresh()
     }
 
-    internal fun atBottom(): Boolean {
-        if (scroll.viewport.view !== messageBody) return tail
-        val bar = scroll.verticalScrollBar
-        if (bar.maximum <= bar.visibleAmount) return true
-        return bar.value + bar.visibleAmount >= bar.maximum - JBUI.scale(32)
-    }
-
-    internal fun followBottom(follow: Boolean) {
-        if (!follow) {
-            seq++
-            updateJump()
-            return
-        }
-        tail = true
-        auto = true
-        showBody(messageBody)
-        auto = false
-        followPass(++seq, 2)
-    }
-
-    private fun jumpBottom() {
-        tail = true
-        auto = true
-        showBody(messageBody)
-        auto = false
-        followPass(++seq, 2)
-    }
-
-    private fun followPass(id: Int, remaining: Int) {
-        if (id != seq || !tail) return
-        auto = true
-        try {
-            layoutScroll()
-            scrollToBottom()
-            updateJump()
-        } finally {
-            auto = false
-        }
-        if (remaining <= 0) return
-        ApplicationManager.getApplication().invokeLater {
-            followPass(id, remaining - 1)
-        }
-    }
-
-    private fun layoutScroll() {
-        scroll.viewport.view?.revalidate()
-        scroll.viewport.view?.doLayout()
-        scroll.revalidate()
-        scroll.doLayout()
-    }
-
-    private fun scrollToBottom() {
-        val view = scroll.viewport.view ?: return
-        val y = (view.height - scroll.viewport.extentSize.height).coerceAtLeast(0)
-        scroll.viewport.viewPosition = Point(0, y)
-        (view as? JComponent)?.scrollRectToVisible(Rectangle(0, view.height.coerceAtLeast(1) - 1, 1, 1))
-        val bar = scroll.verticalScrollBar
-        bar.value = (bar.maximum - bar.visibleAmount).coerceAtLeast(bar.minimum)
-    }
-
-    private fun onScroll() {
-        if (auto) {
-            updateJump()
-            return
-        }
-        if (scroll.viewport.view === messageBody) {
-            tail = atBottom()
-            if (!tail) seq++
-        }
-        updateJump()
-    }
-
-    private fun updateJump() {
-        val visible = scroll.viewport.view === messageBody && !atBottom()
-        if (jump.isVisible == visible) return
-        jump.isVisible = visible
-        root.overlay.revalidate()
-        root.overlay.repaint()
-    }
-
     private fun refresh() {
-        updateJump()
+        scroll.refresh()
         root.revalidate()
         root.repaint()
     }
 
-    private fun showBody(panel: JPanel) {
-        if (scroll.viewport.view === panel) return
-        (panel as? SessionStyleTarget)?.applyStyle(style)
-        scroll.viewport.setView(panel)
-        scroll.revalidate()
-        scroll.repaint()
-        updateJump()
-    }
-
     override fun applyStyle(style: SessionStyle) {
         this.style = style
-        jump.icon = patchedIcon(SCROLL_ICON)
         loadingLabel.font = style.uiFont
-        messageBody.applyStyle(style)
         prompt.applyStyle(style)
-        (scroll.viewport.view as? SessionStyleTarget)?.applyStyle(style)
+        scroll.applyStyle(style)
         refresh()
     }
 
     override fun dispose() {}
-}
-
-private fun patchedIcon(icon: Icon): Icon {
-    val cached = icon as? CachedImageIcon ?: return icon
-    return cached.createWithPatcher(object : SVGLoader.SvgElementColorPatcherProvider, SvgAttributePatcher {
-        override fun digest(): LongArray {
-            val bg = JBUI.CurrentTheme.Button.defaultButtonColorStart().rgb.toLong()
-            val fg = JBUI.CurrentTheme.Button.defaultButtonForeground().rgb.toLong()
-            return longArrayOf(bg, fg, 0x5c011b0bb17L)
-        }
-
-        override fun attributeForPath(path: String) = this
-
-        override fun patchColors(attributes: MutableMap<String, String>) {
-            when (attributes["id"]) {
-                "ScrollButton.Background" -> set(attributes, "fill", JBUI.CurrentTheme.Button.defaultButtonColorStart())
-                "ScrollButton.Foreground" -> set(attributes, "stroke", JBUI.CurrentTheme.Button.defaultButtonForeground())
-            }
-        }
-
-        private fun set(attributes: MutableMap<String, String>, key: String, color: Color) {
-            if (!attributes.containsKey(key) || attributes[key] == "none") return
-            attributes[key] = "rgb(${color.red},${color.green},${color.blue})"
-            if (color.alpha != 255) attributes["$key-opacity"] = "${color.alpha / 255f}"
-        }
-    })
 }
 
 private fun variantTitle(value: String): String = value.replaceFirstChar { it.titlecase() }
