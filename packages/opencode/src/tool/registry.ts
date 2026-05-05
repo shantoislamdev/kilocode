@@ -220,7 +220,7 @@ export const layer: Layer.Layer<
           custom,
           builtin: [
             tool.invalid,
-            ...(question ? [tool.question] : []),
+            ...(question ? [tool.question] : []), // kilocode_change: boolean renamed from questionEnabled
             tool.bash,
             tool.read,
             tool.glob,
