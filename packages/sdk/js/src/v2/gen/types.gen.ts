@@ -1562,7 +1562,6 @@ export type PermissionConfig =
       question?: PermissionActionConfig
       webfetch?: PermissionActionConfig
       websearch?: PermissionActionConfig
-      codesearch?: PermissionActionConfig
       lsp?: PermissionRuleConfig
       doom_loop?: PermissionActionConfig
       skill?: PermissionRuleConfig
@@ -1617,10 +1616,17 @@ export type AgentConfig = {
     | null
     | string
     | number
+    | null
+    | number
+    | null
+    | string
+    | null
     | {
         [key: string]: boolean
       }
     | boolean
+    | string
+    | null
     | "subagent"
     | "primary"
     | "all"
@@ -1635,6 +1641,8 @@ export type AgentConfig = {
     | "warning"
     | "error"
     | "info"
+    | number
+    | null
     | number
     | PermissionConfig
     | undefined
@@ -1941,7 +1949,7 @@ export type Config = {
    * Custom provider configurations and model overrides
    */
   provider?: {
-    [key: string]: ProviderConfig
+    [key: string]: ProviderConfig | null
   }
   /**
    * MCP (Model Context Protocol) server configurations
@@ -3868,10 +3876,18 @@ export type SessionListData = {
   path?: never
   query?: {
     /**
-     * Filter sessions by project directory
+     * Filter sessions by directory
      */
     directory?: string
     workspace?: string
+    /**
+     * List all sessions for the current project
+     */
+    scope?: "project"
+    /**
+     * Filter sessions by project-relative path
+     */
+    path?: string
     /**
      * Only return root sessions (no parentID)
      */
