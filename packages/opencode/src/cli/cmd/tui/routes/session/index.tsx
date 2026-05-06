@@ -86,7 +86,7 @@ import { useTuiConfig } from "../../context/tui-config"
 import { formatMarkdownTables } from "../../util/markdown" // kilocode_change
 import { bell } from "@/kilocode/bell" // kilocode_change
 import { SessionIndexing } from "@/kilocode/components/session-indexing" // kilocode_change
-import { Telemetry } from "@kilocode/kilo-telemetry" // kilocode_change
+import { submitFeedback } from "@/kilocode/cli/cmd/tui/feedback" // kilocode_change
 import { getScrollAcceleration } from "../../util/scroll"
 import { TuiPluginRuntime } from "@/cli/cmd/tui/plugin/runtime"
 import { DialogGoUpsell } from "../../component/dialog-go-upsell"
@@ -474,44 +474,6 @@ export function Session() {
       func(dialog)
     }
   }
-
-  // kilocode_change start - message feedback
-  function submitFeedback(rating: "up" | "down", dialog: DialogContext) {
-    if (!Telemetry.isEnabled()) {
-      toast.show({ message: "Feedback disabled: telemetry is off", variant: "info" })
-      dialog.clear()
-      return
-    }
-    const revertID = session()?.revert?.messageID
-    const lastAssistant = messages().findLast(
-      (msg): msg is AssistantMessage => msg.role === "assistant" && (!revertID || msg.id < revertID),
-    )
-    if (!lastAssistant) {
-      toast.show({ message: "No assistant messages found", variant: "error" })
-      dialog.clear()
-      return
-    }
-    const providerID = lastAssistant.providerID
-    const payload: Telemetry.FeedbackProperties = {
-      providerID,
-      modelID: lastAssistant.modelID,
-      rating,
-    }
-    const variant = (lastAssistant as AssistantMessage & { variant?: string }).variant
-    if (variant) payload.variant = variant
-    if (providerID.startsWith("kilo")) {
-      payload.sessionID = lastAssistant.sessionID
-      payload.messageID = lastAssistant.id
-      payload.parentMessageID = lastAssistant.parentID
-    }
-    Telemetry.trackFeedback(payload)
-    toast.show({
-      message: rating === "up" ? "Thanks for the feedback!" : "Thanks — we'll use this to improve.",
-      variant: "success",
-    })
-    dialog.clear()
-  }
-  // kilocode_change end
 
   const command = useCommandDialog()
   command.register(() => [
@@ -994,14 +956,14 @@ export function Session() {
       value: "messages.feedback.up",
       keybind: "messages_feedback_up",
       category: "Session",
-      onSelect: (dialog) => submitFeedback("up", dialog),
+      onSelect: (dialog) => submitFeedback("up", dialog, { toast, session, messages }),
     },
     {
       title: "Rate last assistant message not helpful",
       value: "messages.feedback.down",
       keybind: "messages_feedback_down",
       category: "Session",
-      onSelect: (dialog) => submitFeedback("down", dialog),
+      onSelect: (dialog) => submitFeedback("down", dialog, { toast, session, messages }),
     },
     // kilocode_change end
     {
