@@ -40,7 +40,7 @@ class SessionHeaderPanel(
     private val title = JBLabel()
     private val cost = JBLabel()
     private val context = JBLabel()
-    private val todos = JBLabel().apply { foreground = UiStyle.Colors.weak() }
+    private val todos = JBLabel()
     private val compact = UiStyle.Buttons.HoverIcon().apply {
         icon = COMPRESS_ICON
         toolTipText = KiloBundle.message("session.header.compact.description")
@@ -66,24 +66,20 @@ class SessionHeaderPanel(
         maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
     }
     private val bar = ContextBar()
-    private val tokenTitle = JBLabel(KiloBundle.message("session.header.tokens")).apply { foreground = UiStyle.Colors.weak() }
+    private val tokenTitle = JBLabel(KiloBundle.message("session.header.tokens"))
     private val input = JBLabel().apply {
-        foreground = UiStyle.Colors.weak()
         icon = UP_ICON
         iconTextGap = UiStyle.Gap.xs()
     }
     private val output = JBLabel().apply {
-        foreground = UiStyle.Colors.weak()
         icon = DOWN_ICON
         iconTextGap = UiStyle.Gap.xs()
     }
     private val cacheRead = JBLabel().apply {
-        foreground = UiStyle.Colors.weak()
         icon = DOWN_ICON
         iconTextGap = UiStyle.Gap.xs()
     }
     private val cacheWrite = JBLabel().apply {
-        foreground = UiStyle.Colors.weak()
         icon = UP_ICON
         iconTextGap = UiStyle.Gap.xs()
     }
@@ -122,7 +118,6 @@ class SessionHeaderPanel(
 
     init {
         isOpaque = true
-        background = UiStyle.Colors.headerBar()
         updateUI()
 
         top.add(title, BorderLayout.CENTER)
@@ -159,7 +154,6 @@ class SessionHeaderPanel(
 
     override fun updateUI() {
         super.updateUI()
-        background = UiStyle.Colors.headerBar()
         border = JBUI.Borders.compound(
             JBUI.Borders.customLine(JBUI.CurrentTheme.ToolWindow.borderColor(), 1, 0, 1, 0),
             JBUI.Borders.empty(UiStyle.Space.LG, UiStyle.Space.PAD, UiStyle.Space.SM, UiStyle.Space.PAD),
@@ -195,15 +189,33 @@ class SessionHeaderPanel(
 
     override fun applyStyle(style: SessionStyle) {
         this.style = style
+        background = style.editorBackground
+        foreground = style.editorForeground
+        top.background = style.editorBackground
+        right.background = style.editorBackground
+        tokens.background = style.editorBackground
+        todoRow.background = style.editorBackground
+        body.background = style.editorBackground
+        scroll.background = style.editorBackground
+        scroll.viewport.background = style.editorBackground
         title.font = style.boldUiFont
+        title.foreground = style.editorForeground
         cost.font = style.uiFont
+        cost.foreground = style.editorForeground
         context.font = style.uiFont
+        context.foreground = style.editorForeground
         todos.font = style.smallUiFont
+        todos.foreground = style.editorForeground
         tokenTitle.font = style.smallUiFont
+        tokenTitle.foreground = style.editorForeground
         input.font = style.smallUiFont
+        input.foreground = style.editorForeground
         output.font = style.smallUiFont
+        output.foreground = style.editorForeground
         cacheRead.font = style.smallUiFont
+        cacheRead.foreground = style.editorForeground
         cacheWrite.font = style.smallUiFont
+        cacheWrite.foreground = style.editorForeground
         bar.applyStyle(style)
         refresh()
     }
@@ -213,6 +225,9 @@ class SessionHeaderPanel(
     internal fun costText(): String = cost.text
 
     internal fun contextText(): String = context.text
+
+    internal fun foregrounds() = listOf(title, cost, context, todos, tokenTitle, input, output, cacheRead, cacheWrite)
+        .map { it.foreground }
 
     internal fun tokenText(): String = listOf(tokenTitle, input, output, cacheWrite, cacheRead)
         .filter { it.isVisible }
@@ -251,6 +266,8 @@ class SessionHeaderPanel(
     internal fun contextBarAvailable() = bar.available()
 
     internal fun contextBarLimit() = bar.limit()
+
+    internal fun contextBarForegrounds() = bar.foregrounds()
 
     internal fun contextBarTip() = bar.toolTipText
 

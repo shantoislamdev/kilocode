@@ -4,6 +4,7 @@ import ai.kilocode.client.session.model.Reasoning
 import ai.kilocode.client.session.model.Tool
 import ai.kilocode.client.session.model.ToolExecState
 import ai.kilocode.client.session.model.ToolKind
+import ai.kilocode.client.session.ui.SessionStyle
 import ai.kilocode.client.session.update.SessionControllerTestBase
 import ai.kilocode.rpc.dto.ChatEventDto
 import ai.kilocode.rpc.dto.MessageDto
@@ -14,6 +15,7 @@ import ai.kilocode.rpc.dto.PartTimeDto
 import ai.kilocode.rpc.dto.ProviderDto
 import ai.kilocode.rpc.dto.TodoDto
 import ai.kilocode.rpc.dto.TokensDto
+import java.awt.Color
 
 class SessionHeaderPanelTest : SessionControllerTestBase() {
 
@@ -31,6 +33,7 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
     fun `test shows populated session header`() {
         val c = promptedHeader()
         val panel = SessionHeaderPanel(c, parent)
+        val style = SessionStyle.current()
 
         assertTrue(panel.isVisible)
         assertFalse(panel.isExpanded())
@@ -44,6 +47,11 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertEquals("cache write 25", panel.cacheWriteText())
         assertEquals("1/2 todos complete", panel.todoText())
         assertTrue(panel.todoVisible())
+        assertEquals(style.editorBackground, panel.background)
+        assertEquals(
+            List(panel.foregrounds().size) { style.editorForeground },
+            panel.foregrounds(),
+        )
         assertNotNull(panel.expandButton().icon)
     }
 
@@ -79,9 +87,32 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertEquals("500", panel.outputTokenText())
     }
 
+    fun `test apply style updates header colors`() {
+        val c = promptedHeader()
+        val panel = SessionHeaderPanel(c, parent)
+        val style = SessionStyle.current().copy(
+            editorForeground = Color(1, 2, 3),
+            editorBackground = Color(4, 5, 6),
+        )
+
+        panel.applyStyle(style)
+        panel.expandButton().doClick()
+
+        assertEquals(style.editorBackground, panel.background)
+        assertEquals(
+            List(panel.foregrounds().size) { style.editorForeground },
+            panel.foregrounds(),
+        )
+        assertEquals(
+            List(panel.contextBarForegrounds().size) { style.editorForeground },
+            panel.contextBarForegrounds(),
+        )
+    }
+
     fun `test expanded body shows timeline context and token metrics`() {
         val c = promptedHeader()
         val panel = SessionHeaderPanel(c, parent)
+        val style = SessionStyle.current()
         val body = panel.bodyPanel()
         val timeline = panel.timelinePanel()
         val bar = panel.contextBar()
@@ -108,6 +139,10 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertEquals(200_000L, panel.contextBarReserved())
         assertEquals(1_783_700L, panel.contextBarAvailable())
         assertEquals(2_000_000L, panel.contextBarLimit())
+        assertEquals(
+            List(panel.contextBarForegrounds().size) { style.editorForeground },
+            panel.contextBarForegrounds(),
+        )
         assertEquals("16.3K / 2.0M tokens used\n200.0K reserved for output\n1.8M available", panel.contextBarTip())
         assertNotSame(panel.contextBarTrackColor(), panel.contextBarReservedColor())
         assertNotSame(panel.contextBarUsedColor(), panel.contextBarReservedColor())

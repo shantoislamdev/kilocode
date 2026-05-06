@@ -18,8 +18,8 @@ import javax.swing.JComponent
 import javax.swing.JPanel
 
 internal class ContextBar : JPanel(BorderLayout(UiStyle.Gap.inline(), 0)) {
-    private val used = JBLabel().apply { foreground = UiStyle.Colors.weak() }
-    private val limit = JBLabel().apply { foreground = UiStyle.Colors.weak() }
+    private val used = JBLabel()
+    private val limit = JBLabel()
     private val meter = Meter()
 
     init {
@@ -43,9 +43,15 @@ internal class ContextBar : JPanel(BorderLayout(UiStyle.Gap.inline(), 0)) {
     }
 
     fun applyStyle(style: SessionStyle) {
+        background = style.editorBackground
+        foreground = style.editorForeground
         used.font = style.smallUiFont
+        used.foreground = style.editorForeground
         limit.font = style.smallUiFont
+        limit.foreground = style.editorForeground
     }
+
+    fun foregrounds() = listOf(used.foreground, limit.foreground)
 
     fun used(): Long? = meter.data?.used
 
