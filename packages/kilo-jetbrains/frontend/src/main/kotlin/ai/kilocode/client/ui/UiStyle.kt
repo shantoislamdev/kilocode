@@ -69,6 +69,8 @@ object UiStyle {
 
         fun header(): Color = panel()
 
+        fun headerBar(): Color = JBUI.CurrentTheme.ToolWindow.headerBackground(false)
+
         /** Local hover color for collapsible transcript card headers. */
         fun headerHover(): Color = panelHover()
 

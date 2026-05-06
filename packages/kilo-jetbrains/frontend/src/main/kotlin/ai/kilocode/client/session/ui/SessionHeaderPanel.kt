@@ -42,8 +42,8 @@ class SessionHeaderPanel(
     }
 
     private val title = JBLabel()
-    private val cost = JBLabel().apply { foreground = UiStyle.Colors.weak() }
-    private val context = JBLabel().apply { foreground = UiStyle.Colors.weak() }
+    private val cost = JBLabel()
+    private val context = JBLabel()
     private val todos = JBLabel().apply { foreground = UiStyle.Colors.weak() }
     private val compact = UiStyle.Buttons.HoverIcon().apply {
         icon = COMPRESS_ICON
@@ -113,7 +113,7 @@ class SessionHeaderPanel(
 
     init {
         isOpaque = true
-        background = UiStyle.Colors.bg()
+        background = UiStyle.Colors.headerBar()
         updateUI()
 
         top.add(title, BorderLayout.CENTER)
@@ -150,9 +150,9 @@ class SessionHeaderPanel(
 
     override fun updateUI() {
         super.updateUI()
-        background = UiStyle.Colors.bg()
+        background = UiStyle.Colors.headerBar()
         border = JBUI.Borders.compound(
-            JBUI.Borders.customLineBottom(UiStyle.Colors.line()),
+            JBUI.Borders.customLine(JBUI.CurrentTheme.ToolWindow.borderColor(), 1, 0, 1, 0),
             JBUI.Borders.empty(UiStyle.Space.LG, UiStyle.Space.PAD, UiStyle.Space.SM, UiStyle.Space.PAD),
         )
     }
@@ -187,8 +187,8 @@ class SessionHeaderPanel(
     override fun applyStyle(style: SessionStyle) {
         this.style = style
         title.font = style.boldUiFont
-        cost.font = style.smallUiFont
-        context.font = style.smallUiFont
+        cost.font = style.uiFont
+        context.font = style.uiFont
         todos.font = style.smallUiFont
         tokenTitle.font = style.smallUiFont
         input.font = style.smallUiFont
