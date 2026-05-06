@@ -2,16 +2,15 @@ import { describe, it, expect, afterEach } from "bun:test"
 import * as vscode from "vscode"
 import { buildProxyEnv } from "../../src/services/cli-backend/server-manager"
 
-type WorkspaceStub = { getConfiguration: (section?: string) => { get: (key: string) => unknown } }
+type Info = { globalValue?: unknown; workspaceValue?: unknown; workspaceFolderValue?: unknown }
+type WorkspaceStub = {
+  getConfiguration: (section?: string) => { get: (key: string) => unknown; inspect: (key: string) => Info }
+}
 
 const workspace = vscode.workspace as unknown as WorkspaceStub
 const originalGetConfiguration = workspace.getConfiguration
 
-function stubHttpConfig(values: {
-  proxy?: unknown
-  noProxy?: unknown
-  proxySupport?: unknown
-}): void {
+function stubHttpConfig(values: { proxy?: unknown; noProxy?: unknown; proxySupport?: unknown }): void {
   workspace.getConfiguration = (section?: string) => {
     if (section === "http") {
       return {
@@ -21,9 +20,16 @@ function stubHttpConfig(values: {
           if (key === "proxySupport") return values.proxySupport
           return undefined
         },
+        inspect: (key: string) => {
+          if (key === "proxy" && values.proxy !== undefined) return { workspaceValue: values.proxy }
+          if (key === "noProxy" && values.noProxy !== undefined) return { workspaceValue: values.noProxy }
+          if (key === "proxySupport" && values.proxySupport !== undefined)
+            return { workspaceValue: values.proxySupport }
+          return {}
+        },
       }
     }
-    return { get: () => undefined }
+    return { get: () => undefined, inspect: () => ({}) }
   }
 }
 
@@ -68,16 +74,21 @@ describe("buildProxyEnv", () => {
     })
   })
 
-  it("ignores an http.proxy that is only whitespace", () => {
+  it("clears env vars when http.proxy is only whitespace", () => {
     stubHttpConfig({ proxy: "   " })
 
-    expect(buildProxyEnv()).toEqual({})
+    expect(buildProxyEnv()).toEqual({
+      HTTP_PROXY: "",
+      HTTPS_PROXY: "",
+    })
   })
 
-  it("ignores an empty http.noProxy array", () => {
+  it("clears env var when http.noProxy is an empty array", () => {
     stubHttpConfig({ noProxy: [] })
 
-    expect(buildProxyEnv()).toEqual({})
+    expect(buildProxyEnv()).toEqual({
+      NO_PROXY: "",
+    })
   })
 
   it("ignores a non-array http.noProxy value", () => {

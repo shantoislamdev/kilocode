@@ -245,21 +245,50 @@ function stripAnsi(str: string): string {
  */
 export function buildProxyEnv(): Record<string, string> {
   const httpConfig = vscode.workspace.getConfiguration("http")
-  const proxy = httpConfig.get<string>("proxy")
-  const noProxy = httpConfig.get<string[]>("noProxy")
+  const proxyInfo = httpConfig.inspect<string>("proxy")
+  const noProxyInfo = httpConfig.inspect<string[]>("noProxy")
   const proxySupport = httpConfig.get<string>("proxySupport")
 
   if (proxySupport === "off") {
     return { HTTP_PROXY: "", HTTPS_PROXY: "", NO_PROXY: "" }
   }
 
+  const proxy = httpConfig.get<string>("proxy")
+  const noProxy = httpConfig.get<string[]>("noProxy")
+  const proxySet =
+    proxyInfo !== undefined &&
+    [
+      proxyInfo.globalValue,
+      proxyInfo.workspaceValue,
+      proxyInfo.workspaceFolderValue,
+      proxyInfo.globalLanguageValue,
+      proxyInfo.workspaceLanguageValue,
+      proxyInfo.workspaceFolderLanguageValue,
+    ].some((value) => value !== undefined)
+  const noProxySet =
+    noProxyInfo !== undefined &&
+    [
+      noProxyInfo.globalValue,
+      noProxyInfo.workspaceValue,
+      noProxyInfo.workspaceFolderValue,
+      noProxyInfo.globalLanguageValue,
+      noProxyInfo.workspaceLanguageValue,
+      noProxyInfo.workspaceFolderLanguageValue,
+    ].some((value) => value !== undefined)
   const env: Record<string, string> = {}
   if (proxy && proxy.trim() !== "") {
     env.HTTP_PROXY = proxy
     env.HTTPS_PROXY = proxy
   }
+  if (proxySet && proxy !== undefined && proxy.trim() === "") {
+    env.HTTP_PROXY = ""
+    env.HTTPS_PROXY = ""
+  }
   if (Array.isArray(noProxy) && noProxy.length > 0) {
     env.NO_PROXY = noProxy.join(",")
+  }
+  if (noProxySet && Array.isArray(noProxy) && noProxy.length === 0) {
+    env.NO_PROXY = ""
   }
   return env
 }
