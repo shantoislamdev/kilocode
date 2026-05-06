@@ -1,48 +1,121 @@
+import { NodeHttpServer, NodeServices } from "@effect/platform-node"
+import { Flag } from "@opencode-ai/core/flag/flag"
 import { afterEach, describe, expect, test } from "bun:test"
 import path from "path"
-import { Flag } from "@opencode-ai/core/flag/flag"
+import { Config, Effect, FileSystem, Layer, Path } from "effect"
+import { HttpClient, HttpClientRequest, HttpRouter, HttpServer } from "effect/unstable/http"
+import * as Socket from "effect/unstable/socket/Socket"
+// kilocode_change start - Hono-bridge tests still cover routes that haven't migrated to the Effect HttpApi
 import { GlobalBus } from "@/bus/global"
-import { Instance } from "../../src/project/instance"
 import { Server } from "../../src/server/server"
-import { InstancePaths } from "../../src/server/routes/instance/httpapi/groups/instance"
-import * as Log from "@opencode-ai/core/util/log"
-import { resetDatabase } from "../fixture/db"
 import { tmpdir } from "../fixture/fixture"
+// kilocode_change end
+import { InstancePaths } from "../../src/server/routes/instance/httpapi/groups/instance"
+import { ExperimentalHttpApiServer } from "../../src/server/routes/instance/httpapi/server"
+import { resetDatabase } from "../fixture/db"
+import { disposeAllInstances, tmpdirScoped } from "../fixture/fixture"
+import { testEffect } from "../lib/effect"
 
-void Log.init({ print: false })
+// Flip the experimental HttpApi flag so backend selection telemetry on the
+// production routes reports the right backend, and reset the database around
+// the test so per-instance state does not leak between runs. resetDatabase()
+// already calls disposeAllInstances(), so we don't repeat it.
+const testStateLayer = Layer.effectDiscard(
+  Effect.gen(function* () {
+    const originalHttpApi = Flag.KILO_EXPERIMENTAL_HTTPAPI
+    Flag.KILO_EXPERIMENTAL_HTTPAPI = true
+    yield* Effect.promise(() => resetDatabase())
+    yield* Effect.addFinalizer(() =>
+      Effect.promise(async () => {
+        Flag.KILO_EXPERIMENTAL_HTTPAPI = originalHttpApi
+        await resetDatabase()
+      }),
+    )
+  }),
+)
 
-const original = Flag.KILO_EXPERIMENTAL_HTTPAPI
+// Mount the production HttpApi route tree on a real Node HTTP server bound to
+// 127.0.0.1:0 and a fetch-based HttpClient that prepends the server URL. This
+// keeps the test wired through the same route layer production uses, without
+// going through Server.Default()/Hono.
+const servedRoutes: Layer.Layer<never, Config.ConfigError, HttpServer.HttpServer> = HttpRouter.serve(
+  ExperimentalHttpApiServer.routes,
+  { disableListenLog: true, disableLogger: true },
+)
 
-function app() {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = true
-  return Server.Default().app
-}
+const httpApiServerLayer = servedRoutes.pipe(
+  Layer.provide(Socket.layerWebSocketConstructorGlobal),
+  Layer.provideMerge(NodeHttpServer.layerTest),
+  Layer.provideMerge(NodeServices.layer),
+)
 
-async function waitDisposed(directory: string) {
-  return await new Promise<void>((resolve, reject) => {
-    const timer = setTimeout(() => {
-      GlobalBus.off("event", onEvent)
-      reject(new Error("timed out waiting for instance disposal"))
-    }, 10_000)
+const it = testEffect(Layer.mergeAll(testStateLayer, httpApiServerLayer))
 
-    function onEvent(event: { directory?: string; payload: { type?: string } }) {
-      if (event.payload.type !== "server.instance.disposed" || event.directory !== directory) return
-      clearTimeout(timer)
-      GlobalBus.off("event", onEvent)
-      resolve()
-    }
-
-    GlobalBus.on("event", onEvent)
-  })
-}
-
-afterEach(async () => {
-  Flag.KILO_EXPERIMENTAL_HTTPAPI = original
-  await Instance.disposeAll()
-  await resetDatabase()
-})
+const directoryHeader = (dir: string) => HttpClientRequest.setHeader("x-kilo-directory", dir)
 
 describe("instance HttpApi", () => {
+  it.live("serves path and VCS read endpoints", () =>
+    Effect.gen(function* () {
+      const dir = yield* tmpdirScoped({ git: true })
+      const fs = yield* FileSystem.FileSystem
+      const path = yield* Path.Path
+      yield* fs.writeFileString(path.join(dir, "changed.txt"), "hello")
+
+      const [paths, vcs, diff] = yield* Effect.all(
+        [
+          HttpClientRequest.get(InstancePaths.path).pipe(directoryHeader(dir), HttpClient.execute),
+          HttpClientRequest.get(InstancePaths.vcs).pipe(directoryHeader(dir), HttpClient.execute),
+          HttpClientRequest.get(InstancePaths.vcsDiff).pipe(
+            HttpClientRequest.setUrlParam("mode", "git"),
+            directoryHeader(dir),
+            HttpClient.execute,
+          ),
+        ],
+        { concurrency: "unbounded" },
+      )
+
+      expect(paths.status).toBe(200)
+      expect(yield* paths.json).toMatchObject({ directory: dir, worktree: dir })
+
+      expect(vcs.status).toBe(200)
+      expect(yield* vcs.json).toMatchObject({ branch: expect.any(String) })
+
+      expect(diff.status).toBe(200)
+      expect(yield* diff.json).toContainEqual(
+        expect.objectContaining({ file: "changed.txt", additions: 1, status: "added" }),
+      )
+    }),
+  )
+
+  // kilocode_change start - Hono-bridge tests cover routes still served via Server.Default()
+  function app() {
+    Flag.KILO_EXPERIMENTAL_HTTPAPI = true
+    return Server.Default().app
+  }
+
+  async function waitDisposed(directory: string) {
+    return await new Promise<void>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        GlobalBus.off("event", onEvent)
+        reject(new Error("timed out waiting for instance disposal"))
+      }, 10_000)
+
+      function onEvent(event: { directory?: string; payload: { type?: string } }) {
+        if (event.payload.type !== "server.instance.disposed" || event.directory !== directory) return
+        clearTimeout(timer)
+        GlobalBus.off("event", onEvent)
+        resolve()
+      }
+
+      GlobalBus.on("event", onEvent)
+    })
+  }
+
+  afterEach(async () => {
+    await disposeAllInstances()
+    await resetDatabase()
+  })
+
   test("serves path and VCS read endpoints through Hono bridge", async () => {
     await using tmp = await tmpdir({ git: true })
     await Bun.write(path.join(tmp.path, "changed.txt"), "hello")
@@ -68,7 +141,7 @@ describe("instance HttpApi", () => {
     )
   })
 
-  // kilocode_change - skip until Kilo's Instance context threads through the Effect HttpApi bridge.
+  // skip until Kilo's Instance context threads through the Effect HttpApi bridge.
   // The /agent handler 500s via the bridge (agent.list's InstanceState lookup drops context mid-request).
   // Bridge is gated behind KILO_EXPERIMENTAL_HTTPAPI, not enabled in any production client.
   test.skip("serves catalog read endpoints through Hono bridge", async () => {
@@ -164,4 +237,5 @@ describe("instance HttpApi", () => {
     expect(await response.json()).toBe(true)
     expect(await disposed).toBe(tmp.path)
   })
+  // kilocode_change end
 })

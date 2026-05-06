@@ -43,7 +43,8 @@
     "rotating-file-stream": "3.2.9",
     "semver": "^7.6.3",
     "xdg-basedir": "5.1.0",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "rotating-file-stream": "3.2.9"
   },
   "overrides": {
     "drizzle-orm": "catalog:"

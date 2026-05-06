@@ -8,7 +8,7 @@ import { InstanceBootstrap } from "../../src/project/bootstrap"
 import { Instance } from "../../src/project/instance"
 import { Server } from "../../src/server/server"
 import * as Log from "@opencode-ai/core/util/log"
-import { tmpdir } from "../fixture/fixture"
+import { disposeAllInstances, tmpdir } from "../fixture/fixture"
 
 Log.init({ print: false })
 
@@ -67,7 +67,7 @@ afterEach(async () => {
   else process.env["KILO_CONFIG_DIR"] = configDir
   if (disabled === undefined) delete process.env["KILO_DISABLE_CODEBASE_INDEXING"]
   else process.env["KILO_DISABLE_CODEBASE_INDEXING"] = disabled
-  await Instance.disposeAll()
+  await disposeAllInstances()
 })
 
 describe("indexing startup degradation", () => {
@@ -167,7 +167,7 @@ describe("indexing startup degradation", () => {
         },
       })
 
-      await Instance.disposeAll()
+      await disposeAllInstances()
       gate.resolve({ requiresRestart: false })
       await new Promise((resolve) => setTimeout(resolve, 0))
 

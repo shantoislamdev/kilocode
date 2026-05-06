@@ -87,6 +87,7 @@ export const layer = Layer.effect(
         // kilocode_change start - include global config dirs so agents can read them without prompting
         const whitelistedDirs = [
           Truncate.GLOB,
+          path.join(Global.Path.tmp, "*"),
           ...skillDirs.map((dir) => path.join(dir, "*")),
           path.join(Global.Path.config, "*"),
           ...KilocodePaths.globalDirs().map((dir) => path.join(dir, "*")),
