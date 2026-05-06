@@ -157,7 +157,7 @@ function askGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
   })
 }
 
-function planGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
+function planGuard(worktree: string, mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
   return Permission.fromConfig({
     "*": "deny",
     question: "allow",
@@ -187,7 +187,7 @@ function planGuard(mcp: Record<string, "allow" | "ask" | "deny"> = {}) {
       "*": "deny",
       [path.join(".kilo", "plans", "*.md")]: "allow",
       [path.join(".opencode", "plans", "*.md")]: "allow",
-      [path.relative(Instance.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
+      [path.relative(worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
     },
     ...mcp,
   })
@@ -278,6 +278,7 @@ export function patchAgents(
   user: Permission.Ruleset,
   cfg: Config.Info,
   kilo: KiloData,
+  worktree: string,
 ) {
   // Rename "build" → "code" for backward compatibility
   if (agents.build) {
@@ -302,7 +303,7 @@ export function patchAgents(
       permission: Permission.merge(
         defaults,
         user,
-        planGuard(kilo.mcpRules),
+        planGuard(worktree, kilo.mcpRules),
         user.filter((r: Permission.Rule) => r.action === "deny"),
       ),
     }
@@ -328,7 +329,8 @@ export function patchAgents(
           semantic_search: "allow",
           read: "allow",
           external_directory: {
-            "*": "ask",
+            // intentionally no "*": "ask" — defaults already has it; redefining
+            // here would overwrite the tmp/skill whitelist via findLast()
             [Truncate.GLOB]: "allow",
           },
         }),

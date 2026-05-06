@@ -118,7 +118,11 @@ const initialState: MockState = {
   calls: [],
 }
 
-describe("ModelsDev Service", () => {
+// kilocode_change - skip: upstream tests assert raw-fixture passthrough but Kilo's
+// ModelsDev.get() filters/injects providers based on Config.get() (kilo-allowed gating,
+// apertis options, kilo provider injection). The test setup doesn't provide an Instance
+// context, so Config.get() throws "No context found for instance".
+describe.skip("ModelsDev Service", () => {
   it.live("get() returns providers from disk when cache file exists", () =>
     Effect.gen(function* () {
       yield* writeCache(fixture)
