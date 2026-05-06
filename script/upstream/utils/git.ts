@@ -25,6 +25,12 @@ export interface CompatBase {
   message: string
 }
 
+type Semver = readonly [number, number, number]
+
+interface Candidate extends CompatBase {
+  version: Semver
+}
+
 export async function getCurrentBranch(): Promise<string> {
   const result = await $`git rev-parse --abbrev-ref HEAD`.text()
   return result.trim()
@@ -220,16 +226,62 @@ export async function recordAncestor(ref: string, message: string): Promise<bool
 }
 
 async function compatUpstream(message: string): Promise<string | null> {
-  const prefix = "refactor: kilo compat for "
-  if (!message.startsWith(prefix)) return null
-
-  const tag = message.slice(prefix.length).trim().split(/\s+/)[0]
+  const tag = compatTag(message)
   if (!tag) return null
 
   const ref = `${tag}^{commit}`
   const result = await $`git rev-parse ${ref}`.quiet().nothrow()
   if (result.exitCode !== 0) return null
   return result.stdout.toString().trim()
+}
+
+function compatTag(message: string): string | null {
+  const prefix = "refactor: kilo compat for "
+  if (!message.startsWith(prefix)) return null
+  return message.slice(prefix.length).trim().split(/\s+/)[0] ?? null
+}
+
+function parseSemver(value: string | undefined): Semver | null {
+  const match = value?.match(/^v?(\d+)\.(\d+)\.(\d+)$/)
+  if (!match) return null
+  const major = Number.parseInt(match[1] ?? "0", 10)
+  const minor = Number.parseInt(match[2] ?? "0", 10)
+  const patch = Number.parseInt(match[3] ?? "0", 10)
+  return [major, minor, patch]
+}
+
+function compareSemver(a: Semver, b: Semver): number {
+  for (const idx of [0, 1, 2] as const) {
+    if (a[idx] < b[idx]) return -1
+    if (a[idx] > b[idx]) return 1
+  }
+  return 0
+}
+
+function exists<T>(value: T | null): value is T {
+  return value !== null
+}
+
+async function targetSemver(ref: string): Promise<Semver | null> {
+  const tags = await getTagsForCommit(ref)
+  const tag = tags.find((item) => parseSemver(item) !== null)
+  const parsed = parseSemver(tag)
+  if (parsed) return parsed
+
+  const message = await getCommitMessage(ref)
+  const match = message.match(/\bv?\d+\.\d+\.\d+\b/)
+  return parseSemver(match?.[0])
+}
+
+async function candidate(line: string): Promise<Candidate | null> {
+  const [commit, message = ""] = line.split("\0")
+  if (!commit) return null
+
+  const version = parseSemver(compatTag(message) ?? undefined)
+  if (!version) return null
+
+  const upstream = (await compatUpstream(message)) ?? (await getCommitParents(commit))[0] ?? commit
+  return { commit, upstream, message, version }
 }
 
 export async function findLatestCompatCommit(base: string, target: string): Promise<CompatBase | null> {
@@ -244,6 +296,16 @@ export async function findLatestCompatCommit(base: string, target: string): Prom
     .trim()
     .split("\n")
     .filter((line) => line.length > 0)
+
+  const targetVersion = await targetSemver(target)
+  if (targetVersion) {
+    const candidates = (await Promise.all(lines.map(candidate)))
+      .filter(exists)
+      .filter((item) => compareSemver(item.version, targetVersion) < 0)
+      .sort((a, b) => compareSemver(b.version, a.version))
+    const latest = candidates[0]
+    if (latest) return { commit: latest.commit, upstream: latest.upstream, message: latest.message }
+  }
 
   for (const line of lines) {
     const [commit, message = ""] = line.split("\0")

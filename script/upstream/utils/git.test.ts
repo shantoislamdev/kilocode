@@ -78,3 +78,33 @@ test("finds previous compatibility commit for transformed base", async () => {
   expect(await getCommitParents(head)).toEqual([link, next])
   expect(await isAncestor(target, head)).toBe(true)
 })
+
+test("finds previous compatibility commit when upstream tags diverge", async () => {
+  await Bun.write("brand.txt", "opencode 1.4.9\n")
+  const old = await commit("release: v1.4.9")
+  await $`git tag v1.4.9 ${old}`.quiet()
+
+  await $`git checkout -b release-30 ${old}`.quiet()
+  await Bun.write("brand.txt", "opencode 1.14.30\n")
+  const side = await commit("release: v1.14.30")
+  await $`git tag v1.14.30 ${side}`.quiet()
+
+  await $`git checkout -b release-31 ${old}`.quiet()
+  await Bun.write("brand.txt", "opencode 1.14.31\n")
+  const target = await commit("release: v1.14.31")
+  await $`git tag v1.14.31 ${target}`.quiet()
+
+  await $`git checkout -b main ${old}`.quiet()
+  await Bun.write("brand.txt", "kilo 1.4.9\n")
+  const ancient = await commit("refactor: kilo compat for v1.4.9")
+  await Bun.write("brand.txt", "kilo 1.14.30\n")
+  const prior = await commit("refactor: kilo compat for v1.14.30")
+
+  expect(await isAncestor(side, target)).toBe(false)
+  expect(await isAncestor(old, target)).toBe(true)
+
+  const found = await findLatestCompatCommit("main", target)
+  expect(found?.commit).toBe(prior)
+  expect(found?.upstream).toBe(side)
+  expect(found?.commit).not.toBe(ancient)
+})
