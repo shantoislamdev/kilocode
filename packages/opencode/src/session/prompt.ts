@@ -1600,6 +1600,16 @@ NOTE: At any point in time through this workflow you should feel free to ask the
               toolChoice: format.type === "json_schema" ? "required" : undefined,
             })
 
+            // kilocode_change start - guard against providers that end the stream
+            // without a terminal stop_reason (e.g. an Anthropic-style message_delta
+            // with stop_reason: null followed immediately by message_stop). Without
+            // a finishReason, the loop-exit check below sees a falsy `finish` and
+            // keeps stepping forever. Default to "unknown" so the regular break
+            // condition fires when there are no tool calls, while still allowing
+            // the loop to continue when tool calls were emitted.
+            handle.message.finish = handle.message.finish ?? "unknown"
+            // kilocode_change end
+
             if (structured !== undefined) {
               handle.message.structured = structured
               handle.message.finish = handle.message.finish ?? "stop"
