@@ -1,13 +1,17 @@
 package ai.kilocode.client.session
 
+import ai.kilocode.client.app.KiloSessionService
 import ai.kilocode.client.app.KiloWorkspaceService
 import ai.kilocode.client.app.Workspace
+import ai.kilocode.client.session.history.HistoryController
+import ai.kilocode.client.session.history.HistoryPanel
 import ai.kilocode.rpc.dto.SessionDto
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import kotlinx.coroutines.cancel
 import java.awt.BorderLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -19,6 +23,7 @@ class SessionSidePanelManager(
         service<SessionUiFactory>().create(project, workspace, manager, id, loading)
     },
     private val resolve: (String) -> Workspace = { dir -> service<KiloWorkspaceService>().workspace(dir) },
+    private val history: ((Disposable, (SessionDto) -> Unit, (String) -> Unit) -> JComponent)? = null,
 ) : SessionManager, Disposable {
     val component: JPanel = object : JPanel(BorderLayout()), DataProvider {
         override fun getData(dataId: String): Any? {
@@ -30,6 +35,7 @@ class SessionSidePanelManager(
     private val opened = mutableMapOf<String, SessionUi>()
     private val all = mutableSetOf<SessionUi>()
     private var current: SessionUi? = null
+    private var panel: JComponent? = null
 
     val defaultFocusedComponent: JComponent? get() = current?.defaultFocusedComponent
 
@@ -48,6 +54,41 @@ class SessionSidePanelManager(
             }
         }
         show(ui)
+    }
+
+    override fun showHistory() {
+        register(current)
+        release(current)
+        val view = panel ?: createHistory().also { panel = it }
+        if (current == null && component.componentCount == 1 && component.getComponent(0) === view) return
+        current = null
+        component.removeAll()
+        component.add(view, BorderLayout.CENTER)
+        component.revalidate()
+        component.repaint()
+    }
+
+    private fun createHistory(): JComponent {
+        val custom = history
+        if (custom != null) return custom(this, this::openSession, this::removeSession)
+        val factory = service<SessionUiFactory>()
+        val cs = factory.scope()
+        val controller = HistoryController(
+            sessions = project.service<KiloSessionService>(),
+            workspace = root,
+            cs = cs,
+            open = { item -> item.local?.let(this::openSession) },
+            deleted = this::removeSession,
+        )
+        Disposer.register(this) { cs.cancel() }
+        return HistoryPanel(this, controller).component
+    }
+
+    private fun removeSession(id: String) {
+        val ui = opened.remove(id) ?: return
+        all.remove(ui)
+        if (current === ui) current = null
+        Disposer.dispose(ui)
     }
 
     private fun show(ui: SessionUi) {

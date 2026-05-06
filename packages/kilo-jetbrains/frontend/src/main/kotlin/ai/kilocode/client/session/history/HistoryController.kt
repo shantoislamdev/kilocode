@@ -14,6 +14,7 @@ class HistoryController(
     private val workspace: Workspace,
     private val cs: CoroutineScope,
     private val open: (HistoryItem) -> Unit = {},
+    private val deleted: (String) -> Unit = {},
 ) {
     companion object {
         const val CLOUD_LIMIT = 50
@@ -28,7 +29,7 @@ class HistoryController(
         cs.launch {
             try {
                 val result = sessions.list(workspace.directory)
-                val items = result.sessions.map(::localItem)
+                val items = HistoryTime.sorted(result.sessions.map(::localItem))
                 edt { model.setLocal(items) }
             } catch (e: Exception) {
                 edt { model.error(HistorySource.LOCAL, e.message ?: KiloBundle.message("history.error.local")) }
@@ -37,13 +38,14 @@ class HistoryController(
     }
 
     fun loadCloud(reset: Boolean = true, gitUrl: String? = null) {
-        if (reset) this.gitUrl = gitUrl
         val cursor = if (reset) null else model.cursor
+        val url = if (reset) gitUrl else this.gitUrl
+        if (reset) this.gitUrl = gitUrl
         edt { model.startCloud(reset) }
         cs.launch {
             try {
-                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, this@HistoryController.gitUrl)
-                val items = result.sessions.map(::cloudItem)
+                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, url)
+                val items = HistoryTime.sorted(result.sessions.map(::cloudItem))
                 edt { model.setCloud(items, result.nextCursor, append = !reset) }
             } catch (e: Exception) {
                 edt { model.error(HistorySource.CLOUD, e.message ?: KiloBundle.message("history.error.cloud")) }
@@ -69,7 +71,10 @@ class HistoryController(
         cs.launch {
             try {
                 sessions.deleteSession(item.id, item.directory ?: workspace.directory)
-                edt { model.deleted(item.id) }
+                edt {
+                    model.deleted(item.id)
+                    deleted(item.id)
+                }
             } catch (e: Exception) {
                 edt { model.error(HistorySource.LOCAL, e.message ?: KiloBundle.message("history.error.local.delete")) }
             }
@@ -77,6 +82,7 @@ class HistoryController(
     }
 
     fun open(item: HistoryItem) {
+        if (item.source != HistorySource.LOCAL) return
         edt { open(item) }
     }
 }

@@ -10,5 +10,7 @@ interface SessionManager {
 
     fun newSession()
 
+    fun showHistory()
+
     fun openSession(session: SessionDto)
 }

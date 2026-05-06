@@ -31,7 +31,7 @@ class SessionUiFactory(
         open = manager::openSession,
     )
 
-    private fun scope(): CoroutineScope {
+    fun scope(): CoroutineScope {
         val parent = cs.coroutineContext[Job]
         return CoroutineScope(cs.coroutineContext + SupervisorJob(parent))
     }

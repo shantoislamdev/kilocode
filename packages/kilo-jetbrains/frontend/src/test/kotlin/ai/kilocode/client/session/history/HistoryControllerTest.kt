@@ -20,6 +20,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 @Suppress("UnstableApiUsage")
 class HistoryControllerTest : BasePlatformTestCase() {
@@ -132,6 +134,53 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(1, panel.itemCount())
     }
 
+    fun `test panel preserves independent search per source`() {
+        rpc.listed += session("ses_1", "Alpha")
+        rpc.listed += session("ses_2", "Beta")
+        rpc.cloud += cloud("cloud_1", "Cloud Alpha")
+        rpc.cloud += cloud("cloud_2", "Cloud Beta")
+        val panel = HistoryPanel(parent, controller())
+        flush()
+
+        panel.setSearch("alp")
+        assertEquals(1, panel.itemCount())
+
+        panel.clickCloud()
+        flush()
+        assertEquals(2, panel.itemCount())
+        panel.setSearch("beta")
+        assertEquals(1, panel.itemCount())
+
+        panel.clickLocal()
+        assertEquals(1, panel.itemCount())
+    }
+
+    fun `test panel groups sessions by date`() {
+        val now = Instant.now()
+        rpc.listed += session("ses_today", "Today", now.toEpochMilli().toDouble())
+        rpc.listed += session("ses_yesterday", "Yesterday", now.minus(1, ChronoUnit.DAYS).toEpochMilli().toDouble())
+        rpc.listed += session("ses_week", "Week", now.minus(3, ChronoUnit.DAYS).toEpochMilli().toDouble())
+        rpc.listed += session("ses_month", "Month", now.minus(10, ChronoUnit.DAYS).toEpochMilli().toDouble())
+        rpc.listed += session("ses_older", "Older", now.minus(60, ChronoUnit.DAYS).toEpochMilli().toDouble())
+        val panel = HistoryPanel(parent, controller())
+        flush()
+
+        assertTrue(panel.groupTitles().containsAll(listOf("Today", "Yesterday", "This Week", "Older")))
+    }
+
+    fun `test local renderer exposes delete and cloud renderer hides it`() {
+        rpc.listed += session("ses_1", "Local")
+        rpc.cloud += cloud("cloud_1", "Cloud")
+        val panel = HistoryPanel(parent, controller())
+        flush()
+
+        assertTrue(panel.deleteVisible(0))
+
+        panel.clickCloud()
+        flush()
+        assertFalse(panel.cloudDeleteVisible(0))
+    }
+
     private fun controller() = HistoryController(sessions, workspace, scope)
 
     private fun collect(controller: HistoryController): MutableList<HistoryModelEvent> {
@@ -150,13 +199,13 @@ class HistoryControllerTest : BasePlatformTestCase() {
         }
     }
 
-    private fun session(id: String, title: String) = SessionDto(
+    private fun session(id: String, title: String, updated: Double = 2.0) = SessionDto(
         id = id,
         projectID = "prj",
         directory = "/test",
         title = title,
         version = "1",
-        time = SessionTimeDto(created = 1.0, updated = 2.0),
+        time = SessionTimeDto(created = 1.0, updated = updated),
     )
 
     private fun cloud(id: String, title: String) = CloudSessionDto(

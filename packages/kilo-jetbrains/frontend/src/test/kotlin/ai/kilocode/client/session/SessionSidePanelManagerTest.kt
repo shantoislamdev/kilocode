@@ -19,6 +19,8 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import javax.swing.JLabel
+import javax.swing.JComponent
 import javax.swing.JPanel
 
 @Suppress("UnstableApiUsage")
@@ -184,7 +186,64 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
         assertEquals(0, manager.component.componentCount)
     }
 
-    private fun manager(): SessionSidePanelManager {
+    fun `test show history swaps active component`() {
+        val history = JLabel("History")
+        val manager = manager(history = { _, _, _ -> history })
+
+        manager.newSession()
+        manager.showHistory()
+
+        assertSame(history, manager.component.getComponent(0))
+        assertNull(manager.defaultFocusedComponent)
+    }
+
+    fun `test opening local history item shows session ui`() {
+        lateinit var open: (SessionDto) -> Unit
+        val history = JLabel("History")
+        val manager = manager(history = { _, fn, _ ->
+            open = fn
+            history
+        })
+
+        manager.showHistory()
+        open(session("ses_1"))
+
+        assertTrue(active(manager) is SessionUi)
+        assertEquals(listOf("/test" to "ses_1"), created)
+    }
+
+    fun `test new session from history shows blank session`() {
+        val history = JLabel("History")
+        val manager = manager(history = { _, _, _ -> history })
+
+        manager.showHistory()
+        manager.newSession()
+
+        assertTrue(active(manager) is SessionUi)
+        assertEquals(listOf("/test" to null), created)
+    }
+
+    fun `test deleted cached history session is not reused`() {
+        lateinit var deleted: (String) -> Unit
+        val manager = manager(history = { _, _, fn ->
+            deleted = fn
+            JLabel("History")
+        })
+        val session = session("ses_1")
+
+        manager.openSession(session)
+        val first = active(manager)
+        manager.showHistory()
+        deleted("ses_1")
+        manager.openSession(session)
+
+        assertNotSame(first, active(manager))
+        assertEquals(listOf("/test" to "ses_1", "/test" to "ses_1"), created)
+    }
+
+    private fun manager(
+        history: ((com.intellij.openapi.Disposable, (SessionDto) -> Unit, (String) -> Unit) -> JComponent)? = null,
+    ): SessionSidePanelManager {
         val manager = SessionSidePanelManager(
             project = project,
             root = workspace,
@@ -197,6 +256,7 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
                 }
             },
             resolve = { workspaces.workspace(it) },
+            history = history,
         )
         managers.add(manager)
         return manager

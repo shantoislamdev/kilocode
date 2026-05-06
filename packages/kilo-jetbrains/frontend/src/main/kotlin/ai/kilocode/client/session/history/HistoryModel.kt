@@ -22,6 +22,9 @@ class HistoryModel {
         private set
     var cursor: String? = null
         private set
+    private val deleting = mutableSetOf<String>()
+
+    fun deleting(id: String): Boolean = id in deleting
 
     fun addListener(parent: Disposable, listener: HistoryModelEvent.Listener) {
         listeners.add(listener)
@@ -60,7 +63,7 @@ class HistoryModel {
     }
 
     fun setCloud(items: List<HistoryItem>, next: String?, append: Boolean) {
-        cloud = if (append) cloud + items else items
+        cloud = HistoryTime.sorted(if (append) cloud + items else items)
         cursor = next
         cloudLoading = false
         cloudError = null
@@ -68,15 +71,18 @@ class HistoryModel {
     }
 
     fun startDelete(id: String) {
+        deleting.add(id)
         fire(HistoryModelEvent.DeleteStarted(id))
     }
 
     fun deleted(id: String) {
+        deleting.remove(id)
         local = local.filterNot { it.id == id }
         fire(HistoryModelEvent.Deleted(id))
     }
 
     fun error(source: HistorySource, message: String) {
+        if (source == HistorySource.LOCAL) deleting.clear()
         if (source == HistorySource.LOCAL) {
             localLoading = false
             localError = message
