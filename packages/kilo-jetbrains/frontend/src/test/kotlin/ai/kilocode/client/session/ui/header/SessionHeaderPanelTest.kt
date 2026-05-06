@@ -165,6 +165,7 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
             false,
         ))
         assertEquals("Run tests", panel.timelineToolTip())
+        assertEquals(1, panel.timelineHover())
         timeline.dispatchEvent(MouseEvent(
             timeline,
             MouseEvent.MOUSE_MOVED,
@@ -176,6 +177,7 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
             false,
         ))
         assertNull(panel.timelineToolTip())
+        assertEquals(-1, panel.timelineHover())
 
         panel.expandButton().doClick()
 

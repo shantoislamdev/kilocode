@@ -263,6 +263,8 @@ class SessionHeaderPanel(
 
     internal fun timelineToolTip() = timeline.toolTipText
 
+    internal fun timelineHover() = timeline.hovered()
+
     internal fun contextBar(): Component = bar
 
     internal fun contextBarVisible() = bar.isVisible

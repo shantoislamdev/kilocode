@@ -26,22 +26,30 @@ internal class TimelinePanel : JPanel() {
         private const val WIDTH = 12
         private const val MIN = 8
         private const val PAD = 4
-        private const val GAP = 1
+        private const val GAP = 2
     }
 
     private var items: List<TimelineItem> = emptyList()
     private var heights: List<Int> = emptyList()
+    private var hover = -1
 
     init {
         isOpaque = false
         addMouseMotionListener(object : MouseMotionAdapter() {
             override fun mouseMoved(event: MouseEvent) {
-                toolTipText = item(event)?.title
+                val idx = index(event)
+                toolTipText = items.getOrNull(idx)?.title
+                if (hover == idx) return
+                hover = idx
+                repaint()
             }
         })
         addMouseListener(object : MouseAdapter() {
             override fun mouseExited(event: MouseEvent) {
                 toolTipText = null
+                if (hover == -1) return
+                hover = -1
+                repaint()
             }
         })
     }
@@ -63,32 +71,36 @@ internal class TimelinePanel : JPanel() {
         val g2 = g.create() as Graphics2D
         val w = JBUI.scale(WIDTH)
         val gap = JBUI.scale(GAP)
+        val grow = JBUI.scale(1)
         val tall = height.takeIf { it > 0 } ?: preferredSize.height
         try {
             for (idx in items.indices) {
-                val h = heights[idx]
-                val x = idx * (w + gap)
+                val over = idx == hover
+                val h = heights[idx] + if (over) grow else 0
+                val wide = w + if (over) grow * 2 else 0
+                val x = grow + idx * (w + gap) - if (over) grow else 0
                 val y = (tall - h).coerceAtLeast(0)
                 g2.color = color(items[idx])
-                g2.fillRect(x, y, w, h)
+                g2.fillRect(x, y, wide, h)
             }
         } finally {
             g2.dispose()
         }
     }
 
-    private fun item(event: MouseEvent): TimelineItem? {
+    private fun index(event: MouseEvent): Int {
         val w = JBUI.scale(WIDTH)
         val gap = JBUI.scale(GAP)
+        val grow = JBUI.scale(1)
         val tall = height.takeIf { it > 0 } ?: preferredSize.height
         for (idx in items.indices) {
             val h = heights[idx]
-            val x = idx * (w + gap)
+            val x = grow + idx * (w + gap)
             val y = (tall - h).coerceAtLeast(0)
             val inside = event.x >= x && event.x < x + w && event.y >= y && event.y < y + h
-            if (inside) return items[idx]
+            if (inside) return idx
         }
-        return null
+        return -1
     }
 
     override fun getPreferredSize(): Dimension = JBUI.size(width(), HEIGHT)
@@ -107,6 +119,8 @@ internal class TimelinePanel : JPanel() {
 
     fun barWidth() = JBUI.scale(WIDTH + GAP)
 
+    fun hovered() = hover
+
     private fun height(weight: Int, max: Int): Int {
         val fill = MIN + (weight.toDouble() / max.toDouble()) * (HEIGHT - MIN - PAD)
         return JBUI.scale(fill.roundToInt())
@@ -114,7 +128,7 @@ internal class TimelinePanel : JPanel() {
 
     private fun width(): Int {
         if (items.isEmpty()) return 0
-        return items.size * WIDTH + (items.size - 1) * GAP
+        return items.size * WIDTH + (items.size - 1) * GAP + 2
     }
 
     private fun color(item: TimelineItem): Color {
