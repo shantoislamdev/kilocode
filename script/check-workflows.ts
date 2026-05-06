@@ -8,10 +8,14 @@
  * `.github/workflows/`, it silently starts running in our CI unless we
  * explicitly review and accept it. This check makes that decision explicit:
  * the list of allowed workflows is hardcoded below, and any drift (added or
- * removed file in `.github/workflows/` or `.github/workflows/disabled/`) fails
- * CI until the list is updated deliberately.
+ * removed file in `.github/workflows/`) fails CI until the list is updated
+ * deliberately.
  *
- * To accept a new workflow: add its filename to `active` (or `disabled`).
+ * Only runnable workflows are checked (`.yml` / `.yaml`). Files under
+ * `.github/workflows/disabled/` are Kilo-specific and can't run, so they're
+ * not tracked here.
+ *
+ * To accept a new workflow: add its filename to `active`.
  * To drop one: remove its filename from the list.
  */
 
@@ -48,53 +52,25 @@ const active = new Set([
   "watch-opencode-releases.yml",
 ])
 
-// Workflows we have explicitly disabled. Kept here so that upstream additions
-// to `.github/workflows/disabled/` also require a manual review.
-const disabled = new Set([
-  "compliance-close.yml.disabled",
-  "daily-issues-recap.yml.disabled",
-  "daily-pr-recap.yml.disabled",
-  "kilo.yml.disabled",
-  "nix-desktop.yml.disabled",
-  "notify-discord.yml.disabled",
-  "pr-management.yml.disabled",
-  "pr-standards.yml.disabled",
-  "publish-github-action.yml.disabled",
-  "release-github-action.yml.disabled",
-  "review.yml.disabled",
-  "stats.yml.disabled",
-  "storybook.yml.disabled",
-  "sync-zed-extension.yml.disabled",
-])
-
-function diff(expected: Set<string>, actual: Set<string>, label: string) {
-  const missing = [...expected].filter((f) => !actual.has(f)).sort()
-  const extra = [...actual].filter((f) => !expected.has(f)).sort()
-  const errs: string[] = []
-  for (const f of extra) {
-    errs.push(
-      `unexpected ${label} workflow: ${f} — if this was added intentionally, add it to script/check-workflows.ts`,
-    )
-  }
-  for (const f of missing) {
-    errs.push(
-      `expected ${label} workflow not found: ${f} — if this was removed intentionally, remove it from script/check-workflows.ts`,
-    )
-  }
-  return errs
-}
-
-// GitHub picks up both .yml and .yaml in .github/workflows/. We list both so
+// GitHub picks up both .yml and .yaml in .github/workflows/. We accept both so
 // an upstream `.yaml` addition also shows up as unexpected drift.
 const isWorkflow = (f: string) => f.endsWith(".yml") || f.endsWith(".yaml")
-const isDisabled = (f: string) => f.endsWith(".disabled")
 const actualActive = new Set(readdirSync(DIR).filter(isWorkflow))
-const actualDisabled = new Set(readdirSync(path.join(DIR, "disabled")).filter(isDisabled))
 
-const errs = [...diff(active, actualActive, "active"), ...diff(disabled, actualDisabled, "disabled")]
+const missing = [...active].filter((f) => !actualActive.has(f)).sort()
+const extra = [...actualActive].filter((f) => !active.has(f)).sort()
+const errs: string[] = []
+for (const f of extra) {
+  errs.push(`unexpected workflow: ${f} — if this was added intentionally, add it to script/check-workflows.ts`)
+}
+for (const f of missing) {
+  errs.push(
+    `expected workflow not found: ${f} — if this was removed intentionally, remove it from script/check-workflows.ts`,
+  )
+}
 
 if (errs.length === 0) {
-  console.log(`check-workflows: ok (${actualActive.size} active, ${actualDisabled.size} disabled).`)
+  console.log(`check-workflows: ok (${actualActive.size} workflows).`)
   process.exit(0)
 }
 
