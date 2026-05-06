@@ -1,4 +1,4 @@
-package ai.kilocode.client.session.ui
+package ai.kilocode.client.session.ui.header
 
 import ai.kilocode.client.session.model.Reasoning
 import ai.kilocode.client.session.model.Tool
