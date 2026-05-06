@@ -110,8 +110,8 @@ class SessionHeaderPanel(
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         border = JBUI.Borders.empty(UiStyle.Space.SM, 0, 0, 0)
         add(scroll)
-        add(bar)
         add(tokens)
+        add(bar)
         add(todoRow)
     }
     private var style = SessionStyle.current()
@@ -252,6 +252,12 @@ class SessionHeaderPanel(
     internal fun isExpanded() = body.parent === this
 
     internal fun bodyPanel() = body
+
+    internal fun bodyComponents() = body.components.toList()
+
+    internal fun timelineScroll() = scroll
+
+    internal fun tokenPanel() = tokens
 
     internal fun timelinePanel(): Component = timeline
 

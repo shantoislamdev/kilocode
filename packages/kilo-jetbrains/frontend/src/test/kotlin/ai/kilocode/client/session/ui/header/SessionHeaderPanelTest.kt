@@ -125,6 +125,7 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertSame(body, panel.bodyPanel())
         assertSame(timeline, panel.timelinePanel())
         assertSame(bar, panel.contextBar())
+        assertEquals(listOf(panel.timelineScroll(), panel.tokenPanel(), bar), panel.bodyComponents().take(3))
         assertEquals(3, panel.timelineCount())
         val parts = panel.timelineParts()
         assertTrue(parts[0] is Reasoning)
@@ -181,14 +182,17 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertEquals("Show session metrics", panel.expandTip())
     }
 
-    fun `test context bar uses hot color after half context`() {
+    fun `test context bar uses neutral grey colors`() {
         val c = promptedHeader()
         val panel = SessionHeaderPanel(c, parent)
         val color = panel.contextBarUsedColor()
 
         emit(ChatEventDto.MessageUpdated("ses_test", assistant(tokens = TokensDto(1_200_000, 0, 0, 0, 0))))
 
-        assertNotSame(color, panel.contextBarUsedColor())
+        assertEquals(color, panel.contextBarUsedColor())
+        assertNotSame(panel.contextBarTrackColor(), panel.contextBarUsedColor())
+        assertNotSame(panel.contextBarTrackColor(), panel.contextBarReservedColor())
+        assertNotSame(panel.contextBarUsedColor(), panel.contextBarReservedColor())
     }
 
     fun `test timeline width uses uniform bars and gaps`() {

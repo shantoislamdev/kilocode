@@ -4,10 +4,8 @@ import ai.kilocode.client.plugin.KiloBundle
 import ai.kilocode.client.session.model.ContextUsage
 import ai.kilocode.client.session.ui.SessionStyle
 import ai.kilocode.client.ui.UiStyle
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
-import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -45,6 +43,7 @@ internal class ContextBar : JPanel(BorderLayout(UiStyle.Gap.inline(), 0)) {
     fun applyStyle(style: SessionStyle) {
         background = style.editorBackground
         foreground = style.editorForeground
+        meter.background = style.editorBackground
         used.font = style.smallUiFont
         used.foreground = style.editorForeground
         limit.font = style.smallUiFont
@@ -97,10 +96,6 @@ private data class ContextData(
 }
 
 private class Meter : JComponent() {
-    companion object {
-        private val HOT = JBColor.namedColor("Kilo.ContextProgress.hotBase", Color(128, 0, 0))
-    }
-
     var data: ContextData? = null
 
     init {
@@ -139,14 +134,17 @@ private class Meter : JComponent() {
         g.fillRoundRect(x, y, w, h, arc, arc)
     }
 
-    fun trackColor(): Color = UIUtil.getBoundsColor()
+    fun trackColor(): Color = shade(0.14f)
 
-    fun usedColor(): Color = UiStyle.Colors.fg()
+    fun usedColor(): Color = shade(0.45f)
 
-    fun usedColor(data: ContextData): Color {
-        if (data.used.toDouble() / data.limit.toDouble() >= 0.5) return UiStyle.Colors.blend(HOT, UiStyle.Colors.error(), 0.6f)
-        return usedColor()
+    fun usedColor(data: ContextData): Color = usedColor()
+
+    fun reservedColor(): Color = shade(0.28f)
+
+    private fun shade(alpha: Float): Color {
+        val base = background ?: UiStyle.Colors.panel()
+        val grey = if (UiStyle.Colors.bright(base)) Color.BLACK else Color.WHITE
+        return UiStyle.Colors.blend(base, grey, alpha)
     }
-
-    fun reservedColor(): Color = UiStyle.Colors.weak()
 }
