@@ -18,6 +18,7 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
+import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.Icon
 import javax.swing.JPanel
@@ -79,10 +80,6 @@ class SessionHeaderPanel(
         icon = DOWN_ICON
         iconTextGap = UiStyle.Gap.xs()
     }
-    private val cacheWrite = JBLabel().apply {
-        icon = UP_ICON
-        iconTextGap = UiStyle.Gap.xs()
-    }
     private val top = BorderLayoutPanel()
     private val right = JPanel(FlowLayout(FlowLayout.RIGHT, UiStyle.Gap.inline(), 0)).apply {
         isOpaque = false
@@ -91,13 +88,15 @@ class SessionHeaderPanel(
         add(compact)
         add(expand)
     }
-    private val tokens = JPanel(FlowLayout(FlowLayout.LEFT, UiStyle.Gap.inline(), 0)).apply {
+    private val tokens = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0)).apply {
         isOpaque = false
         border = JBUI.Borders.empty(UiStyle.Space.SM, 0, 0, 0)
         add(tokenTitle)
+        add(Box.createHorizontalStrut(UiStyle.Gap.inline()))
         add(input)
+        add(Box.createHorizontalStrut(UiStyle.Gap.small()))
         add(output)
-        add(cacheWrite)
+        add(Box.createHorizontalStrut(UiStyle.Gap.small()))
         add(cacheRead)
     }
     private val todoRow = JPanel(FlowLayout(FlowLayout.LEFT, UiStyle.Gap.inline(), 0)).apply {
@@ -214,8 +213,6 @@ class SessionHeaderPanel(
         output.foreground = style.editorForeground
         cacheRead.font = style.smallUiFont
         cacheRead.foreground = style.editorForeground
-        cacheWrite.font = style.smallUiFont
-        cacheWrite.foreground = style.editorForeground
         bar.applyStyle(style)
         refresh()
     }
@@ -226,20 +223,20 @@ class SessionHeaderPanel(
 
     internal fun contextText(): String = context.text
 
-    internal fun foregrounds() = listOf(title, cost, context, todos, tokenTitle, input, output, cacheRead, cacheWrite)
+    internal fun foregrounds() = listOf(title, cost, context, todos, tokenTitle, input, output, cacheRead)
         .map { it.foreground }
 
-    internal fun tokenText(): String = listOf(tokenTitle, input, output, cacheWrite, cacheRead)
+    internal fun tokenText(): String = listOf(tokenTitle, input, output, cacheRead)
         .filter { it.isVisible }
         .joinToString(" ") { it.text }
+
+    internal fun tokenTip(): String = tokens.toolTipText
 
     internal fun inputTokenText(): String = input.text
 
     internal fun outputTokenText(): String = output.text
 
     internal fun cacheReadText(): String = cacheRead.text
-
-    internal fun cacheWriteText(): String = cacheWrite.text
 
     internal fun todoText(): String = todos.text
 
@@ -308,15 +305,14 @@ class SessionHeaderPanel(
         val sent = tk?.input ?: 0L
         val received = (tk?.output ?: 0L) + (tk?.reasoning ?: 0L)
         val read = tk?.cacheRead ?: 0L
-        val write = tk?.cacheWrite ?: 0L
-        val total = sent + received + read + write
+        val total = sent + received + read
 
         tokenTitle.text = KiloBundle.message("session.header.tokens")
+        tokens.toolTipText = KiloBundle.message("session.header.tokens.description")
         tokenTitle.isVisible = total > 0
         set(input, if (sent > 0) num(sent) else null)
         set(output, if (received > 0) num(received) else null)
-        set(cacheRead, if (read > 0) KiloBundle.message("session.header.cache.read", num(read)) else null)
-        set(cacheWrite, if (write > 0) KiloBundle.message("session.header.cache.write", num(write)) else null)
+        set(cacheRead, if (read > 0) KiloBundle.message("session.header.cache", num(read)) else null)
         tokens.isVisible = total > 0
     }
 
