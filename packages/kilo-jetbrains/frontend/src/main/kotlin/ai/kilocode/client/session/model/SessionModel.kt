@@ -448,7 +448,7 @@ class SessionModel {
                 TimelineItem(
                     id = "${msg.info.id}/${part.id}",
                     part = part,
-                    title = part.title(),
+                    title = part.timelineTitle(),
                     weight = part.weight().coerceIn(1, 10),
                     durationMs = (part as? Tool)?.time?.durationMs(),
                     active = (part as? Tool)?.state == ToolExecState.RUNNING || part is Reasoning && !part.done,
@@ -560,13 +560,37 @@ private fun parseModelKey(value: String): Pair<String, String>? {
     return value.substring(0, slash) to value.substring(slash + 1)
 }
 
-private fun Content.title(): String = when (this) {
+private fun Content.timelineTitle(): String = when (this) {
     is Text -> "Text"
     is Reasoning -> "Reasoning"
-    is Tool -> title?.takeIf { it.isNotBlank() } ?: name
+    is Tool -> fileActionTitle() ?: title?.takeIf { it.isNotBlank() } ?: name
     is Compaction -> "Compaction"
     is StepFinish -> "Step finish"
     is Generic -> type
+}
+
+private fun Tool.fileActionTitle(): String? {
+    val verb = when (kind) {
+        ToolKind.READ -> "Read"
+        ToolKind.WRITE -> "Write"
+        ToolKind.GENERIC -> return null
+    }
+    val path = listOf("filePath", "path", "file")
+        .asSequence()
+        .mapNotNull {
+            input[it]?.takeIf { value -> value.isNotBlank() }
+                ?: metadata[it]?.takeIf { value -> value.isNotBlank() }
+        }
+        .firstOrNull()
+        ?: return null
+    return "$verb ${tail(path).ifBlank { path }}"
+}
+
+private fun tail(path: String): String {
+    val value = path.trimEnd('/', '\\')
+    val index = maxOf(value.lastIndexOf('/'), value.lastIndexOf('\\'))
+    if (index < 0) return value
+    return value.substring(index + 1)
 }
 
 private fun Content.weight(): Int = when (this) {

@@ -8,6 +8,7 @@ import ai.kilocode.client.session.ui.SessionStyleTarget
 import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.ui.UiStyle
 import ai.kilocode.rpc.dto.TokensDto
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.components.JBLabel
@@ -43,6 +44,7 @@ class SessionHeaderPanel(
         private const val TOUCH_BEGIN = 2
         private const val TOUCH_UPDATE = 3
         private const val TOUCH_END = 4
+        internal const val EXPANDED_KEY = "kilo.session.header.expanded"
     }
 
     private val title = JBLabel()
@@ -168,6 +170,7 @@ class SessionHeaderPanel(
         }
 
         applyStyle(style)
+        syncExpanded(expanded())
         update(controller.model.header)
     }
 
@@ -186,10 +189,12 @@ class SessionHeaderPanel(
         title.accessibleContext.accessibleName = header.title
         isVisible = header.visible
         if (!header.visible) {
-            collapse()
+            syncExpanded(false)
             if (before) refresh()
             return
         }
+
+        syncExpanded(expanded())
 
         set(cost, money(header.cost))
         set(context, contextText(header.context))
@@ -337,8 +342,14 @@ class SessionHeaderPanel(
     }
 
     private fun toggle() {
-        if (isExpanded()) collapse() else expand()
+        val next = !isExpanded()
+        syncExpanded(next)
+        PropertiesComponent.getInstance().setValue(EXPANDED_KEY, next.toString())
         refresh()
+    }
+
+    private fun syncExpanded(expanded: Boolean) {
+        if (expanded) expand() else collapse()
     }
 
     private fun expand(): Boolean {
@@ -362,6 +373,8 @@ class SessionHeaderPanel(
         expand.toolTipText = KiloBundle.message(key)
         expand.accessibleContext.accessibleName = KiloBundle.message(key)
     }
+
+    private fun expanded() = PropertiesComponent.getInstance().getBoolean(EXPANDED_KEY, true)
 
     private fun sizeTimeline() {
         val size = timeline.preferredSize

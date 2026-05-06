@@ -16,12 +16,26 @@ import ai.kilocode.rpc.dto.PartTimeDto
 import ai.kilocode.rpc.dto.ProviderDto
 import ai.kilocode.rpc.dto.TodoDto
 import ai.kilocode.rpc.dto.TokensDto
+import com.intellij.ide.util.PropertiesComponent
 import java.awt.Color
 import java.awt.Point
 import java.awt.event.MouseEvent
 import java.awt.event.MouseWheelEvent
 
 class SessionHeaderPanelTest : SessionControllerTestBase() {
+
+    override fun setUp() {
+        super.setUp()
+        reset()
+    }
+
+    override fun tearDown() {
+        try {
+            reset()
+        } finally {
+            super.tearDown()
+        }
+    }
 
     fun `test starts hidden for empty header`() {
         appRpc.state.value = ai.kilocode.rpc.dto.KiloAppStateDto(ai.kilocode.rpc.dto.KiloAppStatusDto.READY)
@@ -40,7 +54,7 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         val style = SessionStyle.current()
 
         assertTrue(panel.isVisible)
-        assertFalse(panel.isExpanded())
+        assertTrue(panel.isExpanded())
         assertEquals("Generated title", panel.titleText())
         assertEquals("$0.07", panel.costText())
         assertEquals("1%", panel.contextText())
@@ -100,7 +114,6 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         )
 
         panel.applyStyle(style)
-        panel.expandButton().doClick()
 
         assertEquals(style.editorBackground, panel.background)
         assertEquals(
@@ -120,10 +133,6 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         val body = panel.bodyPanel()
         val timeline = panel.timelinePanel()
         val bar = panel.contextBar()
-
-        assertFalse(panel.isExpanded())
-
-        panel.expandButton().doClick()
 
         assertTrue(panel.isExpanded())
         assertSame(body, panel.bodyPanel())
@@ -209,24 +218,98 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertEquals(4, panel.timelineCount())
     }
 
+    fun `test read and write timeline tooltips show filename`() {
+        val c = promptedHeader()
+        val panel = SessionHeaderPanel(c, parent)
+        emit(ChatEventDto.PartUpdated(
+            "ses_test",
+            tool("tool_read", "read", "completed", "Read file", input = mapOf("filePath" to "src/docs/README.md")),
+        ))
+        emit(ChatEventDto.PartUpdated(
+            "ses_test",
+            tool("tool_write", "write", "completed", "Write file", input = mapOf("filePath" to "src/main/App.kt")),
+        ))
+        val timeline = panel.timelinePanel()
+
+        move(panel, 4)
+        assertEquals("Read README.md", panel.timelineToolTip())
+        move(panel, 5)
+        assertEquals("Write App.kt", panel.timelineToolTip())
+
+        assertSame(timeline, panel.timelinePanel())
+    }
+
     fun `test expand button owns expanded state across updates`() {
         val c = promptedHeader()
         val panel = SessionHeaderPanel(c, parent)
-
-        assertFalse(panel.isExpanded())
-        assertEquals("Show session metrics", panel.expandTip())
-
-        panel.expandButton().doClick()
-        emit(ChatEventDto.SessionUpdated("ses_test", session("ses_test", title = "New title")))
 
         assertTrue(panel.isExpanded())
         assertEquals("Hide session metrics", panel.expandTip())
 
         panel.expandButton().doClick()
-        emit(ChatEventDto.MessageUpdated("ses_test", assistant(cost = 0.2)))
+        emit(ChatEventDto.SessionUpdated("ses_test", session("ses_test", title = "New title")))
 
         assertFalse(panel.isExpanded())
         assertEquals("Show session metrics", panel.expandTip())
+
+        panel.expandButton().doClick()
+        emit(ChatEventDto.MessageUpdated("ses_test", assistant(cost = 0.2)))
+
+        assertTrue(panel.isExpanded())
+        assertEquals("Hide session metrics", panel.expandTip())
+    }
+
+    fun `test collapse persists and new header starts collapsed`() {
+        val c = promptedHeader()
+        val panel = SessionHeaderPanel(c, parent)
+
+        panel.expandButton().doClick()
+
+        assertFalse(panel.isExpanded())
+        assertFalse(PropertiesComponent.getInstance().getBoolean(SessionHeaderPanel.EXPANDED_KEY, true))
+
+        val next = SessionHeaderPanel(c, parent)
+
+        assertFalse(next.isExpanded())
+        assertEquals("Show session metrics", next.expandTip())
+    }
+
+    fun `test expand persists and new header starts expanded`() {
+        PropertiesComponent.getInstance().setValue(SessionHeaderPanel.EXPANDED_KEY, "false")
+        val c = promptedHeader()
+        val panel = SessionHeaderPanel(c, parent)
+
+        assertFalse(panel.isExpanded())
+
+        panel.expandButton().doClick()
+
+        assertTrue(panel.isExpanded())
+        assertTrue(PropertiesComponent.getInstance().getBoolean(SessionHeaderPanel.EXPANDED_KEY, false))
+
+        val next = SessionHeaderPanel(c, parent)
+
+        assertTrue(next.isExpanded())
+        assertEquals("Hide session metrics", next.expandTip())
+    }
+
+    fun `test hidden empty header collapse keeps saved expansion preference`() {
+        appRpc.state.value = ai.kilocode.rpc.dto.KiloAppStateDto(ai.kilocode.rpc.dto.KiloAppStatusDto.READY)
+        projectRpc.state.value = workspaceReady()
+        val c = controller()
+        flush()
+        val panel = SessionHeaderPanel(c, parent)
+
+        assertFalse(panel.isVisible)
+        assertFalse(panel.isExpanded())
+        assertTrue(PropertiesComponent.getInstance().getBoolean(SessionHeaderPanel.EXPANDED_KEY, true))
+
+        edt { c.prompt("go") }
+        flush()
+        emit(ChatEventDto.SessionUpdated("ses_test", session("ses_test", title = "Generated title")))
+        emit(ChatEventDto.MessageUpdated("ses_test", assistant()))
+
+        assertTrue(panel.isVisible)
+        assertTrue(panel.isExpanded())
     }
 
     fun `test context bar uses neutral grey colors`() {
@@ -261,7 +344,6 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         repeat(12) { idx ->
             emit(ChatEventDto.PartUpdated("ses_test", tool("tool_more_$idx", "bash", "running", "More $idx")))
         }
-        panel.expandButton().doClick()
         panel.timelineViewport().setSize(panel.timelineBarWidth() * 4, panel.timelineViewportPreferredSize().height)
         panel.timelineViewport().doLayout()
         panel.timelineViewport().viewPosition = Point(0, 0)
@@ -300,7 +382,6 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         repeat(12) { idx ->
             emit(ChatEventDto.PartUpdated("ses_test", tool("tool_touch_$idx", "bash", "running", "Touch $idx")))
         }
-        panel.expandButton().doClick()
         panel.timelineViewport().setSize(panel.timelineBarWidth() * 4, panel.timelineViewportPreferredSize().height)
         panel.timelineViewport().doLayout()
         panel.timelineViewport().viewPosition = Point(0, 0)
@@ -335,7 +416,6 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         repeat(12) { idx ->
             emit(ChatEventDto.PartUpdated("ses_test", tool("tool_wheel_$idx", "bash", "running", "Wheel $idx")))
         }
-        panel.expandButton().doClick()
         panel.timelineViewport().setSize(panel.timelineBarWidth() * 4, panel.timelineViewportPreferredSize().height)
         panel.timelineViewport().doLayout()
         panel.timelineViewport().viewPosition = Point(0, 0)
@@ -370,7 +450,6 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         repeat(12) { idx ->
             emit(ChatEventDto.PartUpdated("ses_test", tool("tool_more_$idx", "bash", "running", "More $idx")))
         }
-        panel.expandButton().doClick()
         panel.timelineViewport().setSize(panel.timelineBarWidth() * 4, panel.timelineViewportPreferredSize().height)
         panel.timelineViewport().doLayout()
         panel.timelineViewport().viewPosition = Point(0, 0)
@@ -471,4 +550,22 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         cost = 0.07,
         tokens = TokensDto(13_700, 2_000, 500, 75, 25),
     )
+
+    private fun move(panel: SessionHeaderPanel, index: Int) {
+        val timeline = panel.timelinePanel()
+        timeline.dispatchEvent(MouseEvent(
+            timeline,
+            MouseEvent.MOUSE_MOVED,
+            System.currentTimeMillis(),
+            0,
+            panel.timelineBarWidth() * index + 1,
+            panel.timelinePreferredSize().height - 1,
+            0,
+            false,
+        ))
+    }
+
+    private fun reset() {
+        PropertiesComponent.getInstance().unsetValue(SessionHeaderPanel.EXPANDED_KEY)
+    }
 }
