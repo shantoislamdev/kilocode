@@ -148,8 +148,21 @@ class SessionModelTest : UsefulTestCase() {
 
         val p = model.message("m1")!!.parts["p1"] as Tool
         assertEquals("bash", p.name)
+        assertEquals(ToolKind.GENERIC, p.kind)
         assertEquals(ToolExecState.RUNNING, p.state)
         assertEquals("ls", p.title)
+    }
+
+    fun `test updateContent tool derives tool kind from name`() {
+        model.addMessage(msg("m1", "assistant"))
+
+        model.updateContent("m1", part("p1", "m1", "tool", tool = "read"))
+        model.updateContent("m1", part("p2", "m1", "tool", tool = "write"))
+        model.updateContent("m1", part("p3", "m1", "tool", tool = "bash"))
+
+        assertEquals(ToolKind.READ, (model.message("m1")!!.parts["p1"] as Tool).kind)
+        assertEquals(ToolKind.WRITE, (model.message("m1")!!.parts["p2"] as Tool).kind)
+        assertEquals(ToolKind.GENERIC, (model.message("m1")!!.parts["p3"] as Tool).kind)
     }
 
     fun `test updateContent tool stores rich fields`() {
@@ -188,6 +201,7 @@ class SessionModelTest : UsefulTestCase() {
         model.updateContent("m1", part("p1", "m1", "tool", tool = "bash", state = "completed"))
 
         val p = model.message("m1")!!.parts["p1"] as Tool
+        assertEquals(ToolKind.GENERIC, p.kind)
         assertEquals(ToolExecState.COMPLETED, p.state)
         assertTrue(events.single() is SessionModelEvent.ContentUpdated)
     }
@@ -699,8 +713,8 @@ class SessionModelTest : UsefulTestCase() {
 
         val item = model.header.timeline.single()
         assertEquals("Updated title", model.header.title)
-        assertEquals("tool", item.kind)
-        assertEquals("bash", item.tool)
+        assertTrue(item.part is Tool)
+        assertEquals("bash", (item.part as Tool).name)
         assertEquals("Run tests", item.title)
         assertEquals(2000L, item.durationMs)
         assertTrue(item.active)

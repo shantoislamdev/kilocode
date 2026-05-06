@@ -25,8 +25,7 @@ data class ContextUsage(
 
 data class TimelineItem(
     val id: String,
-    val kind: String,
-    val tool: String?,
+    val part: Content,
     val title: String,
     val weight: Int,
     val durationMs: Long?,
@@ -67,7 +66,7 @@ class Reasoning(id: String) : Content(id) {
 }
 
 /** Tool invocation with lifecycle state. */
-class Tool(id: String, val name: String) : Content(id) {
+class Tool(id: String, val name: String, var kind: ToolKind) : Content(id) {
     var state: ToolExecState = ToolExecState.PENDING
     var title: String? = null
     var input: Map<String, String> = emptyMap()
@@ -87,6 +86,14 @@ class Compaction(id: String) : Content(id)
 class Generic(id: String, val type: String) : Content(id)
 
 enum class ToolExecState { PENDING, RUNNING, COMPLETED, ERROR }
+
+enum class ToolKind { READ, WRITE, GENERIC }
+
+fun toolKind(name: String?): ToolKind = when (name) {
+    "read" -> ToolKind.READ
+    "write" -> ToolKind.WRITE
+    else -> ToolKind.GENERIC
+}
 
 data class ToolCallRef(
     val messageId: String,

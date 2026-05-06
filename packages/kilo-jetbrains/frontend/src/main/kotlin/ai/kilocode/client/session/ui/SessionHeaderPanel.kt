@@ -1,10 +1,17 @@
 package ai.kilocode.client.session.ui
 
 import ai.kilocode.client.plugin.KiloBundle
+import ai.kilocode.client.session.model.Compaction
+import ai.kilocode.client.session.model.Content
 import ai.kilocode.client.session.model.ContextUsage
+import ai.kilocode.client.session.model.Reasoning
 import ai.kilocode.client.session.model.SessionHeaderSnapshot
 import ai.kilocode.client.session.model.SessionModelEvent
+import ai.kilocode.client.session.model.Text
 import ai.kilocode.client.session.model.TimelineItem
+import ai.kilocode.client.session.model.Tool
+import ai.kilocode.client.session.model.ToolExecState
+import ai.kilocode.client.session.model.ToolKind
 import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.ui.UiStyle
 import ai.kilocode.rpc.dto.TokensDto
@@ -271,7 +278,7 @@ class SessionHeaderPanel(
 
     internal fun timelineCount() = timeline.count()
 
-    internal fun timelineKinds() = timeline.kinds()
+    internal fun timelineParts() = timeline.parts()
 
     internal fun timelineActive(index: Int) = timeline.active(index)
 
@@ -574,7 +581,7 @@ private class TimelinePanel : JPanel(null) {
 
     fun count() = bars.size
 
-    fun kinds() = bars.map { it.kind }
+    fun parts() = bars.map { it.part }
 
     fun active(index: Int) = bars[index].active
 
@@ -594,12 +601,7 @@ private class TimelinePanel : JPanel(null) {
 }
 
 private class TimelineBar : JPanel() {
-    companion object {
-        private val READ_TOOLS = setOf("read", "glob", "grep", "find", "ls", "diagnostics", "warpgrep")
-        private val WRITE_TOOLS = setOf("edit", "write", "patch", "multi_edit", "multiedit", "apply_patch")
-    }
-
-    var kind: String = ""
+    lateinit var part: Content
         private set
     var active: Boolean = false
         private set
@@ -611,7 +613,7 @@ private class TimelineBar : JPanel() {
     }
 
     fun setItem(item: TimelineItem, height: Int) {
-        kind = item.kind
+        part = item.part
         active = item.active
         toolTipText = item.title
         barHeight = height
@@ -619,14 +621,14 @@ private class TimelineBar : JPanel() {
     }
 
     private fun color(item: TimelineItem): Color {
-        if (item.kind == "error") return UiStyle.Colors.timelineError
-        if (item.kind == "text") return UiStyle.Colors.timelineText
-        if (item.kind == "reasoning") return UiStyle.Colors.timelineText
-        if (item.kind == "compaction") return UiStyle.Colors.timelineStep
-        if (item.kind != "tool") return UiStyle.Colors.timelineStep
-        val name = item.tool?.lowercase().orEmpty()
-        if (READ_TOOLS.contains(name)) return UiStyle.Colors.timelineRead
-        if (WRITE_TOOLS.contains(name)) return UiStyle.Colors.timelineWrite
+        val part = item.part
+        if (part is Tool && part.state == ToolExecState.ERROR) return UiStyle.Colors.timelineError
+        if (part is Text) return UiStyle.Colors.timelineText
+        if (part is Reasoning) return UiStyle.Colors.timelineText
+        if (part is Compaction) return UiStyle.Colors.timelineStep
+        if (part !is Tool) return UiStyle.Colors.timelineStep
+        if (part.kind == ToolKind.READ) return UiStyle.Colors.timelineRead
+        if (part.kind == ToolKind.WRITE) return UiStyle.Colors.timelineWrite
         return UiStyle.Colors.timelineTool
     }
 }

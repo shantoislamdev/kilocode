@@ -1,5 +1,9 @@
 package ai.kilocode.client.session.ui
 
+import ai.kilocode.client.session.model.Reasoning
+import ai.kilocode.client.session.model.Tool
+import ai.kilocode.client.session.model.ToolExecState
+import ai.kilocode.client.session.model.ToolKind
 import ai.kilocode.client.session.update.SessionControllerTestBase
 import ai.kilocode.rpc.dto.ChatEventDto
 import ai.kilocode.rpc.dto.MessageDto
@@ -91,7 +95,11 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertSame(timeline, panel.timelinePanel())
         assertSame(bar, panel.contextBar())
         assertEquals(3, panel.timelineCount())
-        assertEquals(listOf("reasoning", "tool", "error"), panel.timelineKinds())
+        val parts = panel.timelineParts()
+        assertTrue(parts[0] is Reasoning)
+        assertEquals("bash", (parts[1] as Tool).name)
+        assertEquals(ToolKind.GENERIC, (parts[1] as Tool).kind)
+        assertEquals(ToolExecState.ERROR, (parts[2] as Tool).state)
         assertTrue(panel.timelineActive(0))
         assertTrue(panel.timelineActive(1))
         assertFalse(panel.timelineActive(2))

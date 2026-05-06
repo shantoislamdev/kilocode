@@ -349,6 +349,7 @@ class SessionModel {
                 existing.done = dto.time?.end != null || dto.time == null
             }
             is Tool -> {
+                existing.kind = toolKind(dto.tool)
                 existing.state = parseToolState(dto.state)
                 existing.title = dto.title
                 existing.input = dto.input
@@ -374,7 +375,7 @@ class SessionModel {
                 if (content != null && content.isNotEmpty()) this.content.append(content)
                 done = dto.time?.end != null || dto.time == null
             }
-            "tool" -> Tool(dto.id, dto.tool ?: "unknown").apply {
+            "tool" -> Tool(dto.id, dto.tool ?: "unknown", toolKind(dto.tool)).apply {
                 state = parseToolState(dto.state)
                 title = dto.title
                 input = dto.input
@@ -436,8 +437,7 @@ class SessionModel {
             msg.parts.values.map { part ->
                 TimelineItem(
                     id = "${msg.info.id}/${part.id}",
-                    kind = part.kind(),
-                    tool = (part as? Tool)?.name,
+                    part = part,
                     title = part.title(),
                     weight = part.weight().coerceIn(1, 10),
                     durationMs = (part as? Tool)?.time?.durationMs(),
@@ -548,14 +548,6 @@ private fun parseModelKey(value: String): Pair<String, String>? {
     val slash = value.indexOf('/')
     if (slash <= 0 || slash >= value.length - 1) return null
     return value.substring(0, slash) to value.substring(slash + 1)
-}
-
-private fun Content.kind(): String = when (this) {
-    is Text -> "text"
-    is Reasoning -> "reasoning"
-    is Tool -> if (state == ToolExecState.ERROR) "error" else "tool"
-    is Compaction -> "compaction"
-    is Generic -> type
 }
 
 private fun Content.title(): String = when (this) {
