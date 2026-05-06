@@ -61,6 +61,9 @@ class MockCliServer : AutoCloseable {
     @Volatile var sessionGetStatus = 200
     @Volatile var sessionDeleteStatus = 200
     @Volatile var sessionStatusesStatus = 200
+    @Volatile var cloudSessions = """{"cliSessions":[],"nextCursor":null}"""
+    @Volatile var cloudSessionsStatus = 200
+    @Volatile var lastCloudSessionsPath: String? = null
 
     /** Configurable delay for all endpoint responses (ms). 0 = no delay. */
     @Volatile var responseDelay: Long = 0
@@ -210,6 +213,10 @@ class MockCliServer : AutoCloseable {
                 bare == "/experimental/session" -> {
                     lastExperimentalSessionPath = path
                     respond(output, recentSessionsStatus, recentSessions)
+                }
+                bare == "/kilo/cloud-sessions" -> {
+                    lastCloudSessionsPath = path
+                    respond(output, cloudSessionsStatus, cloudSessions)
                 }
                 bare == "/session/status" -> respond(output, sessionStatusesStatus, sessionStatuses)
                 bare == "/session" && method == "GET" -> respond(output, sessionsStatus, sessions)
