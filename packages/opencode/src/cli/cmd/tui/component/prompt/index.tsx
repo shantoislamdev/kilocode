@@ -237,9 +237,11 @@ export function Prompt(props: PromptProps) {
     const sessionID = props.sessionID
     const msg = lastUserMessage()
     if (!sessionID || !msg) return
+    // kilocode_change start - skip compaction messages while syncing local agent/model
     const parts = sync.data.part[msg.id]
     if (!parts) return
     if (!KiloSessionTuiSync.model({ role: msg.role, parts })) return
+    // kilocode_change end
 
     const key = [sessionID, msg.id].join(":")
     if (key === syncedKey) return
