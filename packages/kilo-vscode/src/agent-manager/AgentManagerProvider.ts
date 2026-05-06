@@ -4,9 +4,10 @@ import type { KiloClient, Session } from "@kilocode/sdk/v2/client"
 import type { KiloConnectionService } from "../services/cli-backend"
 import { getErrorMessage } from "../kilo-provider-utils"
 import { resolveLocalDiffTarget } from "../review-utils"
+import { getDiffMarkdownRender, setDiffMarkdownRender } from "../review-settings"
 import { isAbsolutePath } from "../path-utils"
 import { WorktreeManager, type CreateWorktreeResult } from "./WorktreeManager"
-import { remoteRef, WorktreeStateManager } from "./WorktreeStateManager"
+import { remoteRef, WorktreeStateManager, type Worktree } from "./WorktreeStateManager"
 import { handleSection } from "./section-handler"
 import { chooseBaseBranch, normalizeBaseBranch } from "./base-branch"
 import { GitStatsPoller, type LocalStats, type WorktreePresenceResult, type WorktreeStats } from "./GitStatsPoller"
@@ -28,6 +29,7 @@ import { forkSession } from "./fork-session"
 import { continueInWorktree } from "./continue-in-worktree"
 import { WorktreeDiffController } from "./worktree-diff-controller"
 import { WorktreeImporter } from "./worktree-importer"
+import { restoreWorktrees } from "./state-recovery"
 import { diffSummary as localDiffSummary, diffFile as localDiffFile } from "./local-diff"
 import { parseToolRequest, startFromTool, type ToolRequest } from "./tool-start"
 
@@ -67,6 +69,7 @@ export class AgentManagerProvider implements Disposable {
   private cachedWorktreeStats: { type: "agentManager.worktreeStats"; stats: WorktreeStats[] } | undefined
   private cachedLocalStats: { type: "agentManager.localStats"; stats: LocalStats } | undefined
   private unsubTool: (() => void) | undefined
+  private closing: Promise<void> | undefined
 
   /** Session ID most recently loaded via a `loadMessages` message from the webview.
    *  Updated synchronously — unlike the session provider's currentSession which depends on
@@ -247,14 +250,22 @@ export class AgentManagerProvider implements Disposable {
       return
     }
 
-    const migration = await state.load()
+    const loaded = await state.load()
     manager.cleanupOrphanedTempDirs()
+
+    if (loaded.status === "failed" && !(await state.prepareRecovery())) {
+      this.postToWebview({ type: "error", message: "Agent Manager state could not be recovered." })
+      this.pushState()
+      return
+    }
+
+    await this.recoverWorktrees(manager, state)
 
     // When the .kilocode → .kilo migration rewrote git worktree refs, nudge
     // VS Code's git extension to re-discover them. Without this, worktrees
     // won't appear in Source Control until the next VS Code restart.
-    if (migration.refsFixed > 0) {
-      this.log(`Migration fixed ${migration.refsFixed} git worktree ref(s), refreshing git`)
+    if (loaded.refsFixed > 0) {
+      this.log(`Migration fixed ${loaded.refsFixed} git worktree ref(s), refreshing git`)
       this.host.refreshGit()
     }
 
@@ -279,6 +290,20 @@ export class AgentManagerProvider implements Disposable {
     this.panel?.sessions.recoverPendingPrompts()
   }
 
+  private async recoverWorktrees(manager: WorktreeManager, state: WorktreeStateManager): Promise<void> {
+    const infos = await manager.discoverWorktrees().catch((err) => {
+      this.log("Failed to discover worktrees during state recovery:", err)
+      return []
+    })
+    if (infos.length === 0) return
+
+    const result = restoreWorktrees(state, infos)
+    if (result.worktrees === 0 && result.sessions === 0) return
+
+    this.log(`Recovered ${result.worktrees} worktree(s) and ${result.sessions} session(s) from disk`)
+    await state.flush()
+  }
+
   // ---------------------------------------------------------------------------
   // Message interceptor
   // ---------------------------------------------------------------------------
@@ -290,6 +315,7 @@ export class AgentManagerProvider implements Disposable {
     }
     msg = await this.contextMessage(msg)
     const m = msg as unknown as AgentManagerInMessage
+    if (this.shouldWaitForState(m)) await this.waitForStateReady(m.type)
 
     const worktree = await this.onWorktreeMessage(m)
     if (worktree !== undefined) return worktree
@@ -497,6 +523,10 @@ export class AgentManagerProvider implements Disposable {
     if (this.handleSection(m)) return null
     if (m.type === "agentManager.setReviewDiffStyle") {
       this.state?.setReviewDiffStyle(m.style)
+      return null
+    }
+    if (m.type === "agentManager.setReviewMarkdownRender") {
+      void setDiffMarkdownRender(m.render).then(() => this.pushState())
       return null
     }
     if (m.type === "agentManager.setDefaultBaseBranch") {
@@ -796,6 +826,39 @@ export class AgentManagerProvider implements Disposable {
   private async waitForStateReady(context: string): Promise<void> {
     if (!this.stateReady) return
     await this.stateReady.catch((err) => this.log(`${context}: stateReady rejected, continuing:`, err))
+  }
+
+  private shouldWaitForState(m: AgentManagerInMessage): boolean {
+    switch (m.type) {
+      case "agentManager.deleteWorktree":
+      case "agentManager.removeStaleWorktree":
+      case "agentManager.openLocally":
+      case "agentManager.addSessionToWorktree":
+      case "agentManager.closeSession":
+      case "agentManager.persistSession":
+      case "agentManager.forgetSession":
+      case "agentManager.renameWorktree":
+      case "agentManager.requestBranches":
+      case "agentManager.importFromBranch":
+      case "agentManager.importFromPR":
+      case "agentManager.importExternalWorktree":
+      case "agentManager.importAllExternalWorktrees":
+      case "agentManager.setTabOrder":
+      case "agentManager.setWorktreeOrder":
+      case "agentManager.setSessionsCollapsed":
+      case "agentManager.setReviewDiffStyle":
+      case "agentManager.setDefaultBaseBranch":
+      case "agentManager.createSection":
+      case "agentManager.renameSection":
+      case "agentManager.deleteSection":
+      case "agentManager.setSectionColor":
+      case "agentManager.toggleSectionCollapsed":
+      case "agentManager.moveToSection":
+      case "agentManager.moveSection":
+        return true
+      default:
+        return false
+    }
   }
 
   private onToolEvent(event: unknown, directory?: string): void {
@@ -1291,6 +1354,9 @@ export class AgentManagerProvider implements Disposable {
   // ---------------------------------------------------------------------------
 
   private registerWorktreeSession(sessionId: string, directory: string): void {
+    const worktree = this.state?.findWorktreeByPath(directory)
+    if (worktree) this.writeMetadata(sessionId, worktree)
+
     if (!this.panel) return
     this.panel.sessions.setSessionDirectory(sessionId, directory)
     this.panel.sessions.trackSession(sessionId)
@@ -1298,6 +1364,14 @@ export class AgentManagerProvider implements Disposable {
     // was tracked. The CLI backend may have emitted permission.asked between
     // session.create() returning and this registration completing.
     this.panel.sessions.recoverPendingPrompts()
+  }
+
+  private writeMetadata(sessionId: string, worktree: Worktree): void {
+    const manager = this.getWorktreeManager()
+    if (!manager) return
+    void manager
+      .writeMetadata(worktree.path, sessionId, worktree.parentBranch, worktree.remote)
+      .catch((err) => this.log(`Failed to write worktree metadata for ${worktree.id}:`, err))
   }
 
   /** Route a plan follow-up session to its worktree instead of LOCAL. */
@@ -1401,6 +1475,7 @@ export class AgentManagerProvider implements Disposable {
       worktreeOrder: state.getWorktreeOrder(),
       sessionsCollapsed: state.getSessionsCollapsed(),
       reviewDiffStyle: state.getReviewDiffStyle(),
+      reviewMarkdownRender: getDiffMarkdownRender(),
       isGitRepo: true,
       defaultBaseBranch: state.getDefaultBaseBranch(),
       ...run,
@@ -1422,6 +1497,7 @@ export class AgentManagerProvider implements Disposable {
       sessions: [],
       staleWorktreeIds: [],
       reviewDiffStyle: "unified",
+      reviewMarkdownRender: getDiffMarkdownRender(),
       isGitRepo: false,
       runStatuses: [],
       runScriptConfigured: false,
@@ -1607,7 +1683,18 @@ export class AgentManagerProvider implements Disposable {
     this.panel?.postMessage(message)
   }
 
+  public shutdown(): Promise<void> {
+    if (!this.closing) this.closing = this.disposeAsync()
+    return this.closing
+  }
+
   public dispose(): void {
+    void this.shutdown()
+  }
+
+  private async disposeAsync(): Promise<void> {
+    await this.stateReady?.catch((err) => this.log("dispose: stateReady rejected:", err))
+    await this.state?.flush().catch((err) => this.log("dispose: state flush failed:", err))
     this.unsubTool?.()
     this.connectionService.unregisterFocused("agent-manager")
     this.connectionService.registerOpen("agent-manager", [])
@@ -1617,7 +1704,7 @@ export class AgentManagerProvider implements Disposable {
     this.prBridge.poller.stop()
     this.run.dispose()
     this.terminalManager.dispose()
-    void this.terminalRouter.dispose()
+    await this.terminalRouter.dispose()
     this.panel?.dispose()
     this.outputChannel.dispose()
     this.host.dispose()

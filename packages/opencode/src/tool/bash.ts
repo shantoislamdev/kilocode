@@ -1,17 +1,19 @@
 import { Schema } from "effect"
+import { PositiveInt } from "@/util/schema"
 import os from "os"
 import { createWriteStream } from "node:fs"
 import * as Tool from "./tool"
 import path from "path"
 import DESCRIPTION from "./bash.txt"
-import { Log } from "../util"
+import * as Log from "@opencode-ai/core/util/log"
 import { Instance } from "../project/instance"
 import { lazy } from "@/util/lazy"
 import { Language, type Node } from "web-tree-sitter"
 
-import { AppFileSystem } from "@opencode-ai/shared/filesystem"
+import { AppFileSystem } from "@opencode-ai/core/filesystem"
 import { fileURLToPath } from "url"
-import { Flag } from "@/flag/flag"
+import { Config } from "@/config/config"
+import { Flag } from "@opencode-ai/core/flag/flag"
 import { Shell } from "@/shell/shell"
 
 import { BashArity } from "@/permission/arity"
@@ -20,10 +22,10 @@ import { Plugin } from "@/plugin"
 import { Effect, Stream } from "effect"
 import { ChildProcess } from "effect/unstable/process"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
+import { InstanceState } from "@/effect/instance-state"
 
 const MAX_METADATA_LENGTH = 30_000
 const DEFAULT_TIMEOUT = Flag.KILO_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS || 2 * 60 * 1000
-const PS = new Set(["powershell", "pwsh"])
 const CWD = new Set(["cd", "push-location", "set-location"])
 const FILES = new Set([
   ...CWD,
@@ -55,7 +57,7 @@ const SWITCHES = new Set(["-confirm", "-debug", "-force", "-nonewline", "-recurs
 
 export const Parameters = Schema.Struct({
   command: Schema.String.annotate({ description: "The command to execute" }),
-  timeout: Schema.optional(Schema.Number).annotate({ description: "Optional timeout in milliseconds" }),
+  timeout: Schema.optional(PositiveInt).annotate({ description: "Optional timeout in milliseconds" }),
   workdir: Schema.optional(Schema.String).annotate({
     description: `The working directory to run the command in. Defaults to the current directory. Use this instead of 'cd' commands.`,
   }),
@@ -270,7 +272,7 @@ function tail(text: string, maxLines: number, maxBytes: number) {
 const parse = Effect.fn("BashTool.parse")(function* (command: string, ps: boolean) {
   const tree = yield* Effect.promise(() => parser().then((p) => (ps ? p.ps : p.bash).parse(command)))
   if (!tree) throw new Error("Failed to parse command")
-  return tree.rootNode
+  return tree
 })
 
 const ask = Effect.fn("BashTool.ask")(function* (ctx: Tool.Context, scan: Scan, command: string) {
@@ -297,8 +299,8 @@ const ask = Effect.fn("BashTool.ask")(function* (ctx: Tool.Context, scan: Scan, 
   })
 })
 
-function cmd(shell: string, name: string, command: string, cwd: string, env: NodeJS.ProcessEnv) {
-  if (process.platform === "win32" && PS.has(name)) {
+function cmd(shell: string, command: string, cwd: string, env: NodeJS.ProcessEnv) {
+  if (process.platform === "win32" && Shell.ps(shell)) {
     return ChildProcess.make(shell, ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command], {
       cwd,
       env,
@@ -315,7 +317,6 @@ function cmd(shell: string, name: string, command: string, cwd: string, env: Nod
     detached: process.platform !== "win32",
   })
 }
-
 const parser = lazy(async () => {
   const { Parser } = await import("web-tree-sitter")
   const { default: treeWasm } = await import("web-tree-sitter/tree-sitter.wasm" as string, {
@@ -347,6 +348,7 @@ const parser = lazy(async () => {
 export const BashTool = Tool.define(
   "bash",
   Effect.gen(function* () {
+    const config = yield* Config.Service
     const spawner = yield* ChildProcessSpawner
     const fs = yield* AppFileSystem.Service
     const trunc = yield* Truncate.Service
@@ -397,7 +399,8 @@ export const BashTool = Tool.define(
       }
       // kilocode_change end
 
-      for (const node of nodes) { // kilocode_change
+      for (const node of nodes) {
+        // kilocode_change
         const command = parts(node)
         const tokens = command.map((item) => item.text)
         const cmd = ps ? tokens[0]?.toLowerCase() : tokens[0]
@@ -438,7 +441,6 @@ export const BashTool = Tool.define(
     const run = Effect.fn("BashTool.run")(function* (
       input: {
         shell: string
-        name: string
         command: string
         cwd: string
         env: NodeJS.ProcessEnv
@@ -468,7 +470,7 @@ export const BashTool = Tool.define(
 
       const code: number | null = yield* Effect.scoped(
         Effect.gen(function* () {
-          const handle = yield* spawner.spawn(cmd(input.shell, input.name, input.command, input.cwd, input.env))
+          const handle = yield* spawner.spawn(cmd(input.shell, input.command, input.cwd, input.env))
 
           yield* Effect.forkScoped(
             Stream.runForEach(Stream.decodeText(handle.all), (chunk) => {
@@ -597,7 +599,8 @@ export const BashTool = Tool.define(
 
     return () =>
       Effect.gen(function* () {
-        const shell = Shell.acceptable()
+        const cfg = yield* config.get()
+        const shell = Shell.acceptable(cfg.shell)
         const name = Shell.name(shell)
         const chain =
           name === "powershell"
@@ -606,9 +609,10 @@ export const BashTool = Tool.define(
         log.info("bash tool using shell", { shell })
 
         const limits = yield* trunc.limits()
+        const instance = yield* InstanceState.context
 
         return {
-          description: DESCRIPTION.replaceAll("${directory}", Instance.directory)
+          description: DESCRIPTION.replaceAll("${directory}", instance.directory)
             .replaceAll("${os}", process.platform)
             .replaceAll("${shell}", name)
             .replaceAll("${chaining}", chain)
@@ -624,21 +628,26 @@ export const BashTool = Tool.define(
                 throw new Error(`Invalid timeout value: ${params.timeout}. Timeout must be a positive number.`)
               }
               const timeout = params.timeout ?? DEFAULT_TIMEOUT
-              const ps = PS.has(name)
-              const root = yield* parse(params.command, ps)
-              const scan = yield* collect(root, cwd, ps, shell)
-              // kilocode_change start
-              if (!Instance.containsPath(cwd)) {
-                scan.dirs.add(cwd)
-                scan.access = "unknown"
-              }
-              // kilocode_change end
-              yield* ask(ctx, scan, params.command) // kilocode_change
+              const ps = Shell.ps(shell)
+              yield* Effect.scoped(
+                Effect.gen(function* () {
+                  const tree = yield* Effect.acquireRelease(parse(params.command, ps), (tree) =>
+                    Effect.sync(() => tree.delete()),
+                  )
+                  const scan = yield* collect(tree.rootNode, cwd, ps, shell)
+                  // kilocode_change start
+                  if (!Instance.containsPath(cwd)) {
+                    scan.dirs.add(cwd)
+                    scan.access = "unknown"
+                  }
+                  // kilocode_change end
+                  yield* ask(ctx, scan, params.command) // kilocode_change
+                }),
+              )
 
               return yield* run(
                 {
                   shell,
-                  name,
                   command: params.command,
                   cwd,
                   env: yield* shellEnv(ctx, cwd),
