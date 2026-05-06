@@ -1,13 +1,26 @@
 package ai.kilocode.client.session.ui.header
 
 import ai.kilocode.client.session.model.Content
+import ai.kilocode.client.session.model.Compaction
+import ai.kilocode.client.session.model.Reasoning
+import ai.kilocode.client.session.model.Text
 import ai.kilocode.client.session.model.TimelineItem
+import ai.kilocode.client.session.model.Tool
+import ai.kilocode.client.session.model.ToolExecState
+import ai.kilocode.client.session.model.ToolKind
+import ai.kilocode.client.ui.UiStyle
 import com.intellij.util.ui.JBUI
+import java.awt.Color
 import java.awt.Dimension
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import java.awt.event.MouseMotionAdapter
 import kotlin.math.roundToInt
 import javax.swing.JPanel
 
-internal class TimelinePanel : JPanel(null) {
+internal class TimelinePanel : JPanel() {
     companion object {
         const val HEIGHT = 26
         private const val WIDTH = 12
@@ -16,25 +29,28 @@ internal class TimelinePanel : JPanel(null) {
         private const val GAP = 1
     }
 
-    private val bars = mutableListOf<TimelineBar>()
+    private var items: List<TimelineItem> = emptyList()
+    private var heights: List<Int> = emptyList()
 
     init {
         isOpaque = false
+        addMouseMotionListener(object : MouseMotionAdapter() {
+            override fun mouseMoved(event: MouseEvent) {
+                toolTipText = item(event)?.title
+            }
+        })
+        addMouseListener(object : MouseAdapter() {
+            override fun mouseExited(event: MouseEvent) {
+                toolTipText = null
+            }
+        })
     }
 
     fun setItems(items: List<TimelineItem>): Boolean {
-        val appended = items.size > bars.size
-        while (bars.size > items.size) {
-            val bar = bars.removeAt(bars.lastIndex)
-            remove(bar)
-        }
-        while (bars.size < items.size) {
-            val bar = TimelineBar()
-            bars.add(bar)
-            add(bar)
-        }
+        val appended = items.size > this.items.size
         val max = items.maxOfOrNull { it.weight }?.coerceAtLeast(1) ?: 1
-        for ((index, item) in items.withIndex()) bars[index].setItem(item, height(item.weight, max))
+        this.items = items
+        heights = items.map { height(it.weight, max) }
         val show = items.isNotEmpty()
         if (isVisible != show) isVisible = show
         revalidate()
@@ -42,15 +58,37 @@ internal class TimelinePanel : JPanel(null) {
         return appended
     }
 
-    override fun doLayout() {
+    override fun paintComponent(g: Graphics) {
+        super.paintComponent(g)
+        val g2 = g.create() as Graphics2D
         val w = JBUI.scale(WIDTH)
         val gap = JBUI.scale(GAP)
-        bars.forEachIndexed { index, bar ->
-            val h = bar.barHeight
-            val x = index * (w + gap)
-            val y = height - h
-            bar.setBounds(x, y.coerceAtLeast(0), w, h)
+        val tall = height.takeIf { it > 0 } ?: preferredSize.height
+        try {
+            for (idx in items.indices) {
+                val h = heights[idx]
+                val x = idx * (w + gap)
+                val y = (tall - h).coerceAtLeast(0)
+                g2.color = color(items[idx])
+                g2.fillRect(x, y, w, h)
+            }
+        } finally {
+            g2.dispose()
         }
+    }
+
+    private fun item(event: MouseEvent): TimelineItem? {
+        val w = JBUI.scale(WIDTH)
+        val gap = JBUI.scale(GAP)
+        val tall = height.takeIf { it > 0 } ?: preferredSize.height
+        for (idx in items.indices) {
+            val h = heights[idx]
+            val x = idx * (w + gap)
+            val y = (tall - h).coerceAtLeast(0)
+            val inside = event.x >= x && event.x < x + w && event.y >= y && event.y < y + h
+            if (inside) return items[idx]
+        }
+        return null
     }
 
     override fun getPreferredSize(): Dimension = JBUI.size(width(), HEIGHT)
@@ -59,13 +97,13 @@ internal class TimelinePanel : JPanel(null) {
 
     override fun getMaximumSize(): Dimension = Dimension(Int.MAX_VALUE, JBUI.scale(HEIGHT))
 
-    fun count() = bars.size
+    fun count() = items.size
 
-    fun parts(): List<Content> = bars.map { it.part }
+    fun parts(): List<Content> = items.map { it.part }
 
-    fun active(index: Int) = bars[index].active
+    fun active(index: Int) = items[index].active
 
-    fun barHeight(index: Int) = bars[index].barHeight
+    fun barHeight(index: Int) = heights[index]
 
     fun barWidth() = JBUI.scale(WIDTH + GAP)
 
@@ -75,7 +113,19 @@ internal class TimelinePanel : JPanel(null) {
     }
 
     private fun width(): Int {
-        if (bars.isEmpty()) return 0
-        return bars.size * WIDTH + (bars.size - 1) * GAP
+        if (items.isEmpty()) return 0
+        return items.size * WIDTH + (items.size - 1) * GAP
+    }
+
+    private fun color(item: TimelineItem): Color {
+        val part = item.part
+        if (part is Tool && part.state == ToolExecState.ERROR) return UiStyle.Colors.timelineError
+        if (part is Text) return UiStyle.Colors.timelineText
+        if (part is Reasoning) return UiStyle.Colors.timelineText
+        if (part is Compaction) return UiStyle.Colors.timelineStep
+        if (part !is Tool) return UiStyle.Colors.timelineStep
+        if (part.kind == ToolKind.READ) return UiStyle.Colors.timelineRead
+        if (part.kind == ToolKind.WRITE) return UiStyle.Colors.timelineWrite
+        return UiStyle.Colors.timelineTool
     }
 }

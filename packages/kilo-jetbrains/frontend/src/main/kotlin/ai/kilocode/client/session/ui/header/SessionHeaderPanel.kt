@@ -261,6 +261,8 @@ class SessionHeaderPanel(
 
     internal fun timelinePanel(): Component = timeline
 
+    internal fun timelineToolTip() = timeline.toolTipText
+
     internal fun contextBar(): Component = bar
 
     internal fun contextBarVisible() = bar.isVisible

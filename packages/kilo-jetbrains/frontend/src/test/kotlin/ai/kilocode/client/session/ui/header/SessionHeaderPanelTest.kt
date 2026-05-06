@@ -16,6 +16,7 @@ import ai.kilocode.rpc.dto.ProviderDto
 import ai.kilocode.rpc.dto.TodoDto
 import ai.kilocode.rpc.dto.TokensDto
 import java.awt.Color
+import java.awt.event.MouseEvent
 
 class SessionHeaderPanelTest : SessionControllerTestBase() {
 
@@ -152,6 +153,29 @@ class SessionHeaderPanelTest : SessionControllerTestBase() {
         assertTrue(panel.timelineBarHeight(1) < panel.timelineScrollPreferredSize().height)
         assertTrue(panel.timelineBarHeight(0) < panel.timelineBarHeight(1))
         assertEquals(panel.timelineBarHeight(1), panel.timelineBarHeight(2))
+
+        timeline.dispatchEvent(MouseEvent(
+            timeline,
+            MouseEvent.MOUSE_MOVED,
+            System.currentTimeMillis(),
+            0,
+            panel.timelineBarWidth() + 1,
+            panel.timelineScrollPreferredSize().height - 1,
+            0,
+            false,
+        ))
+        assertEquals("Run tests", panel.timelineToolTip())
+        timeline.dispatchEvent(MouseEvent(
+            timeline,
+            MouseEvent.MOUSE_MOVED,
+            System.currentTimeMillis(),
+            0,
+            panel.timelineBarWidth() - 1,
+            0,
+            0,
+            false,
+        ))
+        assertNull(panel.timelineToolTip())
 
         panel.expandButton().doClick()
 
