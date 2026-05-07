@@ -239,7 +239,6 @@ export default function HomePage() {
     <div className="homepage">
       <Head>
         <title>Kilo Code Docs: Setup, Models, MCP, Custom Modes & CLI</title>
-        <meta name="title" content="Kilo Code Docs: Setup, Models, MCP, Custom Modes & CLI" />
       </Head>
       {/* Dotted background pattern */}
       <div className="dot-pattern" />
