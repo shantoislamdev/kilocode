@@ -1,4 +1,5 @@
 import React, { useState } from "react"
+import Head from "next/head"
 import Link from "next/link"
 
 // Terminal content for each tab
@@ -236,6 +237,10 @@ export default function HomePage() {
 
   return (
     <div className="homepage">
+      <Head>
+        <title>Kilo Code Docs: Setup, Models, MCP, Custom Modes & CLI</title>
+        <meta name="title" content="Kilo Code Docs: Setup, Models, MCP, Custom Modes & CLI" />
+      </Head>
       {/* Dotted background pattern */}
       <div className="dot-pattern" />
 

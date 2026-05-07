@@ -1,9 +1,9 @@
 ---
-title: "JetBrains Extension"
+title: "Kilo Code for JetBrains: Free Open-Source AI Coding Plugin (2026)"
 description: "Using Kilo Code in JetBrains IDEs"
 ---
 
-# JetBrains Extension
+# Kilo Code for JetBrains: Free Open-Source AI Coding Plugin (2026)
 
 ## Installation
 
