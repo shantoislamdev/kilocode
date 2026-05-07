@@ -2330,7 +2330,7 @@ describe("SessionNs.getUsage", () => {
     expect(result.cost).toBe(0.01)
   })
 
-  test("uses anthropic messages api cost for OpenRouter (Kilo BYOK)", () => {
+  test("uses upstream_inference_cost for Anthropic Messages API via OpenRouter", () => {
     const model = createModel({
       context: 100_000,
       output: 32_000,
@@ -2350,6 +2350,7 @@ describe("SessionNs.getUsage", () => {
       metadata: {
         anthropic: {
           usage: {
+            // Top-level `cost` is the OpenRouter fee and must be ignored
             cost: 0.0057550875,
             is_byok: true,
             cost_details: {
@@ -2363,13 +2364,13 @@ describe("SessionNs.getUsage", () => {
     expect(result.cost).toBe(0.11510175)
   })
 
-  test("uses anthropic messages api cost for OpenRouter (non-BYOK)", () => {
+  test("ignores Anthropic Messages `cost` when no upstream_inference_cost is reported", () => {
     const model = createModel({
       context: 100_000,
       output: 32_000,
       cost: { input: 3, output: 15, cache: { read: 0.3, write: 3.75 } },
     })
-    const provider = { id: "openrouter" } as Provider.Info
+    const provider = { id: "kilo" } as Provider.Info
     const result = SessionNs.getUsage({
       model,
       provider,
@@ -2384,16 +2385,17 @@ describe("SessionNs.getUsage", () => {
         anthropic: {
           usage: {
             cost: 0.5,
-            cost_details: { upstream_inference_cost: 0.45 },
+            // cost_details missing
           },
         },
       },
     })
 
-    expect(result.cost).toBe(0.5)
+    // Falls back to calculated cost: 1M input * $3 + 100k output * $15 = 3 + 1.5
+    expect(result.cost).toBe(3 + 1.5)
   })
 
-  test("uses Vercel AI Gateway marketCost for Kilo provider", () => {
+  test("uses Vercel AI Gateway marketCost", () => {
     const model = createModel({
       context: 100_000,
       output: 32_000,
@@ -2412,7 +2414,8 @@ describe("SessionNs.getUsage", () => {
       },
       metadata: {
         gateway: {
-          // Strings, exactly as emitted by the AI Gateway message_delta event
+          // Strings, exactly as emitted by the AI Gateway message_delta event.
+          // `cost` (gateway fee, often 0 for BYOK) must be ignored.
           cost: "0",
           marketCost: "0.35349075",
         },
@@ -2422,7 +2425,7 @@ describe("SessionNs.getUsage", () => {
     expect(result.cost).toBe(0.35349075)
   })
 
-  test("uses Vercel AI Gateway cost when marketCost missing", () => {
+  test("ignores Vercel AI Gateway `cost` when marketCost is missing", () => {
     const model = createModel({
       context: 100_000,
       output: 32_000,
@@ -2446,7 +2449,8 @@ describe("SessionNs.getUsage", () => {
       },
     })
 
-    expect(result.cost).toBe(0.123)
+    // Falls back to calculated cost: 1M input * $3 + 100k output * $15 = 3 + 1.5
+    expect(result.cost).toBe(3 + 1.5)
   })
 
   test("falls back to calculated cost when no provider cost is reported", () => {
@@ -2469,7 +2473,7 @@ describe("SessionNs.getUsage", () => {
       metadata: {
         anthropic: {
           usage: {
-            // no cost / cost_details
+            // no cost_details
           },
         },
       },

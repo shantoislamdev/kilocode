@@ -104,15 +104,14 @@ export namespace KiloSession {
    * Extract provider-reported cost from response metadata when available.
    *
    * Supports three internal transports:
-   *   1. OpenRouter chat completions   -> `metadata.openrouter.usage.cost`
-   *                                       (`costDetails.upstreamInferenceCost` for BYOK)
-   *   2. Anthropic Messages via OpenRouter -> `metadata.anthropic.usage.cost`
-   *                                       (`cost_details.upstream_inference_cost` for BYOK)
-   *   3. Anthropic Messages via Vercel AI Gateway -> `metadata.gateway.cost`
-   *                                       (`metadata.gateway.marketCost` for BYOK)
+   *   1. OpenRouter chat completions      -> `metadata.openrouter.usage.cost`
+   *                                          (`costDetails.upstreamInferenceCost` for Kilo BYOK)
+   *   2. Anthropic Messages via OpenRouter -> `metadata.anthropic.usage.cost_details.upstream_inference_cost`
+   *   3. Anthropic Messages via Vercel AI Gateway -> `metadata.gateway.marketCost`
    *
-   * For the Kilo provider (always BYOK), prefers the upstream/market cost over
-   * the regular `cost` field (which represents the gateway fee, often 0).
+   * For the Anthropic Messages API paths only the upstream/market cost is used:
+   * the gateway-level `cost` field represents the gateway fee paid by Kilo
+   * (typically 0 for BYOK) and would understate the user's true spend.
    *
    * Returns `undefined` when no provider cost is available, so the caller
    * should fall back to the standard token-based calculation.
@@ -132,36 +131,31 @@ export namespace KiloSession {
       return Number.isFinite(n) ? n : undefined
     }
 
-    const pick = (regular: unknown, upstream: unknown): number | undefined => {
-      const u = num(upstream)
-      const r = num(regular)
-      return isKilo && u !== undefined ? u : (r ?? u)
-    }
-
     // 1. OpenRouter chat completions
     const orUsage = input.metadata?.["openrouter"]?.["usage"] as
       | { cost?: number; costDetails?: { upstreamInferenceCost?: number } }
       | undefined
     if (orUsage) {
-      const cost = pick(orUsage.cost, orUsage.costDetails?.upstreamInferenceCost)
+      const upstream = num(orUsage.costDetails?.upstreamInferenceCost)
+      const regular = num(orUsage.cost)
+      // Kilo is always BYOK, so prefer upstream cost. For OpenRouter, use regular cost.
+      const cost = isKilo && upstream !== undefined ? upstream : regular
       if (cost !== undefined) return cost
     }
 
-    // 2. Anthropic Messages API (passes through OpenRouter `usage` fields verbatim)
+    // 2. Anthropic Messages API via OpenRouter. Only the upstream BYOK cost is meaningful;
+    //    the top-level `cost` field is the OpenRouter fee, which we deliberately ignore.
     const anthropicUsage = input.metadata?.["anthropic"]?.["usage"] as
-      | { cost?: number; cost_details?: { upstream_inference_cost?: number } }
+      | { cost_details?: { upstream_inference_cost?: number } }
       | undefined
-    if (anthropicUsage) {
-      const cost = pick(anthropicUsage.cost, anthropicUsage.cost_details?.upstream_inference_cost)
-      if (cost !== undefined) return cost
-    }
+    const upstream = num(anthropicUsage?.cost_details?.upstream_inference_cost)
+    if (upstream !== undefined) return upstream
 
-    // 3. Vercel AI Gateway (cost / marketCost are emitted as strings)
-    const gateway = input.metadata?.["gateway"] as { cost?: string | number; marketCost?: string | number } | undefined
-    if (gateway) {
-      const cost = pick(gateway.cost, gateway.marketCost)
-      if (cost !== undefined) return cost
-    }
+    // 3. Anthropic Messages API via Vercel AI Gateway. `cost` is what Kilo paid the gateway
+    //    (typically 0 for BYOK), so we always use `marketCost`. Values are emitted as strings.
+    const gateway = input.metadata?.["gateway"] as { marketCost?: string | number } | undefined
+    const marketCost = num(gateway?.marketCost)
+    if (marketCost !== undefined) return marketCost
 
     return undefined
   }
