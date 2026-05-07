@@ -253,20 +253,25 @@ describe("InstanceStore", () => {
     }),
   )
 
-  it.live("does not install legacy ALS around Effect init", () =>
+  // kilocode_change - Kilo wraps init in the Instance ALS so KilocodeBootstrap (and the
+  // KiloIndexing.init that it forkDetaches) can read Instance.directory. Upstream's test
+  // asserted the opposite contract; rewrite to assert Kilo's contract.
+  it.live("installs Instance ALS around Effect init for Kilo bootstrap compatibility", () =>
     Effect.gen(function* () {
       const dir = yield* tmpdirScoped()
+      let directoryDuringInit: string | undefined
 
       const directory = yield* Effect.promise(() =>
         Instance.provide({
           directory: dir,
           init: Effect.sync(() => {
-            expect(() => Instance.current).toThrow()
+            directoryDuringInit = Instance.directory
           }),
           fn: () => Instance.directory,
         }),
       )
 
+      expect(directoryDuringInit).toBe(dir)
       expect(directory).toBe(dir)
     }),
   )
