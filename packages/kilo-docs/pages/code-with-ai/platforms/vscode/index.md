@@ -1,9 +1,9 @@
 ---
-title: "Kilo Code for VS Code: Free Open-Source AI Coding Extension (2026)"
+title: "Kilo Code for VS Code: Free Open-Source AI Coding Extension"
 description: "Using Kilo Code in Visual Studio Code"
 ---
 
-# Kilo Code for VS Code: Free Open-Source AI Coding Extension (2026)
+# Kilo Code for VS Code: Free Open-Source AI Coding Extension
 
 Kilo Code is available as two VS Code extensions: the **VSCode (Legacy)** extension and the current **VSCode** version built on Kilo's shared agent runtime.
 
