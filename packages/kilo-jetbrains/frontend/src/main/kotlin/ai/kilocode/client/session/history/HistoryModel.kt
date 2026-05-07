@@ -1,99 +1,105 @@
 package ai.kilocode.client.session.history
 
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.util.Disposer
+import javax.swing.AbstractListModel
 
-class HistoryModel {
-    private val listeners = mutableListOf<HistoryModelEvent.Listener>()
+open class HistoryModel<T : HistoryItem> : AbstractListModel<T>() {
+    private var all = emptyList<T>()
+    private var rows = emptyList<T>()
+    private var query = ""
 
-    var source = HistorySource.LOCAL
+    var loading = false
         private set
-    var local = emptyList<HistoryItem>()
+    var error: String? = null
         private set
-    var cloud = emptyList<HistoryItem>()
-        private set
-    var localLoading = false
-        private set
-    var cloudLoading = false
-        private set
-    var localError: String? = null
-        private set
-    var cloudError: String? = null
-        private set
+
+    val items: List<T> get() = all
+    val visibleItems: List<T> get() = rows
+
+    override fun getSize(): Int = rows.size
+
+    override fun getElementAt(index: Int): T = rows[index]
+
+    fun start() {
+        loading = true
+        error = null
+        refresh()
+    }
+
+    fun replace(items: List<T>) {
+        all = HistoryTime.sorted(items)
+        loading = false
+        error = null
+        filter()
+    }
+
+    fun append(items: List<T>) {
+        all = HistoryTime.sorted(all + items)
+        loading = false
+        error = null
+        filter()
+    }
+
+    fun remove(id: String) {
+        all = all.filterNot { it.id == id }
+        filter()
+    }
+
+    fun fail(message: String) {
+        loading = false
+        error = message
+        refresh()
+    }
+
+    fun setFilter(value: String) {
+        query = value.trim().lowercase()
+        filter()
+    }
+
+    fun hasFilter(): Boolean = query.isNotEmpty()
+
+    fun refresh() {
+        val end = size.coerceAtLeast(1) - 1
+        fireContentsChanged(this, 0, end)
+    }
+
+    protected fun clear() {
+        all = emptyList()
+        filter()
+    }
+
+    private fun filter() {
+        val old = rows.size
+        rows = all.filter(::matches)
+        val end = maxOf(old, rows.size).coerceAtLeast(1) - 1
+        fireContentsChanged(this, 0, end)
+    }
+
+    private fun matches(item: T): Boolean {
+        if (query.isEmpty()) return true
+        if (item.title.lowercase().contains(query)) return true
+        if (item.id.lowercase().contains(query)) return true
+        if (item is LocalHistoryItem && item.directory?.lowercase()?.contains(query) == true) return true
+        return false
+    }
+}
+
+class CloudHistoryModel : HistoryModel<CloudHistoryItem>() {
     var cursor: String? = null
         private set
-    private val deleting = mutableSetOf<String>()
 
-    fun deleting(id: String): Boolean = id in deleting
-
-    fun addListener(parent: Disposable, listener: HistoryModelEvent.Listener) {
-        listeners.add(listener)
-        Disposer.register(parent) { listeners.remove(listener) }
+    fun start(reset: Boolean) {
+        cursor = cursor.takeUnless { reset }
+        start()
+        if (reset) clear()
     }
 
-    fun items(): List<HistoryItem> = if (source == HistorySource.LOCAL) local else cloud
-
-    fun select(value: HistorySource) {
-        if (source == value) return
-        source = value
-        fire(HistoryModelEvent.SourceChanged(value))
-    }
-
-    fun startLocal() {
-        localLoading = true
-        localError = null
-        fire(HistoryModelEvent.LocalLoading)
-    }
-
-    fun setLocal(items: List<HistoryItem>) {
-        local = items
-        localLoading = false
-        localError = null
-        fire(HistoryModelEvent.LocalLoaded(items.size))
-    }
-
-    fun startCloud(reset: Boolean) {
-        cloudLoading = true
-        cloudError = null
-        if (reset) {
-            cloud = emptyList()
-            cursor = null
-        }
-        fire(HistoryModelEvent.CloudLoading(reset))
-    }
-
-    fun setCloud(items: List<HistoryItem>, next: String?, append: Boolean) {
-        cloud = HistoryTime.sorted(if (append) cloud + items else items)
+    fun replace(items: List<CloudHistoryItem>, next: String?) {
         cursor = next
-        cloudLoading = false
-        cloudError = null
-        fire(HistoryModelEvent.CloudLoaded(items.size, next))
+        replace(items)
     }
 
-    fun startDelete(id: String) {
-        deleting.add(id)
-        fire(HistoryModelEvent.DeleteStarted(id))
-    }
-
-    fun deleted(id: String) {
-        deleting.remove(id)
-        local = local.filterNot { it.id == id }
-        fire(HistoryModelEvent.Deleted(id))
-    }
-
-    fun error(source: HistorySource, message: String) {
-        if (source == HistorySource.LOCAL) deleting.clear()
-        if (source == HistorySource.LOCAL) {
-            localLoading = false
-            localError = message
-        } else {
-            cloudLoading = false
-            cloudError = message
-        }
-        fire(HistoryModelEvent.Error(source, message))
-    }
-
-    private fun fire(event: HistoryModelEvent) {
-        for (listener in listeners) listener.onEvent(event)
+    fun append(items: List<CloudHistoryItem>, next: String?) {
+        cursor = next
+        append(items)
     }
 }

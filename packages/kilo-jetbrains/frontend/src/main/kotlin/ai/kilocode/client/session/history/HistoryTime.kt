@@ -22,7 +22,7 @@ enum class HistorySection {
 
 internal object HistoryTime {
     fun millis(item: HistoryItem): Long? {
-        if (item.source == HistorySource.CLOUD) return runCatching { Instant.parse(item.updatedAt).toEpochMilli() }.getOrNull()
+        if (item is CloudHistoryItem) return runCatching { Instant.parse(item.updatedAt).toEpochMilli() }.getOrNull()
         val raw = item.updatedAt.toDoubleOrNull()?.toLong() ?: return null
         if (abs(raw) < SECOND_MS_LIMIT) return raw * 1000
         return raw
@@ -36,7 +36,7 @@ internal object HistoryTime {
         if (date == today) return HistorySection.TODAY
         if (date == today.minusDays(1)) return HistorySection.YESTERDAY
         if (date.isAfter(today.minusDays(7)) && date.isBefore(today)) return HistorySection.WEEK
-        if (date.year == today.year && date.month == today.month) return HistorySection.MONTH
+        if (date.isAfter(today.minusDays(30)) && date.isBefore(today)) return HistorySection.MONTH
         return HistorySection.OLDER
     }
 
@@ -63,8 +63,8 @@ internal object HistoryTime {
         return KiloBundle.message("history.time.years", months / 12)
     }
 
-    fun sorted(items: List<HistoryItem>): List<HistoryItem> = items.sortedWith(
-        compareByDescending<HistoryItem> { millis(it) ?: Long.MIN_VALUE }
+    fun <T : HistoryItem> sorted(items: List<T>): List<T> = items.sortedWith(
+        compareByDescending<T> { millis(it) ?: Long.MIN_VALUE }
             .thenBy { it.title.lowercase() }
             .thenBy { it.id },
     )

@@ -59,7 +59,9 @@ class SessionSidePanelManager(
     override fun showHistory() {
         register(current)
         release(current)
-        val view = panel ?: createHistory().also { panel = it }
+        val cached = panel
+        val view = cached ?: createHistory().also { panel = it }
+        if (cached != null && view is HistoryPanel) view.refresh()
         if (current == null && component.componentCount == 1 && component.getComponent(0) === view) return
         current = null
         component.removeAll()
@@ -77,7 +79,7 @@ class SessionSidePanelManager(
             sessions = project.service<KiloSessionService>(),
             workspace = root,
             cs = cs,
-            open = { item -> item.local?.let(this::openSession) },
+            open = { item -> openSession(item.session) },
             deleted = this::removeSession,
         )
         Disposer.register(this) { cs.cancel() }

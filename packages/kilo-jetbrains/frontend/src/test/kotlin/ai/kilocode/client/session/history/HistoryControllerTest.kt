@@ -22,6 +22,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import javax.swing.event.ListDataEvent
+import javax.swing.event.ListDataListener
 
 @Suppress("UnstableApiUsage")
 class HistoryControllerTest : BasePlatformTestCase() {
@@ -57,14 +59,14 @@ class HistoryControllerTest : BasePlatformTestCase() {
         val controller = controller()
         val events = collect(controller)
 
-        controller.loadLocal()
+        controller.reloadLocal()
         flush()
 
         assertEquals(listOf("/test"), rpc.lists)
-        assertEquals(1, controller.model.local.size)
-        assertEquals("ses_1", controller.model.local[0].id)
-        assertEquals("Local One", controller.model.local[0].title)
-        assertEquals("LocalLoading\nLocalLoaded count=1", events.joinToString("\n"))
+        assertEquals(1, controller.local.items.size)
+        assertEquals("ses_1", controller.local.items[0].id)
+        assertEquals("Local One", controller.local.items[0].title)
+        assertEquals("loading=true size=0 error=null\nloading=false size=1 error=null", events.joinToString("\n"))
     }
 
     fun `test cloud load maps sessions and supports load more`() {
@@ -72,12 +74,12 @@ class HistoryControllerTest : BasePlatformTestCase() {
         rpc.cloudCursor = "next_1"
         val controller = controller()
 
-        controller.loadCloud(gitUrl = "git@example.com:repo.git")
+        controller.reloadCloud(gitUrl = "git@example.com:repo.git")
         flush()
 
-        assertEquals(1, controller.model.cloud.size)
-        assertEquals("cloud_1", controller.model.cloud[0].id)
-        assertEquals("next_1", controller.model.cursor)
+        assertEquals(1, controller.cloud.items.size)
+        assertEquals("cloud_1", controller.cloud.items[0].id)
+        assertEquals("next_1", controller.cloud.cursor)
         assertEquals(FakeSessionRpcApi.CloudCall("/test", null, 50, "git@example.com:repo.git"), rpc.cloudCalls[0])
 
         rpc.cloud.clear()
@@ -86,32 +88,21 @@ class HistoryControllerTest : BasePlatformTestCase() {
         controller.loadMoreCloud()
         flush()
 
-        assertEquals(listOf("cloud_1", "cloud_2"), controller.model.cloud.map { it.id })
+        assertEquals(listOf("cloud_1", "cloud_2"), controller.cloud.items.map { it.id })
         assertEquals(FakeSessionRpcApi.CloudCall("/test", "next_1", 50, "git@example.com:repo.git"), rpc.cloudCalls[1])
     }
 
     fun `test local delete calls rpc and removes item`() {
         rpc.listed += session("ses_1", "Local One")
         val controller = controller()
-        controller.loadLocal()
+        controller.reloadLocal()
         flush()
 
-        controller.delete(controller.model.local[0])
+        controller.delete(controller.local.items[0])
         flush()
 
         assertEquals(listOf("ses_1" to "/test"), rpc.deletes)
-        assertTrue(controller.model.local.isEmpty())
-    }
-
-    fun `test cloud delete emits unsupported error`() {
-        val controller = controller()
-        val item = HistoryItem("cloud_1", HistorySource.CLOUD, "Cloud", "a", "b")
-
-        controller.delete(item)
-        flush()
-
-        assertEquals(emptyList<Pair<String, String>>(), rpc.deletes)
-        assertEquals("Cloud sessions cannot be deleted yet", controller.model.cloudError)
+        assertTrue(controller.local.items.isEmpty())
     }
 
     fun `test panel filters and switches source`() {
@@ -155,6 +146,22 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(1, panel.itemCount())
     }
 
+    fun `test panel refresh reloads local history`() {
+        rpc.listed += session("ses_1", "One")
+        val controller = controller()
+        val panel = HistoryPanel(parent, controller)
+        flush()
+
+        assertEquals(listOf("ses_1"), controller.local.items.map { it.id })
+
+        rpc.listed.clear()
+        rpc.listed += session("ses_2", "Two")
+        panel.refresh()
+        flush()
+
+        assertEquals(listOf("ses_2"), controller.local.items.map { it.id })
+    }
+
     fun `test panel groups sessions by date`() {
         val now = Instant.now()
         rpc.listed += session("ses_today", "Today", now.toEpochMilli().toDouble())
@@ -183,12 +190,22 @@ class HistoryControllerTest : BasePlatformTestCase() {
 
     private fun controller() = HistoryController(sessions, workspace, scope)
 
-    private fun collect(controller: HistoryController): MutableList<HistoryModelEvent> {
-        val events = mutableListOf<HistoryModelEvent>()
-        controller.model.addListener(parent) { event ->
-            assertTrue(ApplicationManager.getApplication().isDispatchThread)
-            events.add(event)
+    private fun collect(controller: HistoryController): MutableList<String> {
+        val events = mutableListOf<String>()
+        val listener = object : ListDataListener {
+            override fun intervalAdded(e: ListDataEvent) = record()
+
+            override fun intervalRemoved(e: ListDataEvent) = record()
+
+            override fun contentsChanged(e: ListDataEvent) = record()
+
+            private fun record() {
+                assertTrue(ApplicationManager.getApplication().isDispatchThread)
+                events.add("loading=${controller.local.loading} size=${controller.local.items.size} error=${controller.local.error}")
+            }
         }
+        controller.local.addListDataListener(listener)
+        Disposer.register(parent) { controller.local.removeListDataListener(listener) }
         return events
     }
 

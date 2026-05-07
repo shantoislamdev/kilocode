@@ -13,77 +13,91 @@ class HistoryController(
     private val sessions: KiloSessionService,
     private val workspace: Workspace,
     private val cs: CoroutineScope,
-    private val open: (HistoryItem) -> Unit = {},
+    private val open: (LocalHistoryItem) -> Unit = {},
     private val deleted: (String) -> Unit = {},
 ) {
     companion object {
         const val CLOUD_LIMIT = 50
     }
 
-    val model = HistoryModel()
+    val local = HistoryModel<LocalHistoryItem>()
+    val cloud = CloudHistoryModel()
 
-    private var gitUrl: String? = null
+    private val deleting = mutableSetOf<String>()
+    private var git: String? = null
 
-    fun loadLocal() {
-        edt { model.startLocal() }
+    fun reload(gitUrl: String? = null) {
+        reloadLocal()
+        reloadCloud(gitUrl)
+    }
+
+    fun reloadLocal() {
+        edt { local.start() }
         cs.launch {
             try {
                 val result = sessions.list(workspace.directory)
-                val items = HistoryTime.sorted(result.sessions.map(::localItem))
-                edt { model.setLocal(items) }
+                val items = result.sessions.map(::localItem)
+                edt { local.replace(items) }
             } catch (e: Exception) {
-                edt { model.error(HistorySource.LOCAL, e.message ?: KiloBundle.message("history.error.local")) }
+                edt { local.fail(e.message ?: KiloBundle.message("history.error.local")) }
             }
         }
     }
 
-    fun loadCloud(reset: Boolean = true, gitUrl: String? = null) {
-        val cursor = if (reset) null else model.cursor
-        val url = if (reset) gitUrl else this.gitUrl
-        if (reset) this.gitUrl = gitUrl
-        edt { model.startCloud(reset) }
-        cs.launch {
-            try {
-                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, url)
-                val items = HistoryTime.sorted(result.sessions.map(::cloudItem))
-                edt { model.setCloud(items, result.nextCursor, append = !reset) }
-            } catch (e: Exception) {
-                edt { model.error(HistorySource.CLOUD, e.message ?: KiloBundle.message("history.error.cloud")) }
-            }
-        }
+    fun reloadCloud(gitUrl: String? = null) {
+        git = gitUrl
+        loadCloud(reset = true)
     }
 
     fun loadMoreCloud() {
-        if (model.cursor == null || model.cloudLoading) return
+        if (cloud.cursor == null || cloud.loading) return
         loadCloud(reset = false)
     }
 
-    fun selectSource(source: HistorySource) {
-        edt { model.select(source) }
-    }
-
-    fun delete(item: HistoryItem) {
-        if (item.source == HistorySource.CLOUD) {
-            edt { model.error(HistorySource.CLOUD, KiloBundle.message("history.error.cloud.delete")) }
-            return
-        }
-        edt { model.startDelete(item.id) }
-        cs.launch {
-            try {
-                sessions.deleteSession(item.id, item.directory ?: workspace.directory)
-                edt {
-                    model.deleted(item.id)
-                    deleted(item.id)
+    fun delete(item: LocalHistoryItem) {
+        edt {
+            if (item.id in deleting) return@edt
+            deleting.add(item.id)
+            local.refresh()
+            cs.launch {
+                try {
+                    sessions.deleteSession(item.id, item.directory ?: workspace.directory)
+                    edt {
+                        deleting.remove(item.id)
+                        local.remove(item.id)
+                        deleted(item.id)
+                    }
+                } catch (e: Exception) {
+                    edt {
+                        deleting.remove(item.id)
+                        local.fail(e.message ?: KiloBundle.message("history.error.local.delete"))
+                    }
                 }
-            } catch (e: Exception) {
-                edt { model.error(HistorySource.LOCAL, e.message ?: KiloBundle.message("history.error.local.delete")) }
             }
         }
     }
 
-    fun open(item: HistoryItem) {
-        if (item.source != HistorySource.LOCAL) return
+    fun deleting(item: LocalHistoryItem): Boolean = item.id in deleting
+
+    fun open(item: LocalHistoryItem) {
         edt { open(item) }
+    }
+
+    private fun loadCloud(reset: Boolean) {
+        val cursor = cloud.cursor.takeUnless { reset }
+        edt { cloud.start(reset) }
+        cs.launch {
+            try {
+                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, git)
+                val items = result.sessions.map(::cloudItem)
+                edt {
+                    if (reset) cloud.replace(items, result.nextCursor)
+                    else cloud.append(items, result.nextCursor)
+                }
+            } catch (e: Exception) {
+                edt { cloud.fail(e.message ?: KiloBundle.message("history.error.cloud")) }
+            }
+        }
     }
 }
 
@@ -96,20 +110,6 @@ private fun edt(block: () -> Unit) {
     app.invokeLater(block)
 }
 
-private fun localItem(session: SessionDto) = HistoryItem(
-    id = session.id,
-    source = HistorySource.LOCAL,
-    title = session.title,
-    createdAt = session.time.created.toString(),
-    updatedAt = session.time.updated.toString(),
-    directory = session.directory,
-    local = session,
-)
+private fun localItem(session: SessionDto) = LocalHistoryItem(session)
 
-private fun cloudItem(session: CloudSessionDto) = HistoryItem(
-    id = session.id,
-    source = HistorySource.CLOUD,
-    title = session.title.orEmpty(),
-    createdAt = session.createdAt,
-    updatedAt = session.updatedAt,
-)
+private fun cloudItem(session: CloudSessionDto) = CloudHistoryItem(session)
