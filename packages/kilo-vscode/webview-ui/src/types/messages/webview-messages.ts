@@ -143,6 +143,11 @@ export interface WebviewReadyRequest {
   type: "webviewReady"
 }
 
+export interface SelectSourceRequest {
+  type: "selectSource"
+  id: string
+}
+
 export interface RequestProvidersMessage {
   type: "requestProviders"
 }
@@ -308,12 +313,6 @@ export interface RenameSessionRequest {
 
 export interface RequestAutocompleteSettingsMessage {
   type: "requestAutocompleteSettings"
-}
-
-export interface UpdateAutocompleteSettingMessage {
-  type: "updateAutocompleteSetting"
-  key: "enableAutoTrigger" | "enableSmartInlineTaskKeybinding" | "enableChatAutocomplete" | "model"
-  value: boolean | string
 }
 
 export interface RequestChatCompletionMessage {
@@ -771,6 +770,11 @@ export interface DiffViewerRevertFileRequest {
   file: string
 }
 
+export interface DiffViewerRequestFileRequest {
+  type: "diffViewer.requestFile"
+  file: string
+}
+
 export interface DiffViewerCloseRequest {
   type: "diffViewer.close"
 }
@@ -794,6 +798,12 @@ export interface OpenSubAgentViewerRequest {
 // Preview an image attachment in VS Code's built-in image viewer
 export interface PreviewImageRequest {
   type: "previewImage"
+  dataUrl: string
+  filename: string
+}
+
+export interface SaveImageRequest {
+  type: "saveImage"
   dataUrl: string
   filename: string
 }
@@ -1008,6 +1018,7 @@ export type WebviewMessage =
   | CancelLoginRequest
   | SetOrganizationRequest
   | WebviewReadyRequest
+  | SelectSourceRequest
   | RequestProvidersMessage
   | CompactRequest
   | RequestAgentsMessage
@@ -1029,7 +1040,6 @@ export type WebviewMessage =
   | DeleteSessionRequest
   | RenameSessionRequest
   | RequestAutocompleteSettingsMessage
-  | UpdateAutocompleteSettingMessage
   | RequestChatCompletionMessage
   | RequestFileSearchMessage
   | RequestTerminalContextMessage
@@ -1114,11 +1124,13 @@ export type WebviewMessage =
   | DiffViewerSetDiffStyleRequest
   | DiffViewerSetMarkdownRenderRequest
   | DiffViewerRevertFileRequest
+  | DiffViewerRequestFileRequest
   | DiffViewerCloseRequest
   | DiffVirtualSetMarkdownRenderRequest
   | RetryConnectionRequest
   | OpenSubAgentViewerRequest
   | PreviewImageRequest
+  | SaveImageRequest
   | SetDefaultBaseBranchRequest
   | AgentManagerOpenSessionsMessage
   | RequestAutoApproveStateMessage
