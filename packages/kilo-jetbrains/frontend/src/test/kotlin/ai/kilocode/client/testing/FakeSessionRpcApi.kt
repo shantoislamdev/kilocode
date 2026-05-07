@@ -58,6 +58,7 @@ class FakeSessionRpcApi : KiloSessionRpcApi {
     /** Cloud sessions returned by [cloudSessions]. */
     val cloud = mutableListOf<CloudSessionDto>()
     var cloudCursor: String? = null
+    var importedCloudSession = session
 
     /** Push chat events here; tests collect from [events]. */
     val events = MutableSharedFlow<ChatEventDto>(extraBufferCapacity = 64, replay = 64)
@@ -88,6 +89,7 @@ class FakeSessionRpcApi : KiloSessionRpcApi {
     val lists = mutableListOf<String>()
     val recentCalls = mutableListOf<Pair<String, Int>>()
     val cloudCalls = mutableListOf<CloudCall>()
+    val imports = mutableListOf<Pair<String, String>>()
     var creates = 0
         private set
 
@@ -133,6 +135,12 @@ class FakeSessionRpcApi : KiloSessionRpcApi {
         assertNotEdt("cloudSessions")
         cloudCalls.add(CloudCall(directory, cursor, limit, gitUrl))
         return CloudSessionListDto(cloud.take(limit), cloudCursor)
+    }
+
+    override suspend fun importCloudSession(id: String, directory: String): SessionDto {
+        assertNotEdt("importCloudSession")
+        imports.add(id to directory)
+        return importedCloudSession
     }
 
     override suspend fun statuses(): Flow<Map<String, SessionStatusDto>> {

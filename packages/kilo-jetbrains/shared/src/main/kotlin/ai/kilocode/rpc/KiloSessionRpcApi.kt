@@ -54,6 +54,9 @@ interface KiloSessionRpcApi : RemoteApi<Unit> {
     /** List cloud-backed sessions. */
     suspend fun cloudSessions(directory: String, cursor: String?, limit: Int, gitUrl: String?): CloudSessionListDto
 
+    /** Import a cloud-backed session into local storage. */
+    suspend fun importCloudSession(id: String, directory: String): SessionDto
+
     /** Observe live session status changes. */
     suspend fun statuses(): Flow<Map<String, SessionStatusDto>>
 

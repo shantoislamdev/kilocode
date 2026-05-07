@@ -244,6 +244,45 @@ class KiloBackendSessionManagerTest {
         assertTrue(err.message.orEmpty().contains("boom"))
     }
 
+    @Test
+    fun `importCloudSession posts cloud id and returns local session`() = runBlocking {
+        mock.cloudSessionImport = """{
+            "id":"ses_imported",
+            "slug":"imported",
+            "projectID":"prj_test",
+            "directory":"/repo",
+            "title":"Imported Cloud",
+            "version":"1.0.0",
+            "time":{"created":1000,"updated":2000}
+        }"""
+        val app = setup()
+        ready(app)
+
+        val session = app.sessions.importCloudSession("cloud_1", "/repo path")
+
+        assertEquals("ses_imported", session.id)
+        assertEquals("Imported Cloud", session.title)
+        val path = mock.lastCloudSessionImportPath ?: error("missing cloud import request")
+        assertTrue(path.startsWith("/kilo/cloud/session/import?"))
+        assertTrue(URLDecoder.decode(path, "UTF-8").contains("directory=/repo path"), path)
+        assertEquals("""{"sessionId":"cloud_1"}""", mock.lastCloudSessionImportBody)
+    }
+
+    @Test
+    fun `importCloudSession surfaces server failure`() = runBlocking {
+        mock.cloudSessionImportStatus = 500
+        mock.cloudSessionImport = """{"error":"boom"}"""
+        val app = setup()
+        ready(app)
+
+        val err = assertFailsWith<RuntimeException> {
+            app.sessions.importCloudSession("cloud_1", "/test")
+        }
+
+        assertTrue(err.message.orEmpty().contains("HTTP 500"))
+        assertTrue(err.message.orEmpty().contains("boom"))
+    }
+
     // ------ Session create ------
 
     @Test

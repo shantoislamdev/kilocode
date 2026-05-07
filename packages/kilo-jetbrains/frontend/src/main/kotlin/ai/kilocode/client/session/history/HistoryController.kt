@@ -13,7 +13,7 @@ class HistoryController(
     private val sessions: KiloSessionService,
     private val workspace: Workspace,
     private val cs: CoroutineScope,
-    private val open: (LocalHistoryItem) -> Unit = {},
+    open: (LocalHistoryItem) -> Unit = {},
     private val deleted: (String) -> Unit = {},
 ) {
     companion object {
@@ -24,6 +24,8 @@ class HistoryController(
     val cloud = CloudHistoryModel()
 
     private val deleting = mutableSetOf<String>()
+    private val importing = mutableSetOf<String>()
+    private val opener = open
     private var git: String? = null
 
     fun reload(gitUrl: String? = null) {
@@ -80,7 +82,30 @@ class HistoryController(
     fun deleting(item: LocalHistoryItem): Boolean = item.id in deleting
 
     fun open(item: LocalHistoryItem) {
-        edt { open(item) }
+        edt { opener(item) }
+    }
+
+    fun open(item: CloudHistoryItem) {
+        edt {
+            if (item.id in importing) return@edt
+            importing.add(item.id)
+            cloud.refresh()
+            cs.launch {
+                try {
+                    val session = sessions.importCloudSession(item.id, workspace.directory)
+                    edt {
+                        importing.remove(item.id)
+                        cloud.refresh()
+                        opener(LocalHistoryItem(session))
+                    }
+                } catch (e: Exception) {
+                    edt {
+                        importing.remove(item.id)
+                        cloud.fail(e.message ?: KiloBundle.message("history.error.cloud"))
+                    }
+                }
+            }
+        }
     }
 
     private fun loadCloud(reset: Boolean) {

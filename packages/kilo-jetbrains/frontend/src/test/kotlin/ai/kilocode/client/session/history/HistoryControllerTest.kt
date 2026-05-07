@@ -179,6 +179,39 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(0, panel.selectedIndex())
     }
 
+    fun `test panel opens selected local session on enter from search`() {
+        rpc.listed += session("ses_1", "Alpha")
+        rpc.listed += session("ses_2", "Beta")
+        val opened = mutableListOf<String>()
+        val panel = HistoryPanel(parent, controller(opened))
+        flush()
+
+        val search = panel.defaultFocusedComponent
+        key(search, KeyEvent.VK_DOWN)
+        key(search, KeyEvent.VK_DOWN)
+        key(search, KeyEvent.VK_ENTER)
+
+        assertEquals(listOf("ses_2"), opened)
+    }
+
+    fun `test panel imports and opens selected cloud session on enter from search`() {
+        rpc.cloud += cloud("cloud_1", "Cloud")
+        rpc.importedCloudSession = session("ses_imported", "Imported")
+        val opened = mutableListOf<String>()
+        val panel = HistoryPanel(parent, controller(opened))
+        flush()
+
+        panel.clickCloud()
+        flush()
+        val search = panel.defaultFocusedComponent
+        key(search, KeyEvent.VK_DOWN)
+        key(search, KeyEvent.VK_ENTER)
+        flush()
+
+        assertEquals(listOf("cloud_1" to "/test"), rpc.imports)
+        assertEquals(listOf("ses_imported"), opened)
+    }
+
     fun `test panel refresh reloads local history`() {
         rpc.listed += session("ses_1", "One")
         val controller = controller()
@@ -240,6 +273,10 @@ class HistoryControllerTest : BasePlatformTestCase() {
     }
 
     private fun controller() = HistoryController(sessions, workspace, scope)
+
+    private fun controller(opened: MutableList<String>) = HistoryController(sessions, workspace, scope, open = { item ->
+        opened.add(item.id)
+    })
 
     private fun collect(controller: HistoryController): MutableList<String> {
         val events = mutableListOf<String>()

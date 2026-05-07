@@ -127,6 +127,9 @@ class KiloSessionService internal constructor(
     suspend fun cloudSessions(dir: String, cursor: String?, limit: Int, gitUrl: String?): CloudSessionListDto =
         call { cloudSessions(dir, cursor, limit, gitUrl) }
 
+    suspend fun importCloudSession(id: String, dir: String): SessionDto =
+        call { importCloudSession(id, dir) }
+
     /** Register a worktree directory override for a session. */
     fun setDirectory(id: String, dir: String) {
         cs.launch {

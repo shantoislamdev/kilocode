@@ -182,6 +182,25 @@ class KiloBackendSessionManager(
         }
     }
 
+    fun importCloudSession(id: String, dir: String): SessionDto {
+        val h = http ?: throw IllegalStateException("Session manager not started")
+        val url = base ?: throw IllegalStateException("Session manager not started")
+        val json = """{"sessionId":"${escape(id)}"}"""
+        val request = Request.Builder()
+            .url("$url/kilo/cloud/session/import?directory=${encode(dir)}")
+            .post(json.toRequestBody("application/json".toMediaType()))
+            .build()
+
+        h.newCall(request).execute().use { response ->
+            val raw = response.body?.string().orEmpty()
+            if (!response.isSuccessful) {
+                log.warn("Cloud session import failed: HTTP ${response.code}, body=$raw")
+                throw RuntimeException("Cloud session import failed: HTTP ${response.code} — $raw")
+            }
+            return KiloCliDataParser.parseSession(raw)
+        }
+    }
+
     fun seed(dir: String) {
         try {
             val raw = requireClient().sessionStatus(directory = dir)
@@ -256,4 +275,8 @@ class KiloBackendSessionManager(
     )
 
     private fun encode(value: String) = java.net.URLEncoder.encode(value, Charsets.UTF_8)
+
+    private fun escape(value: String) = value
+        .replace("\\", "\\\\")
+        .replace("\"", "\\\"")
 }

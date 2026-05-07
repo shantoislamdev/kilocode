@@ -74,6 +74,9 @@ class KiloSessionRpcApiImpl : KiloSessionRpcApi {
     override suspend fun cloudSessions(directory: String, cursor: String?, limit: Int, gitUrl: String?): CloudSessionListDto =
         sessions.cloudSessions(directory, cursor, limit, gitUrl)
 
+    override suspend fun importCloudSession(id: String, directory: String): SessionDto =
+        sessions.importCloudSession(id, directory)
+
     override suspend fun statuses(): Flow<Map<String, SessionStatusDto>> =
         sessions.statuses
 

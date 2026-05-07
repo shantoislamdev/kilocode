@@ -134,6 +134,11 @@ class HistoryPanel(
             KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0),
             JComponent.WHEN_FOCUSED,
         )
+        textEditor.registerKeyboardAction(
+            { activeList().selectedValue?.let(::activate) },
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+            JComponent.WHEN_FOCUSED,
+        )
     }
 
     private fun panel(search: SearchTextField, list: JList<out HistoryItem>, footer: JComponent? = null): JComponent {
@@ -164,9 +169,14 @@ class HistoryPanel(
                     e.consume()
                     return
                 }
-                controller.open(item)
+                activate(item)
             }
         })
+        registerKeyboardAction(
+            { selectedValue?.let(::activate) },
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+            JComponent.WHEN_FOCUSED,
+        )
         ListUtil.installAutoSelectOnMouseMove(this)
         ScrollingUtil.installActions(this)
     }
@@ -179,9 +189,14 @@ class HistoryPanel(
         addMouseListener(object : MouseAdapter() {
             override fun mouseReleased(e: MouseEvent) {
                 if (!UIUtil.isActionClick(e, MouseEvent.MOUSE_RELEASED, true)) return
-                clicked(this@apply, e)
+                clicked(this@apply, e)?.let(::activate)
             }
         })
+        registerKeyboardAction(
+            { selectedValue?.let(::activate) },
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0),
+            JComponent.WHEN_FOCUSED,
+        )
         ListUtil.installAutoSelectOnMouseMove(this)
         ScrollingUtil.installActions(this)
     }
@@ -230,6 +245,13 @@ class HistoryPanel(
         if (!box.contains(e.point)) return null
         list.selectedIndex = row
         return list.model.getElementAt(row)
+    }
+
+    private fun activate(item: HistoryItem) {
+        when (item) {
+            is LocalHistoryItem -> controller.open(item)
+            is CloudHistoryItem -> controller.open(item)
+        }
     }
 
     private fun confirm(item: LocalHistoryItem) {
