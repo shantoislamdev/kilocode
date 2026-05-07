@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test"
-import { fixCatalog, fixScripts } from "./transform-package-json"
+import { fixCatalog, fixScripts, mergeWithNewestVersions } from "./transform-package-json"
 
 test("fixScripts preserves Kilo-only root scripts from base", () => {
   const ours = {
@@ -83,4 +83,34 @@ test("fixCatalog is a no-op when catalog is absent", () => {
   const changes: string[] = []
   fixCatalog(pkg, "package.json", changes)
   expect(changes.length).toBe(0)
+})
+
+test("mergeWithNewestVersions preserves ours' key order so kilo-only deps don't relocate", () => {
+  // Regression: when ours has a kilo-only dep in the middle (e.g. rotating-file-stream
+  // alphabetically between npm-package-arg and semver) and theirs lacks it, the merge
+  // result must keep that key in its original position. Previously this function
+  // started from theirs' keys and appended ours-only keys at the end, causing git's
+  // textual 3-way merge to produce a duplicate JSON key.
+  const ours = {
+    "npm-package-arg": "13.0.2",
+    "rotating-file-stream": "3.2.9",
+    semver: "^7.6.3",
+    zod: "catalog:",
+  }
+  const theirs = {
+    "npm-package-arg": "13.0.2",
+    semver: "^7.6.3",
+    zod: "catalog:",
+  }
+  const changes: string[] = []
+  const result = mergeWithNewestVersions(ours, theirs, changes, "dependencies")
+  expect(Object.keys(result)).toEqual(["npm-package-arg", "rotating-file-stream", "semver", "zod"])
+})
+
+test("mergeWithNewestVersions appends theirs-only keys at the end", () => {
+  const ours = { a: "1.0.0", b: "1.0.0" }
+  const theirs = { a: "1.0.0", c: "1.0.0" }
+  const changes: string[] = []
+  const result = mergeWithNewestVersions(ours, theirs, changes, "dependencies")
+  expect(Object.keys(result)).toEqual(["a", "b", "c"])
 })

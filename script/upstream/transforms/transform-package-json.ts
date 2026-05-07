@@ -108,8 +108,14 @@ function compareVersions(a: string, b: string): number | null {
 /**
  * Merge two dependency objects using "newest wins" strategy
  * For non-comparable versions (URLs, catalog:, workspace:*), upstream (theirs) wins
+ *
+ * Key order preserves ours' order first (so kilo-only deps stay in their
+ * original position), then appends theirs-only keys at the end. This avoids
+ * relocating existing keys, which would otherwise let git's textual merge
+ * produce duplicate JSON keys (ours keeps the line in place, theirs appears
+ * to "add" the same key elsewhere → both survive the merge).
  */
-function mergeWithNewestVersions(
+export function mergeWithNewestVersions(
   ours: Record<string, string> | undefined,
   theirs: Record<string, string> | undefined,
   changes: string[],
@@ -117,38 +123,38 @@ function mergeWithNewestVersions(
 ): Record<string, string> {
   const result: Record<string, string> = {}
 
-  // Start with all of theirs
-  if (theirs) {
-    for (const [name, version] of Object.entries(theirs)) {
-      result[name] = version
+  // Seed with ours' keys in ours' order, applying newest-wins per key.
+  if (ours) {
+    for (const [name, ourVersion] of Object.entries(ours)) {
+      const theirVersion = theirs?.[name]
+      if (theirVersion === undefined) {
+        result[name] = ourVersion
+        changes.push(`${section}: preserved ${name}@${ourVersion} (kilo-only)`)
+        continue
+      }
+      if (ourVersion === theirVersion) {
+        result[name] = theirVersion
+        continue
+      }
+      const cmp = compareVersions(ourVersion, theirVersion)
+      if (cmp === null) {
+        result[name] = theirVersion
+        changes.push(`${section}: ${name} kept upstream ${theirVersion} (special format)`)
+      } else if (cmp > 0) {
+        result[name] = ourVersion
+        changes.push(`${section}: ${name} ${theirVersion} -> ${ourVersion} (kilo newer)`)
+      } else {
+        result[name] = theirVersion
+        if (cmp < 0) changes.push(`${section}: ${name} kept upstream ${theirVersion} (upstream newer)`)
+      }
     }
   }
 
-  // Merge in ours, keeping newer versions
-  if (ours) {
-    for (const [name, ourVersion] of Object.entries(ours)) {
-      const theirVersion = result[name]
-
-      if (!theirVersion) {
-        // Dependency only exists in ours - keep it
-        result[name] = ourVersion
-        changes.push(`${section}: preserved ${name}@${ourVersion} (kilo-only)`)
-      } else if (ourVersion !== theirVersion) {
-        // Both have it with different versions - compare
-        const comparison = compareVersions(ourVersion, theirVersion)
-
-        if (comparison === null) {
-          // Can't compare (special format) - upstream wins per user preference
-          changes.push(`${section}: ${name} kept upstream ${theirVersion} (special format)`)
-        } else if (comparison > 0) {
-          // Ours is newer
-          result[name] = ourVersion
-          changes.push(`${section}: ${name} ${theirVersion} -> ${ourVersion} (kilo newer)`)
-        } else if (comparison < 0) {
-          // Theirs is newer - already in result
-          changes.push(`${section}: ${name} kept upstream ${theirVersion} (upstream newer)`)
-        }
-        // If equal, keep theirs (already in result)
+  // Append any theirs-only keys at the end, preserving theirs' relative order.
+  if (theirs) {
+    for (const [name, version] of Object.entries(theirs)) {
+      if (result[name] === undefined) {
+        result[name] = version
       }
     }
   }
