@@ -319,7 +319,7 @@ const GranularToolRow: Component<{
   const language = useLanguage()
   const [adding, setAdding] = createSignal(false)
   const [input, setInput] = createSignal("")
-  const [expanded, setExpanded] = createSignal(permissionExceptions(props.rule).length <= 2)
+  const [override, setOverride] = createSignal<boolean | null>(null)
   let ref: HTMLInputElement | undefined
 
   createEffect(() => {
@@ -327,6 +327,8 @@ const GranularToolRow: Component<{
   })
 
   const excs = createMemo(() => permissionExceptions(props.rule))
+  const expanded = createMemo(() => override() ?? excs().length <= 2)
+  const toggle = () => setOverride(!expanded())
   const level = createMemo(() => wildcardAction(props.rule, props.fallback))
 
   const submit = () => {
@@ -388,7 +390,7 @@ const GranularToolRow: Component<{
         <div style={{ "margin-top": "4px" }}>
           <button
             type="button"
-            onClick={() => setExpanded((v) => !v)}
+            onClick={toggle}
             style={{
               display: "flex",
               "align-items": "center",
