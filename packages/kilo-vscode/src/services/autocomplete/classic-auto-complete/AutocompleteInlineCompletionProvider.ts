@@ -16,9 +16,6 @@ import {
 import {
   findMatchingSuggestion as _findMatchingSuggestion,
   applyFirstLineOnly as _applyFirstLineOnly,
-  countLines as _countLines,
-  shouldShowOnlyFirstLine as _shouldShowOnlyFirstLine,
-  getFirstLine as _getFirstLine,
   calcDebounceDelay,
   MatchingSuggestionWithFillIn as _MatchingSuggestionWithFillIn,
 } from "./inline-utils"
@@ -92,18 +89,6 @@ export function applyFirstLineOnly(
  * This command is executed after the user accepts an inline completion.
  */
 export const INLINE_COMPLETION_ACCEPTED_COMMAND = "kilocode.autocomplete.inline-completion.accepted"
-
-export function countLines(text: string): number {
-  return _countLines(text)
-}
-
-export function shouldShowOnlyFirstLine(prefix: string, suggestion: string): boolean {
-  return _shouldShowOnlyFirstLine(prefix, suggestion)
-}
-
-export function getFirstLine(text: string): string {
-  return _getFirstLine(text)
-}
 
 export function stringToInlineCompletions(text: string, position: vscode.Position): vscode.InlineCompletionItem[] {
   if (text === "") {
