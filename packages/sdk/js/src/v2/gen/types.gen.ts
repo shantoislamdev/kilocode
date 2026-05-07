@@ -1949,7 +1949,7 @@ export type Config = {
    * Custom provider configurations and model overrides
    */
   provider?: {
-    [key: string]: ProviderConfig
+    [key: string]: ProviderConfig | null
   }
   /**
    * MCP (Model Context Protocol) server configurations
@@ -6465,6 +6465,36 @@ export type TelemetryCaptureResponses = {
 
 export type TelemetryCaptureResponse = TelemetryCaptureResponses[keyof TelemetryCaptureResponses]
 
+export type TelemetrySetEnabledData = {
+  body?: {
+    enabled: boolean
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/telemetry/setEnabled"
+}
+
+export type TelemetrySetEnabledErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type TelemetrySetEnabledError = TelemetrySetEnabledErrors[keyof TelemetrySetEnabledErrors]
+
+export type TelemetrySetEnabledResponses = {
+  /**
+   * State updated
+   */
+  200: boolean
+}
+
+export type TelemetrySetEnabledResponse = TelemetrySetEnabledResponses[keyof TelemetrySetEnabledResponses]
+
 export type RemoteEnableData = {
   body?: never
   path?: never
@@ -7293,7 +7323,16 @@ export type KiloClawStatusResponses = {
    * Instance status
    */
   200: {
-    status: "provisioned" | "starting" | "restarting" | "running" | "stopped" | "destroying" | null
+    status:
+      | "provisioned"
+      | "starting"
+      | "restarting"
+      | "recovering"
+      | "running"
+      | "stopped"
+      | "destroying"
+      | "restoring"
+      | null
     sandboxId?: string
     flyRegion?: string
     machineSize?: {
@@ -7306,6 +7345,7 @@ export type KiloClawStatusResponses = {
     channelCount?: number
     secretCount?: number
     userId?: string
+    botName?: string | null
   }
 }
 
@@ -7323,13 +7363,13 @@ export type KiloClawChatCredentialsData = {
 
 export type KiloClawChatCredentialsResponses = {
   /**
-   * Stream Chat credentials or null
+   * Kilo Chat credentials or null
    */
   200: {
-    apiKey: string
-    userId: string
-    userToken: string
-    channelId: string
+    token: string
+    expiresAt: string
+    kiloChatUrl: string
+    eventServiceUrl: string
   } | null
 }
 

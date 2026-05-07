@@ -221,6 +221,8 @@ import type {
   SyncStartResponses,
   TelemetryCaptureErrors,
   TelemetryCaptureResponses,
+  TelemetrySetEnabledErrors,
+  TelemetrySetEnabledResponses,
   TextPartInput,
   ToolIdsErrors,
   ToolIdsResponses,
@@ -4936,6 +4938,45 @@ export class Telemetry extends HeyApiClient {
       },
     })
   }
+
+  /**
+   * Set PostHog telemetry enabled state
+   *
+   * Update the PostHog client's opt-in/out state at runtime. The CLI reads KILO_TELEMETRY_LEVEL once at spawn — this route lets clients (e.g. the VS Code extension) propagate runtime telemetry consent changes.
+   */
+  public setEnabled<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      enabled?: boolean
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "enabled" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<TelemetrySetEnabledResponses, TelemetrySetEnabledErrors, ThrowOnError>(
+      {
+        url: "/telemetry/setEnabled",
+        ...options,
+        ...params,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...params.headers,
+        },
+      },
+    )
+  }
 }
 
 export class Remote extends HeyApiClient {
@@ -5787,7 +5828,7 @@ export class Claw extends HeyApiClient {
   /**
    * Get KiloClaw chat credentials
    *
-   * Fetch Stream Chat credentials for the user's KiloClaw instance
+   * Returns the bearer token and endpoint URLs the client uses to talk to the Kilo Chat worker and the Event Service. The bearer is the user's existing long-lived Kilo JWT — kilo-chat and event-service both verify it directly with NEXTAUTH_SECRET, so no separate token mint is needed.
    */
   public chatCredentials<ThrowOnError extends boolean = false>(
     parameters?: {
