@@ -18,7 +18,7 @@ Feedback is only available when telemetry is on. If you turn telemetry off, the 
 
 When Kilo finishes a response, you'll see thumbs-up and thumbs-down buttons next to the **Copy response** button. Click one to send your rating. Click the same button again to take it back, or click the other one to change your mind.
 
-If you reload the window or switch to a different session, the buttons will look unrated again — but don't worry, your earlier ratings were already sent.
+If you reload the window or switch to a different session, the feedback status will be reset.
 
 {% /tab %}
 
