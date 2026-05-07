@@ -6,8 +6,10 @@ import type * as Provider from "./provider"
 import type * as ModelsDev from "./models"
 import { iife } from "@/util/iife"
 import { Flag } from "@opencode-ai/core/flag/flag"
+// kilocode_change start
 import { kiloProviderOptions } from "@/kilocode/provider-options"
-import { isLing } from "@/kilocode/model-match" // kilocode_change
+import { isLing } from "@/kilocode/model-match"
+// kilocode_change end
 
 type Modality = NonNullable<ModelsDev.Model["modalities"]>["input"][number]
 
@@ -43,8 +45,10 @@ function sdkKey(npm: string): string | undefined {
       return "gateway"
     case "@openrouter/ai-sdk-provider":
       return "openrouter"
-    case "@kilocode/kilo-gateway": // kilocode_change
+    // kilocode_change start
+    case "@kilocode/kilo-gateway":
       return "openrouter"
+    // kilocode_change end
   }
   return undefined
 }
@@ -469,9 +473,11 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
     id.includes("deepseek-r1") ||
     id.includes("deepseek-v3") ||
     id.includes("minimax") ||
-    // id.includes("glm") || // kilocode_change
-    // id.includes("kimi") || // kilocode_change
+    // kilocode_change start
+    // id.includes("glm") ||
+    // id.includes("kimi") ||
     // TODO: Remove this after models.dev data is fixed to use "kimi-k2.5" instead of "k2p5"
+    // kilocode_change end
     id.includes("k2p") ||
     id.includes("qwen") ||
     id.includes("big-pickle")
@@ -480,8 +486,7 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
 
   // see: https://docs.x.ai/docs/guides/reasoning#control-how-hard-the-model-thinks
   if (id.includes("grok") && id.includes("grok-3-mini")) {
-    if (model.api.npm === "@openrouter/ai-sdk-provider" || model.api.npm === "@kilocode/kilo-gateway") {
-      // kilocode_change - add Kilo Gateway support
+    if (model.api.npm === "@openrouter/ai-sdk-provider" || model.api.npm === "@kilocode/kilo-gateway") { // kilocode_change
       return {
         low: { reasoning: { effort: "low" } },
         high: { reasoning: { effort: "high" } },
@@ -504,14 +509,14 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
           thinking: { reasoning: { enabled: true } },
         }
       }
-      // kilocode_change end
       if (
         !model.id.includes("gpt") &&
         !model.id.includes("gemini-3") &&
         !model.id.includes("claude") &&
-        !model.id.includes("mercury") // kilocode_change
+        !model.id.includes("mercury")
       )
         return {}
+      // kilocode_change end
       return Object.fromEntries(OPENAI_EFFORTS.map((effort) => [effort, { reasoning: { effort } }]))
 
     case "@ai-sdk/gateway":
@@ -913,11 +918,13 @@ export function options(input: {
     result["promptCacheKey"] = input.sessionID
   }
 
+  // kilocode_change start
   if (
     input.model.api.npm === "@openrouter/ai-sdk-provider" ||
     input.model.api.npm === "@llmgateway/ai-sdk-provider" ||
-    input.model.api.npm === "@kilocode/kilo-gateway" // kilocode_change
+    input.model.api.npm === "@kilocode/kilo-gateway"
   ) {
+  // kilocode_change end
     result["usage"] = {
       include: true,
     }
@@ -993,9 +1000,11 @@ export function options(input: {
       if (
         input.model.api.npm === "@ai-sdk/openai" ||
         input.model.api.npm === "@ai-sdk/azure" ||
+        // kilocode_change start
         input.model.api.npm === "@ai-sdk/github-copilot" ||
-        input.model.api.npm === "@openrouter/ai-sdk-provider" || // kilocode_change
-        input.model.api.npm === "@kilocode/kilo-gateway" // kilocode_change
+        input.model.api.npm === "@openrouter/ai-sdk-provider" ||
+        input.model.api.npm === "@kilocode/kilo-gateway"
+        // kilocode_change end
       ) {
         result["reasoningSummary"] = "auto"
       }
@@ -1063,11 +1072,13 @@ export function smallOptions(model: Provider.Model) {
     }
     return { thinkingConfig: { thinkingBudget: 0 } }
   }
+  // kilocode_change start
   if (
     model.providerID === "openrouter" ||
     model.providerID === "llmgateway" ||
-    model.api.npm === "@kilocode/kilo-gateway" // kilocode_change
+    model.api.npm === "@kilocode/kilo-gateway"
   ) {
+  // kilocode_change end
     if (model.api.id.includes("google")) {
       return { reasoning: { enabled: false } }
     }
