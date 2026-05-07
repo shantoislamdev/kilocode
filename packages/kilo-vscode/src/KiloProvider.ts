@@ -16,7 +16,13 @@ import type { EditorContext, IndexingStatus } from "./services/cli-backend/types
 import { FileIgnoreController } from "./services/autocomplete/shims/FileIgnoreController"
 import { ChatTextAreaAutocomplete } from "./services/autocomplete/chat-autocomplete/ChatTextAreaAutocomplete"
 import { buildWebviewHtml, getWebviewFontSize } from "./utils"
-import { TelemetryProxy, type TelemetryPropertiesProvider, pushTelemetryState, watchTelemetryState } from "./services/telemetry" // prettier-ignore
+import { saveImage } from "./kilo-provider/save-image"
+import {
+  TelemetryProxy,
+  type TelemetryPropertiesProvider,
+  pushTelemetryState,
+  watchTelemetryState,
+} from "./services/telemetry"
 import {
   sessionToWebview,
   indexProvidersById,
@@ -747,7 +753,6 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
             console.error("[Kilo New] handleForkSession failed:", e),
           )
           break
-
         case "retryConnection":
           console.log("[Kilo New] KiloProvider: 🔄 Retrying connection...")
           this.initializeConnection().catch((e) =>
@@ -760,6 +765,8 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         case "previewImage":
           this.handlePreviewImage(message.dataUrl, message.filename)
           break
+        case "saveImage":
+          return saveImage(this.getWorkspaceDirectory(this.currentSession?.id), message)
         case "openFile":
           if (message.filePath) {
             this.handleOpenFile(message.filePath, message.line, message.column)

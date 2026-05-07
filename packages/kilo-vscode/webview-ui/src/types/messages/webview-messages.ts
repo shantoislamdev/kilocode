@@ -802,6 +802,12 @@ export interface PreviewImageRequest {
   filename: string
 }
 
+export interface SaveImageRequest {
+  type: "saveImage"
+  dataUrl: string
+  filename: string
+}
+
 // Set default base branch (webview → extension)
 export interface SetDefaultBaseBranchRequest {
   type: "agentManager.setDefaultBaseBranch"
@@ -1124,6 +1130,7 @@ export type WebviewMessage =
   | RetryConnectionRequest
   | OpenSubAgentViewerRequest
   | PreviewImageRequest
+  | SaveImageRequest
   | SetDefaultBaseBranchRequest
   | AgentManagerOpenSessionsMessage
   | RequestAutoApproveStateMessage
