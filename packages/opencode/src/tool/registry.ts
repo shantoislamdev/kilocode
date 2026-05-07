@@ -23,8 +23,10 @@ import { Plugin } from "../plugin"
 import { Provider } from "@/provider/provider"
 import { ProviderID, type ModelID } from "../provider/schema"
 import { WebSearchTool } from "./websearch"
-import { KiloToolRegistry } from "../kilocode/tool/registry" // kilocode_change
-import { makeRuntime } from "@/effect/run-service" // kilocode_change
+// kilocode_change start
+import { KiloToolRegistry } from "../kilocode/tool/registry"
+import { makeRuntime } from "@/effect/run-service"
+// kilocode_change end
 import { Flag } from "@opencode-ai/core/flag/flag"
 import * as Log from "@opencode-ai/core/util/log"
 import { LspTool } from "./lsp"
@@ -103,7 +105,7 @@ export const layer: Layer.Layer<
     const invalid = yield* InvalidTool
     const task = yield* TaskTool
     const read = yield* ReadTool
-    const questiontool = yield* QuestionTool // kilocode_change: renamed to free `question` for the boolean below
+    const question = yield* QuestionTool
     const todo = yield* TodoWriteTool
     const lsptool = yield* LspTool
     const plan = yield* PlanExitTool
@@ -117,8 +119,10 @@ export const layer: Layer.Layer<
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
     const agent = yield* Agent.Service
-    const suggesttool = yield* SuggestTool // kilocode_change
-    const kiloToolInfos = yield* KiloToolRegistry.infos() // kilocode_change
+    // kilocode_change start
+    const suggesttool = yield* SuggestTool
+    const kiloToolInfos = yield* KiloToolRegistry.infos()
+    // kilocode_change end
 
     const state = yield* InstanceState.make<State>(
       Effect.fn("ToolRegistry.state")(function* (ctx) {
@@ -194,11 +198,9 @@ export const layer: Layer.Layer<
           }
         }
 
-        const cfg = yield* config.get()
-        // kilocode_change start
-        const question =
-          ["app", "cli", "desktop", "vscode"].includes(Flag.KILO_CLIENT) || Flag.KILO_ENABLE_QUESTION_TOOL
-        // kilocode_change end
+        const cfg = yield* config.get() // kilocode_change: capture for KiloToolRegistry.extra
+        const questionEnabled =
+          ["app", "cli", "desktop", "vscode"].includes(Flag.KILO_CLIENT) || Flag.KILO_ENABLE_QUESTION_TOOL // kilocode_change: add vscode client + KILO_* flag
 
         const tool = yield* Effect.all({
           invalid: Tool.init(invalid),
@@ -214,7 +216,7 @@ export const layer: Layer.Layer<
           search: Tool.init(websearch),
           skill: Tool.init(skilltool),
           patch: Tool.init(patchtool),
-          question: Tool.init(questiontool), // kilocode_change: renamed binding
+          question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
           suggest: Tool.init(suggesttool), // kilocode_change
@@ -226,7 +228,7 @@ export const layer: Layer.Layer<
           custom,
           builtin: [
             tool.invalid,
-            ...(question ? [tool.question] : []), // kilocode_change: boolean renamed from questionEnabled
+            ...(questionEnabled ? [tool.question] : []),
             tool.bash,
             tool.read,
             tool.glob,
@@ -239,10 +241,12 @@ export const layer: Layer.Layer<
             tool.search,
             tool.skill,
             tool.patch,
-            tool.plan, // kilocode_change: always register, gated by agent permission
-            ...(["cli", "vscode"].includes(Flag.KILO_CLIENT) ? [tool.suggest] : []), // kilocode_change
-            ...KiloToolRegistry.extra(kilo, cfg), // kilocode_change
             ...(Flag.KILO_EXPERIMENTAL_LSP_TOOL ? [tool.lsp] : []),
+            // kilocode_change start
+            tool.plan,
+            ...(["cli", "vscode"].includes(Flag.KILO_CLIENT) ? [tool.suggest] : []),
+            ...KiloToolRegistry.extra(kilo, cfg),
+            // kilocode_change end
           ],
           task: tool.task,
           read: tool.read,
@@ -300,8 +304,10 @@ export const layer: Layer.Layer<
         }
 
         const usePatch =
-          !!process.env["KILO_E2E_LLM_URL"] || // kilocode_change
+          // kilocode_change start
+          !!process.env["KILO_E2E_LLM_URL"] ||
           (input.modelID.includes("gpt-") && !input.modelID.includes("oss") && !input.modelID.includes("gpt-4"))
+          // kilocode_change end
         if (tool.id === ApplyPatchTool.id) return usePatch
         if (tool.id === EditTool.id) return !usePatch // kilocode_change
 
