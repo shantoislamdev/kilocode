@@ -204,6 +204,69 @@ const TRANSFORM_PACKAGE_NAMES: Record<string, string> = {
   "packages/sdk/js/package.json": "@kilocode/sdk",
 }
 
+// Kilo-specific scripts to preserve from the base branch per package.json.
+// Upstream's version wholesale-replaces the scripts block, so anything listed
+// here gets re-applied from ours after taking theirs.
+const PRESERVE_SCRIPTS: Record<string, string[]> = {
+  "package.json": ["extension", "changeset", "changeset:version", "dev-setup", "postinstall"],
+  "packages/opencode/package.json": ["test", "test:ci"],
+}
+
+// Upstream-only scripts to delete per package.json. These reference packages
+// Kilo doesn't ship (desktop-electron, console/app, app) and would otherwise
+// reappear on every merge.
+const DELETE_UPSTREAM_SCRIPTS: Record<string, string[]> = {
+  "package.json": ["dev:desktop", "dev:web", "dev:console"],
+}
+
+// Upstream-only catalog entries to delete per package.json. These are pulled
+// in by upstream features (e.g. desktop Sentry integration) that Kilo doesn't
+// ship, so they add install weight with zero consumers in our tree.
+const DELETE_UPSTREAM_CATALOG: Record<string, string[]> = {
+  "package.json": ["@sentry/solid", "@sentry/vite-plugin"],
+}
+
+/**
+ * Re-apply Kilo-specific scripts on top of the upstream-shaped scripts block,
+ * and prune upstream-only scripts that target packages Kilo doesn't ship.
+ */
+export function fixScripts(pkg: Record<string, unknown>, path: string, ours: Record<string, unknown> | null, changes: string[]): void {
+  const theirs = (pkg.scripts as Record<string, string> | undefined) || {}
+  const oursScripts = (ours?.scripts as Record<string, string> | undefined) || {}
+
+  for (const name of PRESERVE_SCRIPTS[path] || []) {
+    const val = oursScripts[name]
+    if (val && theirs[name] !== val) {
+      theirs[name] = val
+      changes.push(`scripts.${name}: preserved from base`)
+    }
+  }
+
+  for (const name of DELETE_UPSTREAM_SCRIPTS[path] || []) {
+    if (theirs[name]) {
+      delete theirs[name]
+      changes.push(`scripts.${name}: removed (upstream-only, no Kilo target)`)
+    }
+  }
+
+  if (Object.keys(theirs).length > 0) pkg.scripts = theirs
+}
+
+/**
+ * Prune upstream-only catalog entries that have no consumers in Kilo.
+ */
+export function fixCatalog(pkg: Record<string, unknown>, path: string, changes: string[]): void {
+  const ws = pkg.workspaces as { catalog?: Record<string, string> } | undefined
+  const cat = ws?.catalog
+  if (!cat) return
+  for (const name of DELETE_UPSTREAM_CATALOG[path] || []) {
+    if (cat[name]) {
+      delete cat[name]
+      changes.push(`workspaces.catalog.${name}: removed (upstream-only, no Kilo consumer)`)
+    }
+  }
+}
+
 /**
  * Check if file is a package.json
  */
@@ -358,46 +421,7 @@ export async function transformPackageJson(file: string, options: PackageJsonOpt
         changes.push(`workspaces.packages: preserved Kilo's workspace configuration`)
       }
 
-      const ourScripts = ourPkg.scripts as Record<string, string> | undefined
-      if (relativePath === "package.json" && ourScripts?.extension && pkg.scripts?.extension !== ourScripts.extension) {
-        pkg.scripts = pkg.scripts || {}
-        pkg.scripts.extension = ourScripts.extension
-        changes.push(`scripts.extension: preserved Kilo's extension script`)
-      }
-      if (relativePath === "package.json" && ourScripts?.changeset && pkg.scripts?.changeset !== ourScripts.changeset) {
-        pkg.scripts = pkg.scripts || {}
-        pkg.scripts.changeset = ourScripts.changeset
-        changes.push(`scripts.changeset: preserved Kilo's changeset script`)
-      }
-      if (
-        relativePath === "package.json" &&
-        ourScripts?.["changeset:version"] &&
-        pkg.scripts?.["changeset:version"] !== ourScripts["changeset:version"]
-      ) {
-        pkg.scripts = pkg.scripts || {}
-        pkg.scripts["changeset:version"] = ourScripts["changeset:version"]
-        changes.push(`scripts.changeset:version: preserved Kilo's changeset:version script`)
-      }
-
-      // Preserve Kilo's test runner scripts for packages/opencode
-      if (
-        relativePath === "packages/opencode/package.json" &&
-        ourScripts?.test &&
-        pkg.scripts?.test !== ourScripts.test
-      ) {
-        pkg.scripts = pkg.scripts || {}
-        pkg.scripts.test = ourScripts.test
-        changes.push(`scripts.test: preserved Kilo's test runner script`)
-      }
-      if (
-        relativePath === "packages/opencode/package.json" &&
-        ourScripts?.["test:ci"] &&
-        pkg.scripts?.["test:ci"] !== ourScripts["test:ci"]
-      ) {
-        pkg.scripts = pkg.scripts || {}
-        pkg.scripts["test:ci"] = ourScripts["test:ci"]
-        changes.push(`scripts.test:ci: preserved Kilo's CI test runner script`)
-      }
+      fixScripts(pkg, relativePath, ourPkg, changes)
 
       // Merge catalog with "newest wins" strategy
       if (ourWorkspaces?.catalog || theirWorkspaces?.catalog) {
@@ -409,6 +433,8 @@ export async function transformPackageJson(file: string, options: PackageJsonOpt
           "workspaces.catalog",
         )
       }
+
+      fixCatalog(pkg, relativePath, changes)
     }
 
     // 7. Transform dependency names (opencode -> kilo)
@@ -617,28 +643,7 @@ export async function transformAllPackageJson(options: PackageJsonOptions = {}):
           changes.push(`workspaces.packages: preserved Kilo's workspace configuration`)
         }
 
-        const kiloScripts = kiloPkg.scripts as Record<string, string> | undefined
-        if (path === "package.json" && kiloScripts?.extension && pkg.scripts?.extension !== kiloScripts.extension) {
-          pkg.scripts = pkg.scripts || {}
-          pkg.scripts.extension = kiloScripts.extension
-          changes.push(`scripts.extension: preserved Kilo's extension script`)
-        }
-
-        // Preserve Kilo's test runner scripts for packages/opencode
-        if (path === "packages/opencode/package.json" && kiloScripts?.test && pkg.scripts?.test !== kiloScripts.test) {
-          pkg.scripts = pkg.scripts || {}
-          pkg.scripts.test = kiloScripts.test
-          changes.push(`scripts.test: preserved Kilo's test runner script`)
-        }
-        if (
-          path === "packages/opencode/package.json" &&
-          kiloScripts?.["test:ci"] &&
-          pkg.scripts?.["test:ci"] !== kiloScripts["test:ci"]
-        ) {
-          pkg.scripts = pkg.scripts || {}
-          pkg.scripts["test:ci"] = kiloScripts["test:ci"]
-          changes.push(`scripts.test:ci: preserved Kilo's CI test runner script`)
-        }
+        fixScripts(pkg, path, kiloPkg, changes)
 
         // Merge catalog with "newest wins" strategy
         if (kiloWorkspaces?.catalog || upstreamWorkspaces?.catalog) {
@@ -650,6 +655,8 @@ export async function transformAllPackageJson(options: PackageJsonOptions = {}):
             "workspaces.catalog",
           )
         }
+
+        fixCatalog(pkg, path, changes)
       }
 
       // 7. Transform dependency names (opencode -> kilo)
