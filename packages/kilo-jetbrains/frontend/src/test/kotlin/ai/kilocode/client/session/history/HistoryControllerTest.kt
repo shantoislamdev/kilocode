@@ -21,8 +21,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.awt.event.KeyEvent
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import javax.swing.JComponent
+import javax.swing.KeyStroke
 import javax.swing.event.ListDataEvent
 import javax.swing.event.ListDataListener
 
@@ -147,6 +150,35 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(1, panel.itemCount())
     }
 
+    fun `test panel focuses active search and moves list selection from search`() {
+        rpc.listed += session("ses_1", "Alpha")
+        rpc.listed += session("ses_2", "Beta")
+        rpc.cloud += cloud("cloud_1", "Cloud One")
+        rpc.cloud += cloud("cloud_2", "Cloud Two")
+        val panel = HistoryPanel(parent, controller())
+        flush()
+
+        val local = panel.defaultFocusedComponent
+        assertFalse(panel.listFocusable())
+        assertEquals(-1, panel.selectedIndex())
+        key(local, KeyEvent.VK_DOWN)
+        assertEquals(0, panel.selectedIndex())
+        key(local, KeyEvent.VK_DOWN)
+        assertEquals(1, panel.selectedIndex())
+        key(local, KeyEvent.VK_UP)
+        assertEquals(0, panel.selectedIndex())
+
+        panel.clickCloud()
+        flush()
+
+        val cloud = panel.defaultFocusedComponent
+        assertNotSame(local, cloud)
+        assertFalse(panel.listFocusable())
+        assertEquals(-1, panel.selectedIndex())
+        key(cloud, KeyEvent.VK_DOWN)
+        assertEquals(0, panel.selectedIndex())
+    }
+
     fun `test panel refresh reloads local history`() {
         rpc.listed += session("ses_1", "One")
         val controller = controller()
@@ -233,6 +265,11 @@ class HistoryControllerTest : BasePlatformTestCase() {
             delay(100)
             ApplicationManager.getApplication().invokeAndWait { UIUtil.dispatchAllInvocationEvents() }
         }
+    }
+
+    private fun key(component: JComponent, code: Int) {
+        val action = component.getActionForKeyStroke(KeyStroke.getKeyStroke(code, 0))
+        requireNotNull(action).actionPerformed(null)
     }
 
     private fun session(id: String, title: String, updated: Double = 2.0) = SessionDto(

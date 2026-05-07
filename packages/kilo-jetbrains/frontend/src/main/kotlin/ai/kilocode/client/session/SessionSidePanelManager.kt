@@ -8,9 +8,12 @@ import ai.kilocode.client.session.history.HistoryPanel
 import ai.kilocode.rpc.dto.SessionDto
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.DataProvider
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.wm.IdeFocusManager
 import kotlinx.coroutines.cancel
 import java.awt.BorderLayout
 import javax.swing.JComponent
@@ -37,7 +40,7 @@ class SessionSidePanelManager(
     private var current: SessionUi? = null
     private var panel: JComponent? = null
 
-    val defaultFocusedComponent: JComponent? get() = current?.defaultFocusedComponent
+    val defaultFocusedComponent: JComponent? get() = current?.defaultFocusedComponent ?: (panel as? HistoryPanel)?.defaultFocusedComponent
 
     override fun newSession() {
         val active = current
@@ -62,12 +65,23 @@ class SessionSidePanelManager(
         val cached = panel
         val view = cached ?: createHistory().also { panel = it }
         if (cached != null && view is HistoryPanel) view.refresh()
-        if (current == null && component.componentCount == 1 && component.getComponent(0) === view) return
+        if (current == null && component.componentCount == 1 && component.getComponent(0) === view) {
+            focusHistory(view)
+            return
+        }
         current = null
         component.removeAll()
         component.add(view, BorderLayout.CENTER)
         component.revalidate()
         component.repaint()
+        focusHistory(view)
+    }
+
+    private fun focusHistory(view: JComponent) {
+        val focus = (view as? HistoryPanel)?.defaultFocusedComponent ?: return
+        ApplicationManager.getApplication().invokeLater({
+            IdeFocusManager.getInstance(project).requestFocusInProject(focus, project)
+        }, ModalityState.defaultModalityState())
     }
 
     private fun createHistory(): JComponent {

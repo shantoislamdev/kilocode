@@ -23,11 +23,13 @@ import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.awt.BorderLayout
 import java.awt.event.HierarchyEvent
+import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.JList
+import javax.swing.KeyStroke
 import javax.swing.ListSelectionModel
 import javax.swing.SwingUtilities
 import javax.swing.event.DocumentEvent
@@ -53,8 +55,8 @@ class HistoryPanel(
         presentation.setSingleRow(true)
         presentation.setTabsPosition(JBTabsPosition.top)
         presentation.showBorder = false
-        addTab(localInfo)
-        addTab(cloudInfo)
+        addTab(localInfo).setPreferredFocusableComponent(localSearch.textEditor)
+        addTab(cloudInfo).setPreferredFocusableComponent(cloudSearch.textEditor)
         addListener(object : TabsListener {
             override fun selectionChanged(oldSelection: TabInfo?, newSelection: TabInfo?) {
                 sync()
@@ -83,6 +85,8 @@ class HistoryPanel(
     }
 
     val component: JComponent get() = this
+
+    val defaultFocusedComponent: JComponent get() = activeSearch().textEditor
 
     fun refresh() {
         stale = false
@@ -120,6 +124,16 @@ class HistoryPanel(
                 model.setFilter(text)
             }
         })
+        textEditor.registerKeyboardAction(
+            { move(-1) },
+            KeyStroke.getKeyStroke(KeyEvent.VK_UP, 0),
+            JComponent.WHEN_FOCUSED,
+        )
+        textEditor.registerKeyboardAction(
+            { move(1) },
+            KeyStroke.getKeyStroke(KeyEvent.VK_DOWN, 0),
+            JComponent.WHEN_FOCUSED,
+        )
     }
 
     private fun panel(search: SearchTextField, list: JList<out HistoryItem>, footer: JComponent? = null): JComponent {
@@ -138,6 +152,7 @@ class HistoryPanel(
 
     private fun localList() = JBList(controller.local).apply {
         selectionMode = ListSelectionModel.SINGLE_SELECTION
+        isFocusable = false
         cellRenderer = LocalHistoryRenderer(controller.local)
         emptyText.text = KiloBundle.message("history.empty")
         addMouseListener(object : MouseAdapter() {
@@ -158,6 +173,7 @@ class HistoryPanel(
 
     private fun cloudList() = JBList(controller.cloud).apply {
         selectionMode = ListSelectionModel.SINGLE_SELECTION
+        isFocusable = false
         cellRenderer = CloudHistoryRenderer(controller.cloud)
         emptyText.text = KiloBundle.message("history.empty")
         addMouseListener(object : MouseAdapter() {
@@ -236,6 +252,10 @@ class HistoryPanel(
         activeList().selectedIndex = index
     }
 
+    internal fun selectedIndex() = activeList().selectedIndex
+
+    internal fun listFocusable() = activeList().isFocusable
+
     internal fun clickDelete() {
         localList.selectedValue?.let(controller::delete)
     }
@@ -278,6 +298,18 @@ class HistoryPanel(
     private fun activeList(): JBList<out HistoryItem> = if (tabs.selectedInfo === cloudInfo) cloudList else localList
 
     private fun activeModel(): HistoryModel<out HistoryItem> = if (tabs.selectedInfo === cloudInfo) controller.cloud else controller.local
+
+    private fun activeSearch(): SearchTextField = if (tabs.selectedInfo === cloudInfo) cloudSearch else localSearch
+
+    private fun move(step: Int) {
+        val list = activeList()
+        val size = list.model.size
+        if (size <= 0) return
+        val cur = list.selectedIndex.takeIf { it >= 0 } ?: if (step > 0) -1 else size
+        val idx = (cur + step).coerceIn(0, size - 1)
+        list.selectedIndex = idx
+        ScrollingUtil.ensureIndexIsVisible(list, idx, 0)
+    }
 
     override fun dispose() {
         // no-op

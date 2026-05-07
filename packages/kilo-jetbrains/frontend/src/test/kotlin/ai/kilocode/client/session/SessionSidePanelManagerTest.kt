@@ -4,6 +4,7 @@ import ai.kilocode.client.app.KiloAppService
 import ai.kilocode.client.app.KiloSessionService
 import ai.kilocode.client.app.KiloWorkspaceService
 import ai.kilocode.client.app.Workspace
+import ai.kilocode.client.session.history.HistoryPanel
 import ai.kilocode.client.testing.FakeAppRpcApi
 import ai.kilocode.client.testing.FakeSessionRpcApi
 import ai.kilocode.client.testing.FakeWorkspaceRpcApi
@@ -107,6 +108,16 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
 
         assertSame(second.defaultFocusedComponent, manager.defaultFocusedComponent)
         assertNotSame(first.defaultFocusedComponent, manager.defaultFocusedComponent)
+    }
+
+    fun `test default focused component tracks history filter`() {
+        val manager = manager()
+
+        manager.showHistory()
+        settle()
+        val history = active(manager) as HistoryPanel
+
+        assertSame(history.defaultFocusedComponent, manager.defaultFocusedComponent)
     }
 
     fun `test opening same existing session reuses component`() {
