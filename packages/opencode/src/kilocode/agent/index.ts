@@ -279,6 +279,7 @@ export function patchAgents(
   cfg: Config.Info,
   kilo: KiloData,
   worktree: string,
+  whitelistedDirs: string[],
 ) {
   // Rename "build" → "code" for backward compatibility
   if (agents.build) {
@@ -329,9 +330,13 @@ export function patchAgents(
           semantic_search: "allow",
           read: "allow",
           external_directory: {
-            // intentionally no "*": "ask" — defaults already has it; redefining
-            // here would overwrite the tmp/skill whitelist via findLast()
-            [Truncate.GLOB]: "allow",
+            // Mirror upstream explore's shape: the outer "*": "deny" above wins
+            // over defaults' external_directory rules via findLast, so re-apply
+            // the full whitelist (Truncate.GLOB, tmp, skill, config, globalDirs)
+            // here. Upstream adds these inline in agent.ts; we do the same from
+            // within the patch.
+            "*": "ask",
+            ...Object.fromEntries(whitelistedDirs.map((dir) => [dir, "allow"])),
           },
         }),
         user,

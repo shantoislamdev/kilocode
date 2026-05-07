@@ -251,7 +251,7 @@ export const layer = Layer.effect(
         }
 
         // kilocode_change start - rename build→code, add debug/orchestrator/ask, patch plan/explore
-        KiloAgent.patchAgents(agents, defaults, user, cfg, kilo, ctx.worktree)
+        KiloAgent.patchAgents(agents, defaults, user, cfg, kilo, ctx.worktree, whitelistedDirs)
         // kilocode_change end
 
         // kilocode_change start - preprocess config to remap "build" key → "code"
