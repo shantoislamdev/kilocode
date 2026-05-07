@@ -327,7 +327,7 @@ const GranularToolRow: Component<{
   })
 
   const excs = createMemo(() => permissionExceptions(props.rule))
-  const expanded = createMemo(() => override() ?? excs().length <= 2)
+  const expanded = createMemo(() => override() ?? excs().length <= 5)
   const toggle = () => setOverride(!expanded())
   const level = createMemo(() => wildcardAction(props.rule, props.fallback))
 
