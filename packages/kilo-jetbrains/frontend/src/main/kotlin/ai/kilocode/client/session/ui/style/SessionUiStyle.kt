@@ -9,19 +9,6 @@ import javax.swing.border.Border
 
 /** Static UI tokens and helpers for session-specific Swing surfaces. */
 object SessionUiStyle {
-    object Prompt {
-        const val EDITOR_LINES = 3
-        const val EDITOR_CHROME = 16
-        const val SEND_BUTTON_SIZE = 24
-        const val CORNER_ARC = 6
-        const val FOCUS_WIDTH = 2
-        const val PANEL_VERTICAL_PADDING = 8
-        const val PANEL_HORIZONTAL_PADDING = 12
-        const val CONTROL_GAP = 4
-        const val SHELL_VERTICAL_PADDING = 6
-        const val SHELL_HORIZONTAL_PADDING = 8
-    }
-
     object SessionLayout {
         const val GAP = 4
         const val TRANSCRIPT_PADDING = 12
@@ -34,6 +21,38 @@ object SessionUiStyle {
         const val CARD_VERTICAL_PADDING = 8
         const val CARD_HORIZONTAL_PADDING = 12
         const val CARD_BODY_EXTRA_HEIGHT = 16
+
+        internal const val BORDER_DELTA = 64
+        internal const val HOVER_ALPHA = 0.35f
+
+        /** Creates a visible separator against editor-derived transcript surfaces. */
+        fun line(): Color = JBColor.lazy { UiStyle.Colors.contrast(UiStyle.Colors.panel(), BORDER_DELTA) }
+
+        fun surface(): Color = UiStyle.Colors.panel()
+
+        fun header(): Color = UiStyle.Colors.panel()
+
+        /** Local hover color for collapsible transcript card headers. */
+        fun headerHover(): Color = JBColor.lazy { UiStyle.Colors.blend(header(), line(), HOVER_ALPHA) }
+
+        fun card(): Border = cardBorder()
+
+        fun cardBorder(): Border = JBUI.Borders.customLine(line(), 1)
+
+        fun cardTop(): Border = JBUI.Borders.customLineTop(line())
+
+        object Prompt {
+            const val EDITOR_LINES = 3
+            const val EDITOR_CHROME = 16
+            const val SEND_BUTTON_SIZE = 24
+            const val CORNER_ARC = 6
+            const val FOCUS_WIDTH = 2
+            const val PANEL_VERTICAL_PADDING = 8
+            const val PANEL_HORIZONTAL_PADDING = 12
+            const val CONTROL_GAP = 4
+            const val SHELL_VERTICAL_PADDING = 6
+            const val SHELL_HORIZONTAL_PADDING = 8
+        }
 
         object Reasoning {
             const val BODY_LINES = 5
@@ -71,12 +90,12 @@ object SessionUiStyle {
 
 object Dock {
     fun banner(): Border = JBUI.Borders.compound(
-        JBUI.Borders.customLineTop(UiStyle.Colors.line()),
+        JBUI.Borders.customLineTop(SessionUiStyle.View.line()),
         JBUI.Borders.empty(UiStyle.Gap.small(), UiStyle.Gap.lg(), 0, UiStyle.Gap.lg()),
     )!!
 
     fun neutral(): Border = JBUI.Borders.compound(
-        JBUI.Borders.customLine(UiStyle.Colors.line(), 1),
+        JBUI.Borders.customLine(SessionUiStyle.View.line(), 1),
         JBUI.Borders.empty(UiStyle.Gap.lg(), UiStyle.Gap.pad()),
     )!!
 

@@ -8,7 +8,6 @@ import java.awt.BorderLayout
 import java.awt.Color
 import javax.swing.JComponent
 import javax.swing.UIManager
-import javax.swing.border.Border
 
 /** Static UI tokens and helpers for JetBrains session Swing surfaces. */
 object UiStyle {
@@ -18,31 +17,16 @@ object UiStyle {
     }
 
     object Colors {
-        internal const val BORDER_DELTA = 64
-        internal const val HOVER_ALPHA = 0.35f
-
         fun bg(): Color = UIUtil.getPanelBackground()
 
         fun fg(): Color = UIUtil.getLabelForeground()
 
         fun weak(): Color = UIUtil.getContextHelpForeground()
 
-        /** Creates a visible separator against editor-derived transcript surfaces. */
-        fun line(): Color = JBColor.lazy { contrast(panel(), BORDER_DELTA) }
-
-        fun surface(): Color = panel()
-
         /** Uses the editor background so chat cards feel native beside editor content. */
         fun panel(): Color = JBColor.lazy { EditorColorsManager.getInstance().globalScheme.defaultBackground }
 
-        fun panelHover(): Color = JBColor.lazy { blend(panel(), line(), HOVER_ALPHA) }
-
-        fun header(): Color = panel()
-
         fun headerBar(): Color = JBUI.CurrentTheme.ToolWindow.headerBackground(false)
-
-        /** Local hover color for collapsible transcript card headers. */
-        fun headerHover(): Color = panelHover()
 
         fun error(): Color = JBColor.namedColor("Label.errorForeground", UIUtil.getErrorForeground())
 
@@ -86,24 +70,10 @@ object UiStyle {
             (color.red * 0.299 + color.green * 0.587 + color.blue * 0.114) >= 128
     }
 
-    object Insets {
-        fun empty(): Border = JBUI.Borders.empty(Gap.pad())
-
-        fun header(): Border = JBUI.Borders.empty(Gap.lg(), Gap.lg())
-
-        fun body(): Border = JBUI.Borders.empty(Gap.lg(), Gap.pad())
-    }
-
     object Borders {
-        fun card(): Border = cardBorder()
+        fun warning() = JBUI.Borders.customLine(Colors.warning(), 1)
 
-        fun cardBorder(): Border = JBUI.Borders.customLine(Colors.line(), 1)
-
-        fun cardTop(): Border = JBUI.Borders.customLineTop(Colors.line())
-
-        fun warning(): Border = JBUI.Borders.customLine(Colors.warning(), 1)
-
-        fun picker(): Border = JBUI.Borders.empty(Gap.xs(), Gap.lg())
+        fun picker() = JBUI.Borders.empty(Gap.xs(), Gap.lg())
     }
 
     object Gap {

@@ -10,7 +10,7 @@ class UiStyleTest : BasePlatformTestCase() {
 
     fun `test border is lighter than dark panel`() {
         val panel = Color(0, 0, 0)
-        val border = UiStyle.Colors.contrast(panel, UiStyle.Colors.BORDER_DELTA)
+        val border = UiStyle.Colors.contrast(panel, SessionUiStyle.View.BORDER_DELTA)
 
         assertTrue(border.red > panel.red)
         assertTrue(border.green > panel.green)
@@ -19,7 +19,7 @@ class UiStyleTest : BasePlatformTestCase() {
 
     fun `test border is darker than light panel`() {
         val panel = Color(255, 255, 255)
-        val border = UiStyle.Colors.contrast(panel, UiStyle.Colors.BORDER_DELTA)
+        val border = UiStyle.Colors.contrast(panel, SessionUiStyle.View.BORDER_DELTA)
 
         assertTrue(border.red < panel.red)
         assertTrue(border.green < panel.green)
@@ -28,8 +28,8 @@ class UiStyleTest : BasePlatformTestCase() {
 
     fun `test hover blends from panel toward border`() {
         val panel = Color(0, 0, 0)
-        val border = UiStyle.Colors.contrast(panel, UiStyle.Colors.BORDER_DELTA)
-        val hover = UiStyle.Colors.blend(panel, border, UiStyle.Colors.HOVER_ALPHA)
+        val border = UiStyle.Colors.contrast(panel, SessionUiStyle.View.BORDER_DELTA)
+        val hover = UiStyle.Colors.blend(panel, border, SessionUiStyle.View.HOVER_ALPHA)
 
         assertTrue(hover.red > panel.red)
         assertTrue(hover.red < border.red)

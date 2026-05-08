@@ -40,12 +40,12 @@ class ToolView(tool: Tool) : PartView() {
 
     private val root = JPanel(BorderLayout()).apply {
         isOpaque = true
-        background = UiStyle.Colors.surface()
-        border = UiStyle.Borders.card()
+        background = SessionUiStyle.View.surface()
+        border = SessionUiStyle.View.card()
     }
     private val header = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.CARD_LAYOUT_GAP), 0)).apply {
         isOpaque = true
-        background = UiStyle.Colors.header()
+        background = SessionUiStyle.View.header()
         border = JBUI.Borders.empty(
             JBUI.scale(SessionUiStyle.View.CARD_VERTICAL_PADDING),
             JBUI.scale(SessionUiStyle.View.CARD_HORIZONTAL_PADDING),
@@ -74,17 +74,17 @@ class ToolView(tool: Tool) : PartView() {
         lineWrap = true
         wrapStyleWord = true
         foreground = bodyColor()
-        background = UiStyle.Colors.surface()
+        background = SessionUiStyle.View.surface()
         border = JBUI.Borders.empty(
             JBUI.scale(SessionUiStyle.View.CARD_VERTICAL_PADDING),
             JBUI.scale(SessionUiStyle.View.CARD_HORIZONTAL_PADDING),
         )
     }
     private val scroll = JBScrollPane(text).apply {
-        border = UiStyle.Borders.cardTop()
+        border = SessionUiStyle.View.cardTop()
         isOpaque = true
-        background = UiStyle.Colors.surface()
-        viewport.background = UiStyle.Colors.surface()
+        background = SessionUiStyle.View.surface()
+        viewport.background = SessionUiStyle.View.surface()
         horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
     }
@@ -201,7 +201,7 @@ class ToolView(tool: Tool) : PartView() {
     }
 
     private fun setHover(value: Boolean) {
-        val color = if (value) UiStyle.Colors.headerHover() else UiStyle.Colors.header()
+        val color = if (value) SessionUiStyle.View.headerHover() else SessionUiStyle.View.header()
         if (same(header.background, color)) return
         header.background = color
         header.repaint()

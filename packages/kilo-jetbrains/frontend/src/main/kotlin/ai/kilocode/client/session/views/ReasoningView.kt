@@ -35,23 +35,23 @@ class ReasoningView(reasoning: Reasoning) : PartView() {
     private val arrow = JBLabel()
     private val body = TrackPanel().apply {
         isOpaque = true
-        background = UiStyle.Colors.surface()
+        background = SessionUiStyle.View.surface()
         border = JBUI.Borders.empty(
             JBUI.scale(SessionUiStyle.View.CARD_VERTICAL_PADDING),
             JBUI.scale(SessionUiStyle.View.CARD_HORIZONTAL_PADDING),
         )
     }
     private val scroll = JBScrollPane(body).apply {
-        border = UiStyle.Borders.cardTop()
+        border = SessionUiStyle.View.cardTop()
         isOpaque = true
-        background = UiStyle.Colors.surface()
-        viewport.background = UiStyle.Colors.surface()
+        background = SessionUiStyle.View.surface()
+        viewport.background = SessionUiStyle.View.surface()
         horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         verticalScrollBarPolicy = ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
     }
     private val header = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.CARD_LAYOUT_GAP), 0)).apply {
         isOpaque = true
-        background = UiStyle.Colors.header()
+        background = SessionUiStyle.View.header()
         border = JBUI.Borders.empty(
             JBUI.scale(SessionUiStyle.View.CARD_VERTICAL_PADDING),
             JBUI.scale(SessionUiStyle.View.CARD_HORIZONTAL_PADDING),
@@ -88,7 +88,7 @@ class ReasoningView(reasoning: Reasoning) : PartView() {
     init {
         layout = BorderLayout()
         isOpaque = false
-        border = UiStyle.Borders.card()
+        border = SessionUiStyle.View.card()
 
         val left = JPanel(BorderLayout(JBUI.scale(SessionUiStyle.View.CARD_LAYOUT_GAP), 0)).apply {
             isOpaque = false
@@ -180,7 +180,7 @@ class ReasoningView(reasoning: Reasoning) : PartView() {
     }
 
     private fun setHover(value: Boolean) {
-        val color = if (value) UiStyle.Colors.headerHover() else UiStyle.Colors.header()
+        val color = if (value) SessionUiStyle.View.headerHover() else SessionUiStyle.View.header()
         if (header.background?.rgb == color.rgb) return
         header.background = color
         header.repaint()

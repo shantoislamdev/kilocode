@@ -7,7 +7,6 @@ import ai.kilocode.client.session.ui.SessionView
 import ai.kilocode.client.session.ui.style.SessionEditorStyle
 import ai.kilocode.client.session.ui.style.SessionEditorStyleTarget
 import ai.kilocode.client.session.ui.style.SessionUiStyle
-import ai.kilocode.client.ui.UiStyle
 import com.intellij.ui.RoundedLineBorder
 import com.intellij.util.ui.JBUI
 
@@ -114,7 +113,7 @@ class MessageView(
     }
 
     private fun userBorder() = JBUI.Borders.compound(
-        RoundedLineBorder(UiStyle.Colors.line(), JBUI.scale(SessionUiStyle.View.Message.USER_BORDER_ARC)),
+        RoundedLineBorder(SessionUiStyle.View.line(), JBUI.scale(SessionUiStyle.View.Message.USER_BORDER_ARC)),
         JBUI.Borders.empty(
             JBUI.scale(SessionUiStyle.View.Message.USER_BORDER_VERTICAL_PADDING),
             JBUI.scale(SessionUiStyle.View.Message.USER_BORDER_HORIZONTAL_PADDING),

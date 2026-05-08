@@ -4,6 +4,7 @@ import ai.kilocode.client.session.model.Compaction
 import ai.kilocode.client.session.model.Content
 import ai.kilocode.client.plugin.KiloBundle
 import ai.kilocode.client.session.ui.style.SessionEditorStyle
+import ai.kilocode.client.session.ui.style.SessionUiStyle
 import ai.kilocode.client.ui.UiStyle
 import com.intellij.ui.components.JBLabel
 import java.awt.BorderLayout
@@ -38,7 +39,7 @@ class CompactionView(@Suppress("UNUSED_PARAMETER") compaction: Compaction) : Par
         applyStyle(SessionEditorStyle.current())
 
         val line = { JPanel().apply {
-            background = UiStyle.Colors.line()
+            background = SessionUiStyle.View.line()
             isOpaque = true
             preferredSize = JBDimension(0, JBUI.scale(1))
         } }
