@@ -2,6 +2,7 @@ package ai.kilocode.client.session.ui
 
 import ai.kilocode.client.ui.UiStyle
 import com.intellij.util.ui.JBDimension
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.awt.Component
 import java.awt.Container
@@ -76,9 +77,9 @@ class SessionLayout(
     private fun bounds(ins: Insets, width: Int, comp: Component): Bounds {
         val view = comp as? SessionView ?: return Bounds(ins.left, width)
         if (view.sessionViewKind != SessionView.Kind.UserPrompt) return Bounds(ins.left, width)
-        val shift = UiStyle.Insets.userPrompt()
+        val shift = JBUI.scale(SessionUiStyle.Prompt.USER_PROMPT_INDENT)
         val next = width - shift
-        if (next < UiStyle.Size.userPromptMin()) return Bounds(ins.left, width)
+        if (next < JBUI.scale(SessionUiStyle.Prompt.USER_PROMPT_INDENT)) return Bounds(ins.left, width)
         return Bounds(ins.left + shift, next)
     }
 

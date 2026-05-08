@@ -6,6 +6,7 @@ import ai.kilocode.client.plugin.KiloBundle
 import ai.kilocode.client.session.ui.ReasoningPicker
 import ai.kilocode.client.session.ui.SessionEditorStyle
 import ai.kilocode.client.session.ui.SessionEditorStyleTarget
+import ai.kilocode.client.session.ui.SessionUiStyle
 import ai.kilocode.client.session.ui.mode.ModePicker
 import ai.kilocode.client.session.ui.model.ModelPicker
 import ai.kilocode.client.ui.UiStyle
@@ -64,8 +65,6 @@ class PromptPanel(
         private val LOG = KiloLog.create(PromptPanel::class.java)
         private val SEND_ICON: Icon = IconLoader.getIcon("/icons/send.svg", PromptPanel::class.java)
         private val STOP_ICON: Icon = IconLoader.getIcon("/icons/stop.svg", PromptPanel::class.java)
-        private const val ARC = 6
-        private const val FOCUS = 2
     }
 
     val mode = ModePicker()
@@ -142,7 +141,12 @@ class PromptPanel(
     init {
         border = JBUI.Borders.compound(
             JBUI.Borders.customLineTop(JBUI.CurrentTheme.ToolWindow.borderColor()),
-            UiStyle.Insets.prompt(),
+            JBUI.Borders.empty(
+                JBUI.scale(SessionUiStyle.Prompt.PANEL_VERTICAL_PADDING),
+                JBUI.scale(SessionUiStyle.Prompt.PANEL_HORIZONTAL_PADDING),
+                JBUI.scale(SessionUiStyle.Prompt.PANEL_VERTICAL_PADDING),
+                JBUI.scale(SessionUiStyle.Prompt.PANEL_HORIZONTAL_PADDING),
+            ),
         )
 
         applyStyle(style)
@@ -151,14 +155,14 @@ class PromptPanel(
         val bar = BorderLayoutPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             isOpaque = false
-            border = JBUI.Borders.emptyTop(UiStyle.Gap.small())
+            border = JBUI.Borders.emptyTop(JBUI.scale(SessionUiStyle.Prompt.CONTROL_GAP))
         }
         bar.add(mode)
-        bar.add(Box.createHorizontalStrut(UiStyle.Gap.small()))
+        bar.add(Box.createHorizontalStrut(JBUI.scale(SessionUiStyle.Prompt.CONTROL_GAP)))
         bar.add(model)
-        bar.add(Box.createHorizontalStrut(UiStyle.Gap.small()))
+        bar.add(Box.createHorizontalStrut(JBUI.scale(SessionUiStyle.Prompt.CONTROL_GAP)))
         bar.add(reasoning)
-        bar.add(Box.createHorizontalStrut(UiStyle.Gap.small()))
+        bar.add(Box.createHorizontalStrut(JBUI.scale(SessionUiStyle.Prompt.CONTROL_GAP)))
         bar.add(reset)
         bar.add(Box.createHorizontalGlue())
         bar.add(button)
@@ -211,8 +215,8 @@ class PromptPanel(
         editor.font = style.transcriptFont
         editor.getEditor(false)?.let(style::applyToEditor)
         editor.background = style.editorScheme.defaultBackground
-        val height = style.transcriptFont.size * UiStyle.Size.LINES + JBUI.scale(
-            UiStyle.Size.CHROME)
+        val height = style.transcriptFont.size * SessionUiStyle.Prompt.EDITOR_LINES + JBUI.scale(
+            SessionUiStyle.Prompt.EDITOR_CHROME)
         editor.preferredSize = JBDimension(0, height)
         editor.minimumSize = JBDimension(0, height)
         revalidate()
@@ -316,7 +320,10 @@ class PromptPanel(
             })
         }
 
-        override fun getPreferredSize() = JBUI.size(UiStyle.Size.BUTTON, UiStyle.Size.BUTTON)
+        override fun getPreferredSize() = JBUI.size(
+            SessionUiStyle.Prompt.SEND_BUTTON_SIZE,
+            SessionUiStyle.Prompt.SEND_BUTTON_SIZE,
+        )
 
         override fun uiDataSnapshot(sink: DataSink) {
             sink.set(PromptDataKeys.SEND, this@PromptPanel)
@@ -332,7 +339,7 @@ class PromptPanel(
                 try {
                     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
                     g2.color = JBUI.CurrentTheme.ActionButton.hoverBackground()
-                    val arc = JBUI.scale(JBUI.getInt("Button.arc", ARC))
+                    val arc = JBUI.scale(JBUI.getInt("Button.arc", SessionUiStyle.Prompt.CORNER_ARC))
                     g2.fillRoundRect(0, 0, width, height, arc, arc)
                 } finally {
                     g2.dispose()
@@ -349,17 +356,23 @@ class PromptPanel(
     }
 
     private inner class PromptShell : BorderLayoutPanel() {
-        private val arc = JBValue.UIInteger("Button.arc", ARC)
-        private val focus = JBValue.UIInteger("Component.focusWidth", FOCUS)
+        private val arc = JBValue.UIInteger("Button.arc", SessionUiStyle.Prompt.CORNER_ARC)
+        private val focus = JBValue.UIInteger("Component.focusWidth", SessionUiStyle.Prompt.FOCUS_WIDTH)
 
         init {
             isOpaque = false
-            border = JBUI.Borders.empty(UiStyle.Gap.md(), UiStyle.Gap.lg())
+            border = JBUI.Borders.empty(
+                JBUI.scale(SessionUiStyle.Prompt.SHELL_VERTICAL_PADDING),
+                JBUI.scale(SessionUiStyle.Prompt.SHELL_HORIZONTAL_PADDING),
+            )
         }
 
         override fun updateUI() {
             super.updateUI()
-            border = JBUI.Borders.empty(UiStyle.Gap.md(), UiStyle.Gap.lg())
+            border = JBUI.Borders.empty(
+                JBUI.scale(SessionUiStyle.Prompt.SHELL_VERTICAL_PADDING),
+                JBUI.scale(SessionUiStyle.Prompt.SHELL_HORIZONTAL_PADDING),
+            )
         }
 
         override fun paintComponent(g: Graphics) {

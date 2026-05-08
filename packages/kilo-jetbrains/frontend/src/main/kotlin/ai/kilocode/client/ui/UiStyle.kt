@@ -23,15 +23,11 @@ import javax.swing.border.Border
 object UiStyle {
     object Size {
         const val WIDTH = 350
-        const val LINES = 3
         const val CHROME = 16
         const val BUTTON_WIDTH = 28
         const val BUTTON = 24
         const val SCROLL = 16
-        const val USER_PROMPT = 100
         const val TOOL_BODY = 20_000
-
-        fun userPromptMin(): Int = JBUI.scale(USER_PROMPT)
 
         fun toolBodyLimit(): Int = TOOL_BODY
     }
@@ -110,11 +106,7 @@ object UiStyle {
 
         fun transcript(): java.awt.Insets = JBUI.insets(Gap.pad(), Gap.pad(), Gap.pad(), Gap.pad())
 
-        fun userPrompt(): Int = Size.userPromptMin()
-
         fun empty(): Border = JBUI.Borders.empty(Gap.pad())
-
-        fun prompt(): Border = JBUI.Borders.empty(Gap.lg(), Gap.pad(), Gap.lg(), Gap.pad())
 
         fun header(): Border = JBUI.Borders.empty(Gap.lg(), Gap.lg())
 
