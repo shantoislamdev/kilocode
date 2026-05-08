@@ -138,14 +138,14 @@ internal class TimelinePanel : JPanel() {
 
     private fun color(item: TimelineItem): Color {
         val part = item.part
-        if (part is Tool && part.state == ToolExecState.ERROR) return SessionUiStyle.Timeline.error
-        if (part is Text) return SessionUiStyle.Timeline.text
-        if (part is Reasoning) return SessionUiStyle.Timeline.text
-        if (part is Compaction) return SessionUiStyle.Timeline.step
-        if (part is StepFinish) return SessionUiStyle.Timeline.success
-        if (part !is Tool) return SessionUiStyle.Timeline.step
-        if (part.kind == ToolKind.READ) return SessionUiStyle.Timeline.read
-        if (part.kind == ToolKind.WRITE) return SessionUiStyle.Timeline.write
-        return SessionUiStyle.Timeline.tool
+        if (part is Tool && part.state == ToolExecState.ERROR) return SessionUiStyle.Timeline.ERROR
+        if (part is Text) return SessionUiStyle.Timeline.TEXT
+        if (part is Reasoning) return SessionUiStyle.Timeline.TEXT
+        if (part is Compaction) return SessionUiStyle.Timeline.STEP
+        if (part is StepFinish) return SessionUiStyle.Timeline.SUCCESS
+        if (part !is Tool) return SessionUiStyle.Timeline.STEP
+        if (part.kind == ToolKind.READ) return SessionUiStyle.Timeline.READ
+        if (part.kind == ToolKind.WRITE) return SessionUiStyle.Timeline.WRITE
+        return SessionUiStyle.Timeline.TOOL
     }
 }
