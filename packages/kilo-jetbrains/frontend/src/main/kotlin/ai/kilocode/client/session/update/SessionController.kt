@@ -90,10 +90,7 @@ class SessionController(
 
     private val listeners = mutableListOf<SessionControllerListener>()
     private var ref: SessionRef? = ref
-    private val local: SessionRef.Local? get() = ref as? SessionRef.Local
-    private val sid: String? get() = local?.id
-    private val key: String? get() = ref?.key
-    private val log: String get() = sid ?: key ?: "pending"
+    private val sid: String? get() = (ref as? SessionRef.Local)?.id
     private val directory: String get() = workspace.directory
     private val updates = SessionUpdateQueue(
       parent,
@@ -102,7 +99,7 @@ class SessionController(
       ::handle,
       condense,
       ref != null
-    ) { log }
+    ) { sid ?: ref?.key ?: "pending" }
 
     private var disposed = false
     private var partType: String? = null
@@ -118,7 +115,7 @@ class SessionController(
     val ready: Boolean get() = model.isReady()
     internal val blank: Boolean get() = ref == null && model.isEmpty() && !model.showSession
     internal val id: String? get() = sid
-    internal val refKey: String? get() = key
+    internal val refKey: String? get() = ref?.key
     internal val refType: SessionRef.Type? get() = ref?.type
 
     fun openSession(session: SessionDto) {
@@ -145,7 +142,7 @@ class SessionController(
             viewState = viewState,
             connectionState = connectionState,
             connectionTargetState = connectionTargetState,
-            refKey = key,
+            refKey = ref?.key,
             refType = ref?.type?.name,
             sessionLoadState = sessionLoadState.toString(),
             recentsState = recentsState.toString(),
@@ -160,7 +157,7 @@ class SessionController(
 
     fun prompt(text: String) {
         assertEdt()
-        val start = log
+        val start = sid ?: ref?.key ?: "pending"
         val dto = promptDto(text)
         LOG.debug { "${ChatLogSummary.sid(start)} ${ChatLogSummary.prompt(text)} ${ChatLogSummary.dir(directory)}" }
         showSession()
@@ -185,7 +182,7 @@ class SessionController(
                 sessions.prompt(id, directory, dto)
                 LOG.debug { "${ChatLogSummary.sid(id)} kind=prompt dispatched=true" }
             } catch (e: Exception) {
-                LOG.warn("${ChatLogSummary.sid(log.takeUnless { it == "pending" } ?: start)} kind=prompt dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
+                LOG.warn("${ChatLogSummary.sid(sid ?: ref?.key ?: start)} kind=prompt dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
                 edt {
                     if (disposed) return@edt
                     val msg = e.message ?: KiloBundle.message("session.error.prompt")
@@ -199,7 +196,7 @@ class SessionController(
 
     fun abort() {
         assertEdt()
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=abort" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=abort" }
         val id = sid ?: return
         cs.launch {
             try {
@@ -237,7 +234,7 @@ class SessionController(
     fun retryConnection() {
         assertEdt()
         LOG.debug {
-            "${ChatLogSummary.sid(log)} kind=connection-retry app=${model.app.status} workspace=${model.workspace.status}"
+            "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=connection-retry app=${model.app.status} workspace=${model.workspace.status}"
         }
         setConnectionTargetState(SessionControllerEvent.ConnectionChanged.ShowConnecting)
         setVisibleConnectionState(SessionControllerEvent.ConnectionChanged.ShowConnecting)
@@ -258,12 +255,12 @@ class SessionController(
 
     fun selectAgent(name: String) {
         assertEdt()
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=config agent=$name" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=config agent=$name" }
         cs.launch {
             try {
                 sessions.updateConfig(directory, ConfigUpdateDto(agent = name))
             } catch (e: Exception) {
-                LOG.warn("${ChatLogSummary.sid(log)} kind=config agent=$name dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
+                LOG.warn("${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=config agent=$name dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
             }
         }
         fire(SessionControllerEvent.WorkspaceReady) {
@@ -274,7 +271,7 @@ class SessionController(
 
     fun selectModel(provider: String, id: String) {
         assertEdt()
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=config model=$provider/$id" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=config model=$provider/$id" }
         val agent = model.agent ?: return
         val key = "$provider/$id"
         if (item(key) == null && model.workspace.providers != null) return
@@ -286,7 +283,7 @@ class SessionController(
     fun clearModelOverride() {
         assertEdt()
         val agent = model.agent ?: return
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=config model-reset agent=$agent" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=config model-reset agent=$agent" }
         app.clearModel(agent)
         val auto = configModel(agent) ?: providerModel(agent)
         selectResolvedModel(auto)
@@ -297,7 +294,7 @@ class SessionController(
         assertEdt()
         val key = model.model ?: return
         if (value !in model.variants) return
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=config variant=$key/$value" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=config variant=$key/$value" }
         app.selectVariant(key, value)
         model.variant = value
     }
@@ -306,46 +303,46 @@ class SessionController(
 
     fun replyPermission(requestId: String, reply: PermissionReplyDto, rules: PermissionAlwaysRulesDto? = null) {
         assertEdt()
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=permission rid=$requestId reply=${reply.reply}" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=permission rid=$requestId reply=${reply.reply}" }
         cs.launch {
             try {
                 if (rules != null) sessions.savePermissionRules(requestId, directory, rules)
                 sessions.replyPermission(requestId, directory, reply)
-                LOG.debug { "${ChatLogSummary.sid(log)} kind=permission rid=$requestId ok=true" }
+                LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=permission rid=$requestId ok=true" }
             } catch (e: Exception) {
-                LOG.warn("${ChatLogSummary.sid(log)} kind=permission rid=$requestId reply=${reply.reply} dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
+                LOG.warn("${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=permission rid=$requestId reply=${reply.reply} dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
             }
         }
     }
 
     fun replyQuestion(requestId: String, answers: QuestionReplyDto) {
         assertEdt()
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=question rid=$requestId answers=${answers.answers.size}" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=question rid=$requestId answers=${answers.answers.size}" }
         cs.launch {
             try {
                 sessions.replyQuestion(requestId, directory, answers)
-                LOG.debug { "${ChatLogSummary.sid(log)} kind=question rid=$requestId ok=true" }
+                LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=question rid=$requestId ok=true" }
             } catch (e: Exception) {
-                LOG.warn("${ChatLogSummary.sid(log)} kind=question rid=$requestId answers=${answers.answers.size} dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
+                LOG.warn("${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=question rid=$requestId answers=${answers.answers.size} dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
             }
         }
     }
 
     fun rejectQuestion(requestId: String) {
         assertEdt()
-        LOG.debug { "${ChatLogSummary.sid(log)} kind=question rid=$requestId rejected=true" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=question rid=$requestId rejected=true" }
         cs.launch {
             try {
                 sessions.rejectQuestion(requestId, directory)
-                LOG.debug { "${ChatLogSummary.sid(log)} kind=question rid=$requestId ok=true" }
+                LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=question rid=$requestId ok=true" }
             } catch (e: Exception) {
-                LOG.warn("${ChatLogSummary.sid(log)} kind=question rid=$requestId rejected=true dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
+                LOG.warn("${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} kind=question rid=$requestId rejected=true dir=${ChatLogSummary.dir(directory)} failed message=${e.message}", e)
             }
         }
     }
 
     init {
-        local?.session?.let { model.setSession(it) }
+        (ref as? SessionRef.Local)?.session?.let { model.setSession(it) }
         when (val item = ref) {
             is SessionRef.Cloud -> {
                 val token = SessionLoadState.Loading()
@@ -362,7 +359,7 @@ class SessionController(
         }
 
         model.addListener(this) { event ->
-            LOG.debug { "session=$log model: $event" }
+            LOG.debug { "session=${sid ?: ref?.key ?: "pending"} model: $event" }
         }
 
         app.connect()
@@ -440,7 +437,7 @@ class SessionController(
     }
 
     private fun loadSession(token: SessionLoadState.Loading) {
-        val target = local ?: return
+        val target = ref as? SessionRef.Local ?: return
         val id = target.id
         cs.launch {
             try {
@@ -596,7 +593,7 @@ class SessionController(
      * for "busy" because no more-specific state has arrived yet.
      */
     private fun seedStatus(dto: SessionStatusDto) {
-        LOG.debug { "${ChatLogSummary.sid(log)} evt=session.status ${ChatLogSummary.status(dto)}" }
+        LOG.debug { "${ChatLogSummary.sid(sid ?: ref?.key ?: "pending")} evt=session.status ${ChatLogSummary.status(dto)}" }
         val state = when (dto.type) {
             "busy" -> SessionState.Busy(KiloBundle.message("session.status.considering"))
             "retry" -> SessionState.Retry(
@@ -986,7 +983,7 @@ class SessionController(
     }
 
     private fun fire(event: SessionControllerEvent, before: (() -> Unit)? = null) {
-        LOG.debug { "session=$log controller: $event" }
+        LOG.debug { "session=${sid ?: ref?.key ?: "pending"} controller: $event" }
         val application = ApplicationManager.getApplication()
         if (application.isDispatchThread) {
             if (disposed) return
