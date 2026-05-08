@@ -74,7 +74,7 @@ export const SortableTab: Component<{
             <TooltipKeybind
               title={props.tab.title || t("agentManager.session.untitled")}
               keybind={props.keybind ?? ""}
-              placement="top"
+              placement="bottom"
               gutter={8}
               class="am-tab-tooltip"
               openDelay={0}
@@ -168,7 +168,7 @@ export const SortableReviewTab: Component<{
         <TooltipKeybind
           title={props.tooltip}
           keybind={props.keybind ?? ""}
-          placement="top"
+          placement="bottom"
           gutter={8}
           class="am-tab-tooltip"
           openDelay={0}

@@ -53,7 +53,7 @@ export const SortableTerminalTab: Component<{
             <TooltipKeybind
               title={props.tooltip}
               keybind={props.keybind ?? ""}
-              placement="top"
+              placement="bottom"
               gutter={8}
               class="am-tab-tooltip"
               openDelay={0}
