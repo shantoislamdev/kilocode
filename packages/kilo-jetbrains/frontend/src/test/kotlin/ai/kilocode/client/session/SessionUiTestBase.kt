@@ -10,6 +10,7 @@ import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.testing.FakeAppRpcApi
 import ai.kilocode.client.testing.FakeSessionRpcApi
 import ai.kilocode.client.testing.FakeWorkspaceRpcApi
+import ai.kilocode.client.session.SessionRef
 import ai.kilocode.rpc.dto.ChatEventDto
 import ai.kilocode.rpc.dto.KiloAppStateDto
 import ai.kilocode.rpc.dto.KiloAppStatusDto
@@ -76,10 +77,9 @@ abstract class SessionUiTestBase : BasePlatformTestCase() {
     protected fun newUi(
         id: String? = null,
         displayMs: Long = 0,
-        loading: Boolean = id == null,
-        open: (SessionDto) -> Unit = {},
+        open: (SessionRef) -> Unit = {},
     ): SessionUi {
-        return SessionUi(project, workspace, sessions, app, scope, id = id, displayMs = displayMs, loading = loading, open = open).apply {
+        return SessionUi(project, workspace, sessions, app, scope, id = id, displayMs = displayMs, open = open).apply {
             setSize(800, 600)
         }
     }

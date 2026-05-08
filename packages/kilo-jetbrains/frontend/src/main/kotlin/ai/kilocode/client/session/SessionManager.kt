@@ -12,5 +12,9 @@ interface SessionManager {
 
     fun showHistory()
 
-    fun openSession(session: SessionDto)
+    fun openSession(ref: SessionRef)
+
+    fun openSession(session: SessionDto) {
+        openSession(SessionRef.Local(session))
+    }
 }

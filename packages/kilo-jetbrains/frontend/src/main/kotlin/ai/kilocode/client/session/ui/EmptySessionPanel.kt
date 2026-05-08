@@ -1,6 +1,7 @@
 package ai.kilocode.client.session.ui
 
 import ai.kilocode.client.plugin.KiloBundle
+import ai.kilocode.client.session.SessionRef
 import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.ui.UiStyle
 import ai.kilocode.client.ui.md.MdView
@@ -67,7 +68,7 @@ class EmptySessionPanel(
                 val index = row(e)
                 if (index < 0) return
                 selectedIndex = index
-                controller.openSession(model.getElementAt(index))
+                controller.openSession(SessionRef.Local(model.getElementAt(index)))
             }
 
             override fun mouseExited(e: MouseEvent) {
@@ -153,7 +154,7 @@ class EmptySessionPanel(
 
     internal fun clickRecent(index: Int) {
         list.selectedIndex = index
-        controller.openSession(model.getElementAt(index))
+        controller.openSession(SessionRef.Local(model.getElementAt(index)))
     }
 
     internal fun recentVisible() = true

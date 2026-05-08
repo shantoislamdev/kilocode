@@ -1,6 +1,8 @@
 package ai.kilocode.client.session.history
 
 import ai.kilocode.client.plugin.KiloBundle
+import ai.kilocode.client.session.ui.LoadingPanel
+import ai.kilocode.client.session.ui.SessionStyle
 import ai.kilocode.client.ui.UiStyle
 import com.intellij.ide.ui.LafManagerListener
 import com.intellij.openapi.application.ApplicationManager
@@ -22,6 +24,7 @@ import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.awt.BorderLayout
+import java.awt.CardLayout
 import java.awt.event.HierarchyEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -48,6 +51,9 @@ class HistoryPanel(
     private val more = JButton(KiloBundle.message("history.cloud.load.more"))
     private val localPanel = panel(localSearch, localList)
     private val cloudPanel = panel(cloudSearch, cloudList, more)
+    private val cards = CardLayout()
+    private val body = BorderLayoutPanel().apply { layout = cards }
+    private val load = LoadingPanel()
     private val localInfo = TabInfo(localPanel).setText(KiloBundle.message("history.tab.local"))
     private val cloudInfo = TabInfo(cloudPanel).setText(KiloBundle.message("history.tab.cloud"))
     private var stale = false
@@ -79,7 +85,9 @@ class HistoryPanel(
             }
             if (!isShowing) stale = true
         }
-        add(tabs.component, BorderLayout.CENTER)
+        body.add(load, CARD_LOAD)
+        body.add(tabs.component, CARD_TABS)
+        add(body, BorderLayout.CENTER)
         sync()
         refresh()
     }
@@ -107,6 +115,7 @@ class HistoryPanel(
         SwingUtilities.updateComponentTreeUI(this)
         SwingUtilities.updateComponentTreeUI(localPanel)
         SwingUtilities.updateComponentTreeUI(cloudPanel)
+        load.applyStyle(SessionStyle.current())
         updateRenderer(localList)
         updateRenderer(cloudList)
         sync()
@@ -219,8 +228,14 @@ class HistoryPanel(
         syncList(cloudList, controller.cloud)
         more.isEnabled = controller.cloud.cursor != null && !controller.cloud.loading
         more.isVisible = controller.cloud.cursor != null || controller.cloud.loading
+        cards.show(body, if (loading()) CARD_LOAD else CARD_TABS)
         revalidate()
         repaint()
+    }
+
+    private fun loading(): Boolean {
+        if (controller.local.loaded || controller.cloud.loaded) return false
+        return controller.local.loading || controller.cloud.loading
     }
 
     private fun <T : HistoryItem> syncList(list: JBList<T>, model: HistoryModel<T>) {
@@ -335,5 +350,12 @@ class HistoryPanel(
 
     override fun dispose() {
         // no-op
+    }
+
+    internal fun showingLoading() = !controller.local.loaded && !controller.cloud.loaded && (controller.local.loading || controller.cloud.loading)
+
+    private companion object {
+        const val CARD_LOAD = "load"
+        const val CARD_TABS = "tabs"
     }
 }

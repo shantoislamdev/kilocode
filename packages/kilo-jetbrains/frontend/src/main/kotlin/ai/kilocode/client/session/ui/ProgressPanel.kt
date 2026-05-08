@@ -15,7 +15,7 @@ import java.awt.FlowLayout
  *
  * Reacts to [SessionModelEvent.StateChanged]:
  * - [SessionState.Busy] → shows an animated spinner and [SessionState.Busy.text]
- * - Any other state → hidden
+ * - Any other state -> hidden
  *
  * Owned by [SessionMessageListPanel], which always re-anchors it as the last child so it
  * appears below all turn views inside the scroll pane.
@@ -52,6 +52,7 @@ class ProgressPanel(
                 label.text = state.text
                 isVisible = true
             }
+            is SessionState.Loading -> isVisible = false
             else -> isVisible = false
         }
         revalidate()

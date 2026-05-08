@@ -3,6 +3,7 @@ package ai.kilocode.client.session.history
 import ai.kilocode.client.app.KiloSessionService
 import ai.kilocode.client.app.Workspace
 import ai.kilocode.client.plugin.KiloBundle
+import ai.kilocode.client.session.SessionRef
 import ai.kilocode.rpc.dto.CloudSessionDto
 import ai.kilocode.rpc.dto.SessionDto
 import com.intellij.openapi.application.ApplicationManager
@@ -13,7 +14,7 @@ class HistoryController(
     private val sessions: KiloSessionService,
     private val workspace: Workspace,
     private val cs: CoroutineScope,
-    open: (LocalHistoryItem) -> Unit = {},
+    open: (SessionRef) -> Unit = {},
     private val deleted: (String) -> Unit = {},
 ) {
     companion object {
@@ -24,7 +25,6 @@ class HistoryController(
     val cloud = CloudHistoryModel()
 
     private val deleting = mutableSetOf<String>()
-    private val importing = mutableSetOf<String>()
     private val opener = open
     private var git: String? = null
 
@@ -82,30 +82,11 @@ class HistoryController(
     fun deleting(item: LocalHistoryItem): Boolean = item.id in deleting
 
     fun open(item: LocalHistoryItem) {
-        edt { opener(item) }
+        edt { opener(SessionRef.Local(item.session)) }
     }
 
     fun open(item: CloudHistoryItem) {
-        edt {
-            if (item.id in importing) return@edt
-            importing.add(item.id)
-            cloud.refresh()
-            cs.launch {
-                try {
-                    val session = sessions.importCloudSession(item.id, workspace.directory)
-                    edt {
-                        importing.remove(item.id)
-                        cloud.refresh()
-                        opener(LocalHistoryItem(session))
-                    }
-                } catch (e: Exception) {
-                    edt {
-                        importing.remove(item.id)
-                        cloud.fail(e.message ?: KiloBundle.message("history.error.cloud"))
-                    }
-                }
-            }
-        }
+        edt { opener(SessionRef.Cloud(item.session)) }
     }
 
     private fun loadCloud(reset: Boolean) {

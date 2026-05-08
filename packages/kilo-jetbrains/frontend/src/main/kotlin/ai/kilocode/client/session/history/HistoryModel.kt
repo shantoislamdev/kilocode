@@ -11,6 +11,8 @@ open class HistoryModel<T : HistoryItem> : AbstractListModel<T>() {
         private set
     var error: String? = null
         private set
+    var loaded = false
+        private set
 
     val items: List<T> get() = all
     val visibleItems: List<T> get() = rows
@@ -28,6 +30,7 @@ open class HistoryModel<T : HistoryItem> : AbstractListModel<T>() {
     fun replace(items: List<T>) {
         all = HistoryTime.sorted(items)
         loading = false
+        loaded = true
         error = null
         filter()
     }
@@ -35,6 +38,7 @@ open class HistoryModel<T : HistoryItem> : AbstractListModel<T>() {
     fun append(items: List<T>) {
         all = HistoryTime.sorted(all + items)
         loading = false
+        loaded = true
         error = null
         filter()
     }
@@ -46,6 +50,7 @@ open class HistoryModel<T : HistoryItem> : AbstractListModel<T>() {
 
     fun fail(message: String) {
         loading = false
+        loaded = true
         error = message
         refresh()
     }
@@ -90,7 +95,7 @@ class CloudHistoryModel : HistoryModel<CloudHistoryItem>() {
     fun start(reset: Boolean) {
         cursor = cursor.takeUnless { reset }
         start()
-        if (reset) clear()
+        if (reset && !loaded) clear()
     }
 
     fun replace(items: List<CloudHistoryItem>, next: String?) {

@@ -175,6 +175,7 @@ class SessionModel {
     }
 
     fun setState(state: SessionState) {
+        if (this.state == state) return
         this.state = state
         fire(SessionModelEvent.StateChanged(state))
         updateHeader()
