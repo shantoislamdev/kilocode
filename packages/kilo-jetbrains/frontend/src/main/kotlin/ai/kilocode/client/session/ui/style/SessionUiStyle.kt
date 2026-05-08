@@ -34,7 +34,10 @@ object SessionUiStyle {
         const val CARD_VERTICAL_PADDING = 8
         const val CARD_HORIZONTAL_PADDING = 12
         const val CARD_BODY_EXTRA_HEIGHT = 16
-        const val REASONING_LINES = 5
+
+        object Reasoning {
+            const val BODY_LINES = 5
+        }
 
         object Tool {
             const val BODY_LINES = 15

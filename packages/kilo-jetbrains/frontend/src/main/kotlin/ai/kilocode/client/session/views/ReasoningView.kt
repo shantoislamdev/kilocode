@@ -150,7 +150,7 @@ class ReasoningView(reasoning: Reasoning) : PartView() {
 
     internal fun horizontalPolicy() = scroll.horizontalScrollBarPolicy
 
-    internal fun bodyMaxRows() = SessionUiStyle.View.REASONING_LINES
+    internal fun bodyMaxRows() = SessionUiStyle.View.Reasoning.BODY_LINES
 
     internal fun bodyCreated() = true
 
