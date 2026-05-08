@@ -563,22 +563,38 @@ const MockReviewTab = (props: { active?: boolean }) => (
   </div>
 )
 
+const MockTabsSearchButton = () => (
+  <button class="am-tabs-menu-trigger" type="button" aria-label="Search open tabs">
+    <svg class="am-tabs-search-icon" viewBox="0 0 16 16" aria-hidden="true">
+      <circle cx="6.8" cy="6.8" r="4.3" />
+      <path d="M10.2 10.2L13.5 13.5" />
+    </svg>
+  </button>
+)
+
+const MockTabLeading = () => (
+  <div class="am-tab-leading">
+    <div class="am-split-button am-tab-add-split">
+      <TooltipKeybind title="New session" keybind="⌘T" placement="bottom">
+        <IconButton icon="plus" size="small" variant="ghost" label="New session" class="am-tab-add" />
+      </TooltipKeybind>
+    </div>
+    <MockTabsSearchButton />
+  </div>
+)
+
 export const TabBarMultipleTabs: Story = {
   name: "TabBar — multiple tabs with active",
   render: () => (
     <StoryProviders noPadding>
       <div class="am-tab-bar">
+        <MockTabLeading />
         <div class="am-tab-scroll-area">
           <div class="am-tab-list-wrap">
             <div class="am-tab-list" style={{ "--tab-count": "3" } as JSX.CSSProperties}>
               <MockTab title="Implement auth" active />
               <MockTab title="Fix button styles" />
               <MockTab title="Add unit tests" />
-            </div>
-            <div class="am-split-button am-tab-add-split">
-              <TooltipKeybind title="New session" keybind="⌘T" placement="bottom">
-                <IconButton icon="plus" size="small" variant="ghost" label="New session" class="am-tab-add" />
-              </TooltipKeybind>
             </div>
           </div>
         </div>
@@ -603,16 +619,12 @@ export const TabBarWithReviewTab: Story = {
   render: () => (
     <StoryProviders noPadding>
       <div class="am-tab-bar">
+        <MockTabLeading />
         <div class="am-tab-scroll-area">
           <div class="am-tab-list-wrap">
             <div class="am-tab-list" style={{ "--tab-count": "2" } as JSX.CSSProperties}>
               <MockTab title="Implement auth" />
               <MockReviewTab active />
-            </div>
-            <div class="am-split-button am-tab-add-split">
-              <TooltipKeybind title="New session" keybind="⌘T" placement="bottom">
-                <IconButton icon="plus" size="small" variant="ghost" label="New session" class="am-tab-add" />
-              </TooltipKeybind>
             </div>
           </div>
         </div>
@@ -630,15 +642,11 @@ export const TabBarSingleTab: Story = {
   render: () => (
     <StoryProviders noPadding>
       <div class="am-tab-bar">
+        <MockTabLeading />
         <div class="am-tab-scroll-area">
           <div class="am-tab-list-wrap">
             <div class="am-tab-list" style={{ "--tab-count": "1" } as JSX.CSSProperties}>
               <MockTab title="PR #6966 worktree checkout" active />
-            </div>
-            <div class="am-split-button am-tab-add-split">
-              <TooltipKeybind title="New session" keybind="⌘T" placement="bottom">
-                <IconButton icon="plus" size="small" variant="ghost" label="New session" class="am-tab-add" />
-              </TooltipKeybind>
             </div>
           </div>
         </div>

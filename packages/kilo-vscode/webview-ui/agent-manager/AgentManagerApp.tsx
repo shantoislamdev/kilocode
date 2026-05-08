@@ -2646,6 +2646,26 @@ const AgentManagerContent: Component = () => {
             <DragDropSensors />
             <ConstrainDragYAxis />
             <div class="am-tab-bar" onPointerLeave={releaseTabs}>
+              <div class="am-tab-leading">
+                {renderNewTabButton({
+                  contextSelected: () => selection() !== null,
+                  kb,
+                  newSessionLabel: t("agentManager.session.new"),
+                  newTerminalLabel: t("agentManager.terminal.new"),
+                  newSessionMenuLabel: t("agentManager.session.newSession"),
+                  moreOptionsLabel: t("agentManager.tab.newOptions"),
+                  onNewSession: handleAddSession,
+                  onNewTerminal: () => termHandlers.requestNew(),
+                })}
+                <CurrentTabsMenu
+                  items={tabMenuItems}
+                  label={t("agentManager.tabsMenu.label")}
+                  searchLabel={t("agentManager.tabsMenu.search")}
+                  emptyLabel={t("agentManager.tabsMenu.empty")}
+                  activeId={visibleTabId}
+                  onSelect={focusTab}
+                />
+              </div>
               <div class="am-tab-scroll-area">
                 <div class={`am-tab-fade am-tab-fade-left ${tabScroll.showLeft() ? "am-tab-fade-visible" : ""}`} />
                 <div class="am-tab-list-wrap">
@@ -2688,28 +2708,10 @@ const AgentManagerContent: Component = () => {
                       </For>
                     </SortableProvider>
                   </div>
-                  {renderNewTabButton({
-                    contextSelected: () => selection() !== null,
-                    kb,
-                    newSessionLabel: t("agentManager.session.new"),
-                    newTerminalLabel: t("agentManager.terminal.new"),
-                    newSessionMenuLabel: t("agentManager.session.newSession"),
-                    moreOptionsLabel: t("agentManager.tab.newOptions"),
-                    onNewSession: handleAddSession,
-                    onNewTerminal: () => termHandlers.requestNew(),
-                  })}
                 </div>
                 <div class={`am-tab-fade am-tab-fade-right ${tabScroll.showRight() ? "am-tab-fade-visible" : ""}`} />
               </div>
               <div class="am-tab-actions">
-                <CurrentTabsMenu
-                  items={tabMenuItems}
-                  label={t("agentManager.tabsMenu.label")}
-                  searchLabel={t("agentManager.tabsMenu.search")}
-                  emptyLabel={t("agentManager.tabsMenu.empty")}
-                  activeId={visibleTabId}
-                  onSelect={focusTab}
-                />
                 {(() => {
                   const sel = () => selection()
                   const isWorktree = () => typeof sel() === "string" && sel() !== LOCAL

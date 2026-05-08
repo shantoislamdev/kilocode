@@ -1032,6 +1032,17 @@ button.am-section-toggle:hover .am-section-label {
   flex-shrink: 0;
 }
 
+.am-tab-leading {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  align-self: stretch;
+  margin-right: 4px;
+  padding-right: 6px;
+  border-right: 1px solid var(--border-weak-base);
+}
+
 .am-tab-list {
   --am-tab-max-width: 240px;
   --am-tab-width: clamp(72px, calc(100% / var(--tab-count, 1)), var(--am-tab-max-width));
@@ -1273,7 +1284,6 @@ body.am-wt-dragging-active * {
 .am-tab-add-split {
   flex-shrink: 0;
   align-self: center;
-  margin-right: 2px;
 }
 
 .am-tab-actions {
@@ -1281,8 +1291,11 @@ body.am-wt-dragging-active * {
   align-items: center;
   gap: 2px;
   flex-shrink: 0;
-  margin-left: auto;
+  align-self: stretch;
+  margin-left: 4px;
+  padding-left: 6px;
   padding-right: 4px;
+  border-left: 1px solid var(--border-weak-base);
 }
 
 .am-tabs-menu-trigger {

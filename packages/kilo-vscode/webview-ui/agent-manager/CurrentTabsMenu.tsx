@@ -231,7 +231,7 @@ export const CurrentTabsMenu: Component<CurrentTabsMenuProps> = (props) => {
 
   return (
     <Popover
-      placement="bottom-end"
+      placement="bottom-start"
       open={open()}
       onOpenChange={setOpen}
       modal={false}
