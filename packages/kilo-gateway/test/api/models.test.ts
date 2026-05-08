@@ -76,7 +76,7 @@ test("returns error with kind=network on fetch exception", async () => {
   expect(result.error?.kind).toBe("network")
 })
 
-test("returns error with kind=unauthorized on non-401 HTTP error without auth", async () => {
+test("returns error with kind=http on non-auth HTTP error (e.g. 500)", async () => {
   const orig = globalThis.fetch
   stubFetch(async () => new Response("Server Error", { status: 500, statusText: "Internal Server Error" }))
 
@@ -85,7 +85,7 @@ test("returns error with kind=unauthorized on non-401 HTTP error without auth", 
   ;(globalThis as any).fetch = orig
 
   expect(result.models).toEqual({})
-  expect(result.error?.kind).toBe("unauthorized")
+  expect(result.error?.kind).toBe("http")
   expect(result.error?.status).toBe(500)
 })
 

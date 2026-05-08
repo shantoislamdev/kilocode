@@ -90,7 +90,8 @@ export async function fetchOrganizationModes(token: string, organizationId: stri
     const modes = parsed.data.modes
     cache.set(organizationId, { modes, timestamp: Date.now() })
     return modes
-  } catch {
+  } catch (err) {
+    console.warn("[Kilo Gateway] Error fetching organization modes:", err)
     return []
   }
 }

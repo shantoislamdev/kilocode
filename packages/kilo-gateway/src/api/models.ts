@@ -5,7 +5,7 @@ import { KILO_API_BASE, KILO_OPENROUTER_BASE, MODELS_FETCH_TIMEOUT_MS, PROMPTS, 
 
 export type KiloModelsResult = {
   models: Record<string, any>
-  error?: { kind: "unauthorized" | "network" | "schema"; status?: number }
+  error?: { kind: "unauthorized" | "network" | "schema" | "http"; status?: number }
 }
 
 /**
@@ -107,7 +107,8 @@ export async function fetchKiloModels(options?: {
     if (response.status === 401 && (token || organizationId)) {
       return fetchKiloModels({})
     }
-    return { models: {}, error: { kind: "unauthorized", status: response.status } }
+    const kind = response.status === 401 || response.status === 403 ? "unauthorized" : "http"
+    return { models: {}, error: { kind, status: response.status } }
   }
 
   const json = await response.json()

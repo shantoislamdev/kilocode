@@ -78,7 +78,10 @@ export namespace ModelCache {
     // Cache miss - fetch models
     log.info("fetching models", { providerID })
 
-    const authOptions = await getAuthOptions(providerID)
+    const authOptions = await getAuthOptions(providerID).catch((err) => {
+      log.warn("getAuthOptions failed", { providerID, err })
+      return {}
+    })
     const mergedOptions = { ...authOptions, ...options }
 
     const result = await fetchModels(providerID, mergedOptions)
@@ -120,7 +123,10 @@ export namespace ModelCache {
     const refreshPromise = (async () => {
       log.info("refreshing models", { providerID })
 
-      const authOptions = await getAuthOptions(providerID)
+      const authOptions = await getAuthOptions(providerID).catch((err) => {
+        log.warn("getAuthOptions failed during refresh", { providerID, err })
+        return {}
+      })
       const mergedOptions = { ...authOptions, ...options }
 
       const result = await fetchModels(providerID, mergedOptions)

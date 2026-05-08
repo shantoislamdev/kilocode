@@ -29,12 +29,16 @@ export function renderGutter(
 }
 
 /**
- * Returns a `(reconnect)` description suffix when the provider has failed auth,
+ * Returns a description suffix when the provider has encountered an error,
  * or `undefined` to leave the default description unchanged.
+ *
+ * NOTE: The sync state only carries failed provider IDs, not the error kind.
+ * A generic message is used so it remains accurate for auth, network, and
+ * schema failure types alike.
  */
 export function failedDescription(providerID: string, failed: string[]): string | undefined {
   if (!failed.includes(providerID)) return undefined
-  return "(reconnect)"
+  return "(connection error — click to reconnect)"
 }
 
 // ---------------------------------------------------------------------------
