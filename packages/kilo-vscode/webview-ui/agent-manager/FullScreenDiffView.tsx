@@ -29,7 +29,13 @@ import {
   type AnnotationLabels,
   type AnnotationMeta,
 } from "./review-annotations"
-import { LONG_DIFF_MARKER_FILE_COUNT, expandableOpenFiles, initialOpenFiles, isLargeDiffFile } from "./diff-open-policy"
+import {
+  LONG_DIFF_MARKER_FILE_COUNT,
+  allOpenFiles,
+  initialOpenFiles,
+  isLargeDiffFile,
+  toggleOpenFiles,
+} from "./diff-open-policy"
 import { DiffEndMarker } from "./DiffEndMarker"
 import { isMarkdownFile, MarkdownDiffView } from "./MarkdownDiffView"
 import { diffToken } from "./diff-state"
@@ -368,7 +374,7 @@ export const FullScreenDiffView: Component<FullScreenDiffViewProps> = (props) =>
   }
 
   const handleExpandAll = () => {
-    setOpen(open().length > 0 ? [] : expandableOpenFiles(props.diffs))
+    setOpen(toggleOpenFiles(props.diffs, open()))
   }
 
   const syncActiveFileFromScroll = () => {
@@ -431,6 +437,8 @@ export const FullScreenDiffView: Component<FullScreenDiffViewProps> = (props) =>
     large: props.diffs.filter((diff) => isLargeDiffFile(diff)).length,
     collapsed: Math.max(props.diffs.length - open().length, 0),
   }))
+  const allOpen = createMemo(() => allOpenFiles(props.diffs, open()))
+  const openLabel = () => (allOpen() ? t("ui.sessionReview.collapseAll") : t("ui.sessionReview.expandAll"))
 
   return (
     <div
@@ -474,7 +482,7 @@ export const FullScreenDiffView: Component<FullScreenDiffViewProps> = (props) =>
         <div class="am-review-toolbar-right">
           <Button size="small" variant="ghost" onClick={handleExpandAll}>
             <Icon name="chevron-grabber-vertical" size="small" />
-            {open().length > 0 ? t("ui.sessionReview.collapseAll") : t("ui.sessionReview.expandAll")}
+            {openLabel()}
           </Button>
           <Show when={comments().length > 0 && props.canComment !== false}>
             <TooltipKeybind
