@@ -52,7 +52,7 @@ class SessionUi(
     cs: CoroutineScope,
     ref: SessionRef? = null,
     displayMs: Long = SessionController.DISPLAY_DELAY_MS,
-    open: (SessionRef) -> Unit = {},
+    manager: SessionManager? = null,
 ) : JPanel(BorderLayout()), Disposable, SessionStyleTarget {
 
     companion object {
@@ -75,7 +75,7 @@ class SessionUi(
         flushMs = flushMs,
         condense = Registry.`is`("kilo.session.condense", true),
         displayMs = displayMs,
-        open = open,
+        open = { item -> manager?.openSession(item) },
         beforeUpdate = { if (opening) false else scroll.atBottom() },
         afterUpdate = { if (!opening) scroll.followBottom(it) },
         loaded = ::onSessionLoaded,

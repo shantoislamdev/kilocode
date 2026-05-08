@@ -56,7 +56,7 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
     fun `test factory wires open callback`() {
         val manager = FakeManager()
         val rpc = session("ses_1")
-        val ui = SessionUi(project, workspace, sessions, app, scope, open = { ref -> manager.openSession(ref) })
+        val ui = SessionUi(project, workspace, sessions, app, scope, manager = manager)
         val controller = controller(ui)
 
         com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait {
@@ -69,7 +69,7 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
     fun `test empty panel opens through SessionRef via controller`() {
         val manager = FakeManager()
         val rpc = session("ses_1")
-        val ui = SessionUi(project, workspace, sessions, app, scope, open = { ref -> manager.openSession(ref) })
+        val ui = SessionUi(project, workspace, sessions, app, scope, manager = manager)
         val controller = controller(ui)
         val panel = ai.kilocode.client.session.ui.EmptySessionPanel(testRootDisposable, controller, listOf(rpc))
 

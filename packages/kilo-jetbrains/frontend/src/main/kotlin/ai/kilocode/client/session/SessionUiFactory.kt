@@ -26,7 +26,7 @@ class SessionUiFactory(
         app = service<KiloAppService>(),
         cs = scope(),
         ref = ref,
-        open = { item -> manager.openSession(item) },
+        manager = manager,
     )
 
     fun scope(): CoroutineScope {

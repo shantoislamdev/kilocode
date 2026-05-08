@@ -77,9 +77,16 @@ abstract class SessionUiTestBase : BasePlatformTestCase() {
     protected fun newUi(
         id: String? = null,
         displayMs: Long = 0,
-        open: (SessionRef) -> Unit = {},
+        open: ((SessionRef) -> Unit)? = null,
     ): SessionUi {
-        return SessionUi(project, workspace, sessions, app, scope, ref = SessionRef.from(id), displayMs = displayMs, open = open).apply {
+        val manager = open?.let { fn ->
+            object : SessionManager {
+                override fun newSession() {}
+                override fun showHistory() {}
+                override fun openSession(ref: SessionRef) = fn(ref)
+            }
+        }
+        return SessionUi(project, workspace, sessions, app, scope, ref = SessionRef.from(id), displayMs = displayMs, manager = manager).apply {
             setSize(800, 600)
         }
     }
