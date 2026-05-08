@@ -97,7 +97,7 @@ export namespace KiloSession {
   }
 
   // ---------------------------------------------------------------------------
-  // Provider-reported cost (OpenRouter / Kilo)
+  // Provider-reported cost (Kilo / OpenRouter / Vercel AI Gateway)
   // ---------------------------------------------------------------------------
 
   /**
