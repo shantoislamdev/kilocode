@@ -6,6 +6,7 @@ import ai.kilocode.client.session.model.SessionModelEvent
 import ai.kilocode.client.session.ui.SessionEditorStyle
 import ai.kilocode.client.session.ui.SessionEditorStyleTarget
 import ai.kilocode.client.session.update.SessionController
+import ai.kilocode.client.ui.HoverIcon
 import ai.kilocode.client.ui.UiStyle
 import ai.kilocode.rpc.dto.TokensDto
 import com.intellij.ide.util.PropertiesComponent
@@ -51,13 +52,13 @@ class SessionHeaderPanel(
     private val cost = JBLabel()
     private val context = JBLabel()
     private val todos = JBLabel()
-    private val compact = UiStyle.Buttons.HoverIcon().apply {
+    private val compact = HoverIcon().apply {
         icon = COMPRESS_ICON
         toolTipText = KiloBundle.message("session.header.compact.description")
         accessibleContext.accessibleName = KiloBundle.message("session.header.compact")
         addActionListener { controller.compact() }
     }
-    private val expand = UiStyle.Buttons.HoverIcon().apply {
+    private val expand = HoverIcon().apply {
         icon = CHEVRON_ICON
         toolTipText = KiloBundle.message("session.header.expand")
         accessibleContext.accessibleName = KiloBundle.message("session.header.expand")

@@ -3,18 +3,10 @@ package ai.kilocode.client.ui
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.ui.JBColor
 import com.intellij.ui.RoundedLineBorder
-import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
 import java.awt.Color
-import java.awt.Dimension
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.RenderingHints
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import javax.swing.JButton
 import javax.swing.JComponent
 import javax.swing.UIManager
 import javax.swing.border.Border
@@ -138,115 +130,6 @@ object UiStyle {
         fun pad() = JBUI.scale(12)
 
         fun layout(gap: Int = lg()) = BorderLayout(gap, 0)
-    }
-
-    object Buttons {
-        class HoverIcon : JButton() {
-            private var over = false
-
-            init {
-                isFocusable = false
-                setRequestFocusEnabled(false)
-                isContentAreaFilled = false
-                isBorderPainted = false
-                isOpaque = false
-                border = JBUI.Borders.empty()
-                addMouseListener(object : MouseAdapter() {
-                    override fun mouseEntered(e: MouseEvent) {
-                        sync(true)
-                    }
-
-                    override fun mouseExited(e: MouseEvent) {
-                        sync(false)
-                    }
-                })
-            }
-
-            override fun getPreferredSize(): Dimension = JBUI.size(Size.BUTTON, Size.BUTTON)
-
-            override fun getMinimumSize(): Dimension = preferredSize
-
-            override fun getMaximumSize(): Dimension = preferredSize
-
-            override fun paintComponent(g: Graphics) {
-                if (isEnabled && over) paintHover(g)
-                super.paintComponent(g)
-            }
-
-            private fun paintHover(g: Graphics) {
-                val g2 = g.create() as Graphics2D
-                try {
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                    g2.color = JBUI.CurrentTheme.ActionButton.hoverBackground()
-                    val arc = JBUI.scale(JBUI.getInt("Button.arc", 6))
-                    g2.fillRoundRect(0, 0, width, height, arc, arc)
-                } finally {
-                    g2.dispose()
-                }
-            }
-
-            private fun sync(value: Boolean) {
-                if (over == value) return
-                over = value
-                repaint()
-            }
-        }
-
-        fun icon(button: JButton) {
-            button.isFocusable = false
-            button.setRequestFocusEnabled(false)
-            button.isContentAreaFilled = false
-            button.isBorderPainted = false
-            button.isOpaque = false
-            button.border = JBUI.Borders.empty()
-        }
-    }
-
-    object Pickers {
-        open class Label : JBLabel() {
-            private var over = false
-
-            init {
-                border = Borders.picker()
-                background = Colors.picker()
-                // The custom rounded fill needs parent background around the corners.
-                isOpaque = false
-                addMouseListener(object : MouseAdapter() {
-                    override fun mouseEntered(e: MouseEvent) {
-                        sync(true)
-                    }
-
-                    override fun mouseExited(e: MouseEvent) {
-                        sync(false)
-                    }
-                })
-            }
-
-            override fun updateUI() {
-                super.updateUI()
-                border = Borders.picker()
-                background = Colors.picker()
-            }
-
-            override fun paintComponent(g: Graphics) {
-                val g2 = g.create() as Graphics2D
-                try {
-                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
-                    g2.color = if (isEnabled && over) Colors.pickerHover() else Colors.picker()
-                    val arc = JBUI.scale(JBUI.getInt("Button.arc", 6))
-                    g2.fillRoundRect(0, 0, width, height, arc, arc)
-                } finally {
-                    g2.dispose()
-                }
-                super.paintComponent(g)
-            }
-
-            private fun sync(value: Boolean) {
-                if (over == value) return
-                over = value
-                repaint()
-            }
-        }
     }
 
     object Components {
