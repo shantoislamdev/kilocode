@@ -2,7 +2,7 @@ import { useTerminalDimensions } from "@opentui/solid" // kilocode_change
 import { createEffect, createMemo, createSignal, Show } from "solid-js" // kilocode_change
 import { useLocal } from "@tui/context/local"
 import { useSync } from "@tui/context/sync"
-import { map, pipe, flatMap, entries, filter, sortBy, take } from "remeda"
+import { map, pipe, flatMap, entries, filter, sortBy, take, groupBy } from "remeda"
 import { DialogSelect } from "@tui/ui/dialog-select"
 import { useDialog } from "@tui/ui/dialog"
 import { createDialogProviderOptions, DialogProvider } from "./dialog-provider"
@@ -166,7 +166,14 @@ export function DialogModel(props: { providerID?: string }) {
     if (needle) {
       const rank = <U extends { title: string; category?: string }>(items: U[]) =>
         fuzzysort.go(needle, items, { keys: ["title", "category"] }).map((x) => x.obj)
-      return [...rank(favoriteOptions), ...rank(recentOptions), ...rank(providerOptions), ...rank(popularProviders)]
+      // rank within each provider category to preserve category order
+      const rankedProviders = pipe(
+        providerOptions,
+        groupBy((x) => x.category ?? ""),
+        entries(),
+        flatMap(([_, items]) => rank(items)),
+      )
+      return [...rank(favoriteOptions), ...rank(recentOptions), ...rankedProviders, ...rank(popularProviders)]
     }
     // kilocode_change end
 
