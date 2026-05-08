@@ -2,7 +2,6 @@ package ai.kilocode.client.ui
 
 import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.ui.JBColor
-import com.intellij.ui.RoundedLineBorder
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import java.awt.BorderLayout
@@ -105,13 +104,6 @@ object UiStyle {
         fun warning(): Border = JBUI.Borders.customLine(Colors.warning(), 1)
 
         fun picker(): Border = JBUI.Borders.empty(Gap.xs(), Gap.lg())
-
-        fun user(): Border = JBUI.Borders.compound(
-            RoundedLineBorder(Colors.line(), Gap.lg()),
-            JBUI.Borders.empty(Gap.lg(), Gap.pad()),
-        )!!
-
-        fun assistant(): Border = JBUI.Borders.empty()
     }
 
     object Gap {

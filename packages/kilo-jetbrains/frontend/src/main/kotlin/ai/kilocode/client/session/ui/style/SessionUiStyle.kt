@@ -39,6 +39,14 @@ object SessionUiStyle {
             const val BODY_LINES = 5
         }
 
+        object Message {
+            const val USER_ROLE = "user"
+            const val ASSISTANT_ROLE = "assistant"
+            const val USER_BORDER_ARC = 8
+            const val USER_BORDER_VERTICAL_PADDING = 8
+            const val USER_BORDER_HORIZONTAL_PADDING = 12
+        }
+
         object Tool {
             const val BODY_LINES = 15
             const val PREVIEW_LIMIT = 20_000
