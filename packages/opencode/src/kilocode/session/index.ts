@@ -105,20 +105,20 @@ export namespace KiloSession {
    *
    * Supports the following internal transports:
    *   1. OpenRouter chat completions  -> `metadata.openrouter.usage.cost`
-   *                                      (`costDetails.upstreamInferenceCost` for Kilo BYOK)
+   *                                      (`costDetails.upstreamInferenceCost` for Kilo)
    *   2. Anthropic Messages or OpenAI Responses via OpenRouter
    *                                   -> `usage.raw.cost_details.upstream_inference_cost`
    *      (the `@ai-sdk/anthropic` and `@ai-sdk/openai` providers both surface the verbatim
-   *      provider usage object on `LanguageModelUsage.raw`, so OpenRouter's BYOK cost lands
-   *      there with snake_case preserved)
+   *      provider usage object on `LanguageModelUsage.raw`, so OpenRouter's upstream
+   *      inference cost lands there with snake_case preserved)
    *   3. Anthropic Messages or OpenAI Responses via Vercel AI Gateway
    *                                   -> `metadata.gateway.marketCost` (defensive: the
    *      gateway emits this in the SSE `provider_metadata` field, which the current AI SDK
    *      providers drop before they reach this layer)
    *
-   * The top-level `cost` field for non-OpenRouter-chat-completions paths represents the
-   * gateway fee paid by Kilo (typically 0 for BYOK) and would understate the user's true
-   * spend, so it is deliberately never used.
+   * Kilo does not charge end users a per-request fee, so for the Kilo provider the
+   * top-level `cost` field (the gateway/marketplace fee) would understate the user's
+   * actual upstream spend. Always prefer the upstream/market cost when present.
    *
    * Returns `undefined` when no provider cost is available, so the caller
    * should fall back to the standard token-based calculation.
@@ -146,7 +146,9 @@ export namespace KiloSession {
     if (orUsage) {
       const upstream = num(orUsage.costDetails?.upstreamInferenceCost)
       const regular = num(orUsage.cost)
-      // Kilo is always BYOK, so prefer upstream cost. For OpenRouter, use regular cost.
+      // Kilo doesn't charge a fee on top of the upstream inference cost, so for Kilo
+      // prefer the upstream cost (the user's true spend). For the OpenRouter provider
+      // itself, the regular `cost` field is what the user is billed.
       const cost = isKilo && upstream !== undefined ? upstream : regular
       if (cost !== undefined) return cost
     }
@@ -154,16 +156,19 @@ export namespace KiloSession {
     // 2. Anthropic Messages or OpenAI Responses via OpenRouter. The `@ai-sdk/anthropic`
     //    (`convertAnthropicUsage`) and `@ai-sdk/openai` (`convertOpenAIResponsesUsage`)
     //    providers both copy the verbatim provider usage object onto `usage.raw`, so
-    //    OpenRouter's BYOK upstream cost lands at `usage.raw.cost_details.upstream_inference_cost`
-    //    with snake_case preserved. Only the upstream BYOK cost is meaningful here; the
-    //    top-level `cost` is the OpenRouter fee.
+    //    OpenRouter's upstream inference cost lands at
+    //    `usage.raw.cost_details.upstream_inference_cost` with snake_case preserved.
+    //    Kilo doesn't charge end users a per-request fee, so the top-level `cost` field
+    //    (the OpenRouter fee) would understate the user's true spend; only the upstream
+    //    cost is meaningful here.
     const raw = input.usage?.raw as { cost_details?: { upstream_inference_cost?: number } } | undefined
     const upstream = num(raw?.cost_details?.upstream_inference_cost)
     if (upstream !== undefined) return upstream
 
-    // 3. Anthropic Messages or OpenAI Responses via Vercel AI Gateway. `cost` is what Kilo
-    //    paid the gateway (typically 0 for BYOK), so we always use `marketCost`. Values are
-    //    emitted as strings on the wire.
+    // 3. Anthropic Messages or OpenAI Responses via Vercel AI Gateway. `cost` is the
+    //    gateway fee that Kilo would pass through, but Kilo doesn't charge end users a
+    //    per-request fee, so always use `marketCost` (the upstream provider's price).
+    //    Values are emitted as strings on the wire.
     //
     //    NOTE: this branch is currently dormant because neither `@ai-sdk/anthropic` nor
     //    `@ai-sdk/openai` (responses) forwards the SSE-level `provider_metadata.gateway`

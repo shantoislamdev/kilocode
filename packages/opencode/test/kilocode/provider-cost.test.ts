@@ -130,8 +130,8 @@ describe("KiloSession.providerCost — Vercel AI Gateway", () => {
       usage: baseUsage,
       metadata: {
         gateway: {
-          // Strings, exactly as emitted by the AI Gateway. `cost` (gateway fee, often 0
-          // for BYOK) must be ignored.
+          // Strings, exactly as emitted by the AI Gateway. `cost` is the gateway fee,
+          // which Kilo doesn't pass on to end users — must be ignored.
           cost: "0",
           marketCost: "0.35349075",
         },
