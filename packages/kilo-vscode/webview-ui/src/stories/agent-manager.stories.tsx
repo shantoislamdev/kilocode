@@ -574,12 +574,18 @@ const MockTabsSearchButton = () => (
 
 const MockTabLeading = () => (
   <div class="am-tab-leading">
+    <MockTabsSearchButton />
+  </div>
+)
+
+const MockTabAdd = () => (
+  <div class="am-tab-add-wrap">
+    <div class="am-tab-add-separator" />
     <div class="am-split-button am-tab-add-split">
       <TooltipKeybind title="New session" keybind="⌘T" placement="bottom">
         <IconButton icon="plus" size="small" variant="ghost" label="New session" class="am-tab-add" />
       </TooltipKeybind>
     </div>
-    <MockTabsSearchButton />
   </div>
 )
 
@@ -598,6 +604,7 @@ export const TabBarMultipleTabs: Story = {
             </div>
           </div>
         </div>
+        <MockTabAdd />
         <div class="am-tab-actions">
           <button class="am-diff-toggle-btn am-diff-toggle-has-changes">
             <Icon name="layers" size="small" />
@@ -628,6 +635,7 @@ export const TabBarWithReviewTab: Story = {
             </div>
           </div>
         </div>
+        <MockTabAdd />
         <div class="am-tab-actions">
           <IconButton icon="expand" size="small" variant="ghost" label="Review" class="am-tab-diff-btn-active" />
           <IconButton icon="console" size="small" variant="ghost" label="Terminal" />
@@ -650,6 +658,7 @@ export const TabBarSingleTab: Story = {
             </div>
           </div>
         </div>
+        <MockTabAdd />
         <div class="am-tab-actions">
           <button class="am-diff-toggle-btn am-diff-toggle-has-changes">
             <Icon name="layers" size="small" />

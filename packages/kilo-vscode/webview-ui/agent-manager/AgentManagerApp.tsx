@@ -2701,19 +2701,21 @@ const AgentManagerContent: Component = () => {
                 </div>
                 <div class={`am-tab-fade am-tab-fade-right ${tabScroll.showRight() ? "am-tab-fade-visible" : ""}`} />
               </div>
-              <div class="am-tab-add-wrap">
-                <div class="am-tab-add-separator" />
-                {renderNewTabButton({
-                  contextSelected: () => selection() !== null,
-                  kb,
-                  newSessionLabel: t("agentManager.session.new"),
-                  newTerminalLabel: t("agentManager.terminal.new"),
-                  newSessionMenuLabel: t("agentManager.session.newSession"),
-                  moreOptionsLabel: t("agentManager.tab.newOptions"),
-                  onNewSession: handleAddSession,
-                  onNewTerminal: () => termHandlers.requestNew(),
-                })}
-              </div>
+              <Show when={selection() !== null}>
+                <div class="am-tab-add-wrap">
+                  <div class="am-tab-add-separator" />
+                  {renderNewTabButton({
+                    contextSelected: () => selection() !== null,
+                    kb,
+                    newSessionLabel: t("agentManager.session.new"),
+                    newTerminalLabel: t("agentManager.terminal.new"),
+                    newSessionMenuLabel: t("agentManager.session.newSession"),
+                    moreOptionsLabel: t("agentManager.tab.newOptions"),
+                    onNewSession: handleAddSession,
+                    onNewTerminal: () => termHandlers.requestNew(),
+                  })}
+                </div>
+              </Show>
               <div class="am-tab-actions">
                 {(() => {
                   const sel = () => selection()
