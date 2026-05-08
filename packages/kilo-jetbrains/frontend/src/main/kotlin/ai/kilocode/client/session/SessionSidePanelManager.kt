@@ -5,7 +5,6 @@ import ai.kilocode.client.app.KiloWorkspaceService
 import ai.kilocode.client.app.Workspace
 import ai.kilocode.client.session.history.HistoryController
 import ai.kilocode.client.session.history.HistoryPanel
-import ai.kilocode.rpc.dto.SessionDto
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.DataProvider
 import com.intellij.openapi.application.ApplicationManager
@@ -22,8 +21,8 @@ import javax.swing.JPanel
 class SessionSidePanelManager(
     private val project: Project,
     private val root: Workspace,
-    private val create: (Project, Workspace, SessionManager, String?, SessionDto?, SessionRef?) -> SessionUi = { project, workspace, manager, id, session, target ->
-        service<SessionUiFactory>().create(project, workspace, manager, id, session, target)
+    private val create: (Project, Workspace, SessionManager, SessionRef?) -> SessionUi = { project, workspace, manager, ref ->
+        service<SessionUiFactory>().create(project, workspace, manager, ref)
     },
     private val resolve: (String) -> Workspace = { dir -> service<KiloWorkspaceService>().workspace(dir) },
     private val history: ((Disposable, (SessionRef) -> Unit, (String) -> Unit) -> JComponent)? = null,
@@ -46,7 +45,7 @@ class SessionSidePanelManager(
         val active = current
         if (active?.blank == true) return
         register(active)
-        show(create(project, root, this, null, null, null))
+        show(create(project, root, this, null))
     }
 
     override fun openSession(session: SessionDto) {
@@ -71,18 +70,11 @@ class SessionSidePanelManager(
             is SessionRef.Local -> ref.session?.directory?.let(resolve) ?: root
             is SessionRef.Cloud -> root
         }
-        val id = when (ref) {
-            is SessionRef.Local -> ref.id
-            is SessionRef.Cloud -> ref.key
-        }
-        val session = (ref as? SessionRef.Local)?.session
-        return create(project, workspace, this, id, session, ref).also {
+        return create(project, workspace, this, ref).also {
             all.add(it)
             opened[ref.key] = it
-            val local = session?.id
-            if (local != null) {
-                opened.putIfAbsent(local, it)
-            }
+            val local = (ref as? SessionRef.Local)?.session?.id
+            if (local != null) opened.putIfAbsent(local, it)
         }
     }
 

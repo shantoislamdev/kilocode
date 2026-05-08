@@ -36,11 +36,5 @@ sealed interface SessionRef {
         fun cloud(id: String?): Cloud? {
             return from(id) as? Cloud
         }
-
-        fun resolve(id: String? = null, session: SessionDto? = null, target: SessionRef? = null): SessionRef? {
-            if (target != null) return target
-            if (session != null) return Local(session)
-            return from(id)
-        }
     }
 }

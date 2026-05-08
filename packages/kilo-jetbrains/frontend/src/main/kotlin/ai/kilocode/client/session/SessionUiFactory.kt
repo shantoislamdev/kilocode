@@ -3,7 +3,6 @@ package ai.kilocode.client.session
 import ai.kilocode.client.app.KiloAppService
 import ai.kilocode.client.app.KiloSessionService
 import ai.kilocode.client.app.Workspace
-import ai.kilocode.rpc.dto.SessionDto
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -19,19 +18,15 @@ class SessionUiFactory(
         project: Project,
         workspace: Workspace,
         manager: SessionManager,
-        id: String? = null,
-        session: SessionDto? = null,
-        target: SessionRef? = SessionRef.resolve(id, session),
+        ref: SessionRef? = null,
     ): SessionUi = SessionUi(
         project = project,
         workspace = workspace,
         sessions = project.service<KiloSessionService>(),
         app = service<KiloAppService>(),
         cs = scope(),
-        id = id,
-        session = session,
-        target = target,
-        open = { ref -> manager.openSession(ref) },
+        ref = ref,
+        open = { item -> manager.openSession(item) },
     )
 
     fun scope(): CoroutineScope {

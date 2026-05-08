@@ -148,7 +148,7 @@ abstract class SessionControllerTestBase : BasePlatformTestCase() {
         session: SessionDto? = null,
         beforeUpdate: () -> Boolean = { false },
         afterUpdate: (Boolean) -> Unit = {},
-        ref: SessionRef? = SessionRef.resolve(id, session),
+        ref: SessionRef? = if (session != null) SessionRef.Local(session) else SessionRef.from(id),
     ): SessionController {
         val root = Root()
         val m = SessionController(

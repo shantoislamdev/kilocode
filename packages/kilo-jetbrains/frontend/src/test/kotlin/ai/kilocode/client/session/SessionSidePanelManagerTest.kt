@@ -35,7 +35,7 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
     private lateinit var app: KiloAppService
     private val managers = mutableListOf<SessionSidePanelManager>()
     private val created = mutableListOf<Pair<String, String?>>()
-    private val targets = mutableListOf<SessionRef?>()
+    private val refs = mutableListOf<SessionRef?>()
     private val ui = mutableListOf<SessionUi>()
 
     override fun setUp() {
@@ -244,7 +244,7 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
 
         assertTrue(active(manager) is SessionUi)
         assertEquals(listOf("/test" to "cloud:cloud_1"), created)
-        assertEquals("cloud:cloud_1", targets.single()?.key)
+        assertEquals("cloud:cloud_1", refs.single()?.key)
         assertEquals(listOf("cloud_1" to "/test"), rpc.imports)
 
         rpc.historyGate?.complete(Unit)
@@ -341,10 +341,15 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
         val manager = SessionSidePanelManager(
             project = project,
             root = workspace,
-            create = { project, workspace, owner, id, session, target ->
+            create = { project, workspace, owner, ref ->
+                val id = when (ref) {
+                    is SessionRef.Local -> ref.id
+                    is SessionRef.Cloud -> ref.key
+                    null -> null
+                }
                 created.add(workspace.directory to id)
-                targets.add(target)
-                SessionUi(project, workspace, sessions, app, scope, id = id, open = { item -> owner.openSession(item) }, session = session, target = target).also {
+                refs.add(ref)
+                SessionUi(project, workspace, sessions, app, scope, ref = ref, open = { item -> owner.openSession(item) }).also {
                     ui.add(it)
                     Disposer.register(it) { ui.remove(it) }
                 }

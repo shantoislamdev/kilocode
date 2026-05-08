@@ -79,7 +79,7 @@ abstract class SessionUiTestBase : BasePlatformTestCase() {
         displayMs: Long = 0,
         open: (SessionRef) -> Unit = {},
     ): SessionUi {
-        return SessionUi(project, workspace, sessions, app, scope, id = id, displayMs = displayMs, open = open).apply {
+        return SessionUi(project, workspace, sessions, app, scope, ref = SessionRef.from(id), displayMs = displayMs, open = open).apply {
             setSize(800, 600)
         }
     }

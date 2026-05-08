@@ -22,7 +22,6 @@ import ai.kilocode.client.session.ui.SessionStyleTarget
 import ai.kilocode.client.session.update.EVENT_FLUSH_MS
 import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.session.update.SessionControllerEvent
-import ai.kilocode.rpc.dto.SessionDto
 import ai.kilocode.log.ChatLogSummary
 import ai.kilocode.log.KiloLog
 import com.intellij.ide.ui.LafManagerListener
@@ -51,11 +50,9 @@ class SessionUi(
     sessions: KiloSessionService,
     app: KiloAppService,
     cs: CoroutineScope,
-    id: String? = null,
+    ref: SessionRef? = null,
     displayMs: Long = SessionController.DISPLAY_DELAY_MS,
     open: (SessionRef) -> Unit = {},
-    session: SessionDto? = null,
-    target: SessionRef? = SessionRef.resolve(id, session),
 ) : JPanel(BorderLayout()), Disposable, SessionStyleTarget {
 
     companion object {
@@ -64,7 +61,6 @@ class SessionUi(
 
     private val project = project
     private val app = app
-    private val ref = SessionRef.resolve(id, session, target)
     private var opening = ref != null
     private var pending = false
     private var loaded: Boolean? = null
@@ -75,7 +71,7 @@ class SessionUi(
             ?: EVENT_FLUSH_MS
 
     private val controller = SessionController(
-        this, ref, sessions, workspace, app, cs, this,
+        this, ref, sessions, workspace, app, cs, comp = this,
         flushMs = flushMs,
         condense = Registry.`is`("kilo.session.condense", true),
         displayMs = displayMs,
