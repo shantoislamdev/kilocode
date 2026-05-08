@@ -2,7 +2,7 @@ import { useTerminalDimensions } from "@opentui/solid" // kilocode_change
 import { createEffect, createMemo, createSignal, Show } from "solid-js" // kilocode_change
 import { useLocal } from "@tui/context/local"
 import { useSync } from "@tui/context/sync"
-import { map, pipe, flatMap, entries, filter, sortBy, take, groupBy } from "remeda"
+import { map, pipe, flatMap, entries, filter, sortBy, take, groupBy } from "remeda" // kilocode_change
 import { DialogSelect } from "@tui/ui/dialog-select"
 import { useDialog } from "@tui/ui/dialog"
 import { createDialogProviderOptions, DialogProvider } from "./dialog-provider"
@@ -67,6 +67,7 @@ export function DialogModel(props: { providerID?: string }) {
 
   const options = createMemo(() => {
     const needle = query().trim()
+    // kilocode_change: removed showSections guard — sections are always built; empty ones are hidden naturally
     const favorites = connected() ? local.model.favorite() : []
     const recents = local.model.recent()
 
@@ -134,6 +135,7 @@ export function DialogModel(props: { providerID?: string }) {
             },
           })),
           filter((x) => {
+            // kilocode_change: always dedupe favorites/recents (upstream only did this when showSections was true)
             if (favorites.some((item) => item.providerID === x.value.providerID && item.modelID === x.value.modelID))
               return false
             if (recents.some((item) => item.providerID === x.value.providerID && item.modelID === x.value.modelID))
