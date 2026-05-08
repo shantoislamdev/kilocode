@@ -4,22 +4,13 @@ import * as Encoding from "./encoding"
 
 /**
  * Encoding-aware text streaming for tools that walk a file line by line.
+ * Optimistically stream as UTF-8; fall back to a buffered iconv decode only
+ * when the bytes turn out not to be valid UTF-8.
  *
- * Most files we read are UTF-8, so we stream chunks straight from disk
- * (decoded strictly with `TextDecoder({ fatal: true })`) and let the consumer
- * early-exit without buffering the rest of the file. Only when the bytes turn
- * out not to be valid UTF-8 do we fall back to {@link Encoding.read}, which
- * runs full-file detection through iconv-lite.
- *
- * Consumers should import this module as a namespace:
  *   import * as TextStream from "../kilocode/text-stream"
  */
 
-/**
- * Sentinel error used to signal the optimistic UTF-8 stream gave up because
- * the bytes are not valid UTF-8. Distinct class so {@link withFallback} can
- * tell it apart from real I/O failures.
- */
+/** Distinct class so {@link withFallback} can tell us apart from real I/O failures. */
 export class InvalidUtf8Error extends Error {
   constructor() {
     super("invalid utf-8")
@@ -27,11 +18,8 @@ export class InvalidUtf8Error extends Error {
 }
 
 /**
- * UTF-8 text Readable for `filepath`. Streams chunks straight from disk so the
- * caller can early-exit without buffering the rest of the file. If invalid
- * UTF-8 is encountered the stream is destroyed with an {@link
- * InvalidUtf8Error}. A leading UTF-8 BOM passes through as U+FEFF — the same
- * behaviour as `createReadStream({ encoding: "utf8" })`.
+ * UTF-8 text Readable for `filepath`. A leading UTF-8 BOM passes through as
+ * U+FEFF — same as `createReadStream({ encoding: "utf8" })`.
  */
 export function openUtf8(filepath: string): Readable {
   const out = new PassThrough({ encoding: "utf8" })
@@ -56,23 +44,21 @@ export function openUtf8(filepath: string): Readable {
     }
   })
   raw.on("error", (err) => out.destroy(err))
+  // Propagate consumer-side teardown so early-exit (line / byte cap, fallback)
+  // stops pulling chunks from disk instead of running to EOF.
+  out.on("close", () => raw.destroy())
   return out
 }
 
-/**
- * Whole-file UTF-8 text Readable for `filepath`, decoded via
- * {@link Encoding.read}'s detection logic. Buffers the entire decoded file
- * into memory; used as a fallback for files that {@link openUtf8} rejects.
- */
+/** Whole-file UTF-8 Readable via {@link Encoding.read}; buffers the entire decoded file. */
 export async function openDecoded(filepath: string): Promise<Readable> {
   const decoded = await Encoding.read(filepath)
   return Readable.from([decoded.text])
 }
 
 /**
- * Run `fn` against an optimistic UTF-8 stream of `filepath`. If the bytes
- * turn out not to be valid UTF-8, `fn` is run a second time against a
- * fallback iconv-decoded stream. Other errors are propagated unchanged.
+ * Run `fn` against an optimistic UTF-8 stream; on {@link InvalidUtf8Error}
+ * retry once against {@link openDecoded}. Other errors propagate.
  */
 export async function withFallback<T>(filepath: string, fn: (input: Readable) => Promise<T>): Promise<T> {
   try {
