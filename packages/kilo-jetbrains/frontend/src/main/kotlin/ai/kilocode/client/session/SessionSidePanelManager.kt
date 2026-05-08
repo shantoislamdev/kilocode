@@ -48,10 +48,6 @@ class SessionSidePanelManager(
         show(create(project, root, this, null))
     }
 
-    override fun openSession(session: SessionDto) {
-        openSession(SessionRef.Local(session))
-    }
-
     override fun openSession(ref: SessionRef) {
         register(current)
         val ui = opened[ref.key] ?: run {
