@@ -691,7 +691,9 @@ export class WorktreeManager {
       // Use non-interactive env to prevent SSH passphrase popups.
       onProgress?.("fetching", `Fetching ${remote}/${branch}...`)
       try {
-        await simpleGit(this.root).env(nonInteractiveEnv()).fetch(remote, branch)
+        await simpleGit(this.root, { unsafe: { allowUnsafeSshCommand: true } })
+          .env(nonInteractiveEnv())
+          .fetch(remote, branch)
         WorktreeManager.fetchCache.set(cacheKey, Date.now())
         if (await this.refExistsLocally(`${remote}/${branch}`)) {
           return {
