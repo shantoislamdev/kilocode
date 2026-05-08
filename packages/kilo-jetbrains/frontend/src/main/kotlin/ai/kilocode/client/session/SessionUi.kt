@@ -52,7 +52,7 @@ class SessionUi(
     cs: CoroutineScope,
     ref: SessionRef? = null,
     displayMs: Long = SessionController.DISPLAY_DELAY_MS,
-    manager: SessionManager? = null,
+    private val manager: SessionManager? = null,
 ) : JPanel(BorderLayout()), Disposable, SessionStyleTarget {
 
     companion object {
@@ -218,7 +218,7 @@ class SessionUi(
                 }
 
                 is SessionControllerEvent.ViewChanged.ShowRecents -> {
-                    val panel = EmptySessionPanel(this, controller, event.recents)
+                    val panel = EmptySessionPanel(this, controller, event.recents) { manager?.showHistory() }
                     scroll.show(panel)
                 }
 

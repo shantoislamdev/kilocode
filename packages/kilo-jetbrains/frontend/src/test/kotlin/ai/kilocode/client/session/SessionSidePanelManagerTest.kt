@@ -214,6 +214,39 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
         assertNull(manager.defaultFocusedComponent)
     }
 
+    fun `test history back restores latest open session`() {
+        val manager = manager()
+
+        manager.openSession(session("ses_1"))
+        val first = active(manager)
+        manager.showHistory()
+        back(manager)
+
+        assertSame(first, active(manager))
+    }
+
+    fun `test history back without latest session opens new session`() {
+        val manager = manager()
+
+        manager.showHistory()
+        back(manager)
+
+        assertTrue(active(manager) is SessionUi)
+        assertEquals(listOf("/test" to null), created)
+    }
+
+    fun `test history back ignores deleted latest session`() {
+        val manager = manager()
+
+        manager.openSession(session("ses_1"))
+        manager.showHistory()
+        remove(manager, "ses_1")
+        back(manager)
+
+        assertTrue(active(manager) is SessionUi)
+        assertEquals(listOf("/test" to "ses_1", "/test" to null), created)
+    }
+
     fun `test opening local history item shows session ui`() {
         lateinit var open: (SessionRef) -> Unit
         val history = JLabel("History")
@@ -367,6 +400,18 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
         val field = SessionUi::class.java.getDeclaredField("controller")
         field.isAccessible = true
         return field.get(this) as ai.kilocode.client.session.update.SessionController
+    }
+
+    private fun remove(manager: SessionSidePanelManager, id: String) {
+        val method = SessionSidePanelManager::class.java.getDeclaredMethod("removeSession", String::class.java)
+        method.isAccessible = true
+        method.invoke(manager, id)
+    }
+
+    private fun back(manager: SessionSidePanelManager) {
+        val method = SessionSidePanelManager::class.java.getDeclaredMethod("back")
+        method.isAccessible = true
+        method.invoke(manager)
     }
 
     private fun settle() = kotlinx.coroutines.runBlocking {

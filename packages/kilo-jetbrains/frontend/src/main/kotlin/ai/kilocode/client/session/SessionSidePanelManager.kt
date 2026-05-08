@@ -37,6 +37,7 @@ class SessionSidePanelManager(
     private val opened = mutableMapOf<String, SessionUi>()
     private val all = mutableSetOf<SessionUi>()
     private var current: SessionUi? = null
+    private var latest: SessionUi? = null
     private var panel: JComponent? = null
 
     val defaultFocusedComponent: JComponent? get() = current?.defaultFocusedComponent ?: (panel as? HistoryPanel)?.defaultFocusedComponent
@@ -112,7 +113,17 @@ class SessionSidePanelManager(
             deleted = this::removeSession,
         )
         Disposer.register(this) { cs.cancel() }
-        return HistoryPanel(this, controller).component
+        return HistoryPanel(this, controller, nav = this::back).component
+    }
+
+    private fun back() {
+        val ui = latest
+        if (ui != null && ui in all) {
+            show(ui)
+            return
+        }
+        latest = null
+        newSession()
     }
 
     private fun removeSession(id: String) {
@@ -120,12 +131,14 @@ class SessionSidePanelManager(
         opened.entries.removeIf { it.value === ui }
         all.remove(ui)
         if (current === ui) current = null
+        if (latest === ui) latest = null
         Disposer.dispose(ui)
     }
 
     private fun show(ui: SessionUi) {
         all.add(ui)
         register(ui)
+        latest = ui
         if (current === ui) return
         release(current)
         component.removeAll()
@@ -155,6 +168,7 @@ class SessionSidePanelManager(
         opened.clear()
         all.clear()
         current = null
+        latest = null
         component.removeAll()
         items.forEach { Disposer.dispose(it) }
     }

@@ -27,6 +27,7 @@ import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.awt.BorderLayout
 import java.awt.CardLayout
+import java.awt.Cursor
 import java.awt.event.HierarchyEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -45,6 +46,7 @@ class HistoryPanel(
     parent: Disposable,
     private val controller: HistoryController,
     private val gitUrl: () -> String? = { null },
+    private val nav: () -> Unit = {},
 ) : BorderLayoutPanel(), Disposable {
     private val localSearch = search(controller.local)
     private val cloudSearch = search(controller.cloud)
@@ -160,7 +162,8 @@ class HistoryPanel(
         add(JButton(KiloBundle.message("history.back"), AllIcons.Actions.Back).apply {
             putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
             isFocusable = false
-            addActionListener { Unit }
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            addActionListener { nav() }
         }, BorderLayout.WEST)
         border = JBUI.Borders.emptyRight(UiStyle.Space.LG)
     }
@@ -183,6 +186,7 @@ class HistoryPanel(
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         isFocusable = false
         cellRenderer = LocalHistoryRenderer(controller.local)
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         emptyText.text = KiloBundle.message("history.empty")
         addMouseListener(object : MouseAdapter() {
             override fun mouseReleased(e: MouseEvent) {
@@ -209,6 +213,7 @@ class HistoryPanel(
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         isFocusable = false
         cellRenderer = CloudHistoryRenderer(controller.cloud)
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         emptyText.text = KiloBundle.message("history.empty")
         addMouseListener(object : MouseAdapter() {
             override fun mouseReleased(e: MouseEvent) {
@@ -300,9 +305,21 @@ class HistoryPanel(
 
     internal fun listFocusable() = activeList().isFocusable
 
+    internal fun listCursor() = activeList().cursor.type
+
     internal fun backText(): String? {
         val view = activeInfo().foreSideComponent ?: return null
         return UIUtil.uiTraverser(view).filter(JButton::class.java).firstOrNull()?.text
+    }
+
+    internal fun backCursor(): Int? {
+        val view = activeInfo().foreSideComponent ?: return null
+        return UIUtil.uiTraverser(view).filter(JButton::class.java).firstOrNull()?.cursor?.type
+    }
+
+    internal fun clickBack() {
+        val view = activeInfo().foreSideComponent ?: return
+        UIUtil.uiTraverser(view).filter(JButton::class.java).firstOrNull()?.doClick()
     }
 
     internal fun clickDelete() {

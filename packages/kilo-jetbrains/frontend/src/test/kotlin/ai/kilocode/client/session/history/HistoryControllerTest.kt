@@ -22,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.awt.Cursor
 import java.awt.event.KeyEvent
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -140,6 +141,30 @@ class HistoryControllerTest : BasePlatformTestCase() {
         flush()
 
         assertEquals(KiloBundle.message("history.back"), panel.backText())
+    }
+
+    fun `test panel back button invokes callback`() {
+        var calls = 0
+        val panel = HistoryPanel(parent, controller(), nav = { calls++ })
+        flush()
+
+        panel.clickBack()
+
+        assertEquals(1, calls)
+    }
+
+    fun `test history actions use hand cursor`() {
+        val panel = HistoryPanel(parent, controller())
+        flush()
+
+        assertEquals(Cursor.HAND_CURSOR, panel.backCursor())
+        assertEquals(Cursor.HAND_CURSOR, panel.listCursor())
+
+        panel.clickCloud()
+        flush()
+
+        assertEquals(Cursor.HAND_CURSOR, panel.backCursor())
+        assertEquals(Cursor.HAND_CURSOR, panel.listCursor())
     }
 
     fun `test panel preserves independent search per source`() {

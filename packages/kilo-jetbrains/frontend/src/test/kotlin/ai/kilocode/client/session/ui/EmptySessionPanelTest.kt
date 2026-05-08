@@ -25,6 +25,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import java.awt.BorderLayout
+import java.awt.Cursor
 
 @Suppress("UnstableApiUsage")
 class EmptySessionPanelTest : BasePlatformTestCase() {
@@ -123,6 +124,29 @@ class EmptySessionPanelTest : BasePlatformTestCase() {
         assertEquals(listOf("ses_2"), opened)
     }
 
+    fun `test show history button uses localized text`() {
+        val panel = panel()
+
+        assertEquals(ai.kilocode.client.plugin.KiloBundle.message("session.showHistory"), panel.showHistoryText())
+    }
+
+    fun `test action controls use hand cursor and no show history outline`() {
+        val panel = panel()
+
+        assertFalse(panel.showHistoryBorderPainted())
+        assertEquals(Cursor.HAND_CURSOR, panel.showHistoryCursor())
+        assertEquals(Cursor.HAND_CURSOR, panel.recentCursor())
+    }
+
+    fun `test clicking show history delegates callback`() {
+        var calls = 0
+        val panel = panel(history = { calls++ })
+
+        panel.clickShowHistory()
+
+        assertEquals(1, calls)
+    }
+
     fun `test renderer aligns title center and time east`() {
         val cell = panel().rendererComponent(session("ses_1")) as BorderLayoutPanel
         val layout = cell.layout as BorderLayout
@@ -164,8 +188,8 @@ class EmptySessionPanelTest : BasePlatformTestCase() {
         assertEquals("4d ago", panel.text(session("ses_1", now - 345_600_000), now))
     }
 
-    private fun panel(recents: List<SessionDto> = emptyList()) =
-        EmptySessionPanel(testRootDisposable, controller, recents)
+    private fun panel(recents: List<SessionDto> = emptyList(), history: () -> Unit = {}) =
+        EmptySessionPanel(testRootDisposable, controller, recents, history)
 
     private fun session(id: String, updated: Long = 2_000L, title: String = "Title $id") = SessionDto(
         id = id,

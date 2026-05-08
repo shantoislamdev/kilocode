@@ -10,6 +10,7 @@ import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.ui.UiStyle
 import ai.kilocode.client.ui.md.MdView
 import ai.kilocode.rpc.dto.SessionDto
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.IconLoader
@@ -22,13 +23,18 @@ import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.Cursor
 import java.awt.Dimension
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.awt.event.MouseMotionAdapter
 import javax.swing.Box
 import javax.swing.BoxLayout
 import javax.swing.DefaultListModel
+import javax.swing.JButton
 import javax.swing.JList
 import javax.swing.ListCellRenderer
 import javax.swing.ListSelectionModel
@@ -40,6 +46,7 @@ class EmptySessionPanel(
     parent: Disposable,
     private val controller: SessionController,
     recents: List<SessionDto>,
+    private val history: () -> Unit = {},
 ) : BorderLayoutPanel(), Disposable, SessionStyleTarget {
 
     companion object {
@@ -61,6 +68,7 @@ class EmptySessionPanel(
         selectionMode = ListSelectionModel.SINGLE_SELECTION
         visibleRowCount = LIMIT
         cellRenderer = SessionRenderer()
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         emptyText.clear()
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -81,6 +89,10 @@ class EmptySessionPanel(
                 repaint()
             }
         })
+    }
+    private val historyButton = ShowHistoryButton().apply {
+        alignmentX = CENTER_ALIGNMENT
+        addActionListener { history() }
     }
     private val md = MdView.html().apply {
         // MdView uses an HTML component; transparency keeps the centered panel seamless.
@@ -122,6 +134,10 @@ class EmptySessionPanel(
             alignmentX = CENTER_ALIGNMENT
             add(recentTitle, BorderLayout.NORTH)
             add(list, BorderLayout.CENTER)
+            add(BorderLayoutPanel().apply {
+                border = JBUI.Borders.emptyTop(UiStyle.Space.LG)
+                add(historyButton, BorderLayout.CENTER)
+            }, BorderLayout.SOUTH)
         }
         val stack = BorderLayoutPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -153,6 +169,18 @@ class EmptySessionPanel(
         list.selectedIndex = index
         controller.openSession(SessionRef.Local(model.getElementAt(index).session))
     }
+
+    internal fun clickShowHistory() {
+        historyButton.doClick()
+    }
+
+    internal fun showHistoryText() = historyButton.text
+
+    internal fun showHistoryBorderPainted() = historyButton.isBorderPainted
+
+    internal fun showHistoryCursor() = historyButton.cursor.type
+
+    internal fun recentCursor() = list.cursor.type
 
     internal fun recentVisible() = true
 
@@ -213,6 +241,50 @@ class EmptySessionPanel(
             title.text = value?.let(::title) ?: ""
             time.text = value?.let(HistoryTime::relative) ?: ""
             return this
+        }
+    }
+
+    private inner class ShowHistoryButton : JButton(KiloBundle.message("session.showHistory"), AllIcons.Vcs.History) {
+        private var over = false
+
+        init {
+            isFocusable = false
+            setRequestFocusEnabled(false)
+            isContentAreaFilled = false
+            isBorderPainted = false
+            isOpaque = false
+            border = JBUI.Borders.empty(UiStyle.Space.SM, UiStyle.Space.LG)
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    sync(true)
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    sync(false)
+                }
+            })
+        }
+
+        override fun paintComponent(g: Graphics) {
+            if (isEnabled && over) {
+                val g2 = g.create() as Graphics2D
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                    g2.color = JBUI.CurrentTheme.ActionButton.hoverBackground()
+                    val arc = JBUI.scale(JBUI.getInt("Button.arc", 6))
+                    g2.fillRoundRect(0, 0, width, height, arc, arc)
+                } finally {
+                    g2.dispose()
+                }
+            }
+            super.paintComponent(g)
+        }
+
+        private fun sync(value: Boolean) {
+            if (over == value) return
+            over = value
+            repaint()
         }
     }
 

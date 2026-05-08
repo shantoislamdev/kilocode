@@ -79,6 +79,21 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
         assertEquals(listOf("ses_1"), manager.opened)
     }
 
+    fun `test empty panel show history routes through manager`() {
+        val manager = FakeManager()
+        val ui = SessionUi(project, workspace, sessions, app, scope, manager = manager)
+        val controller = controller(ui)
+        val panel = ai.kilocode.client.session.ui.EmptySessionPanel(
+            testRootDisposable,
+            controller,
+            emptyList(),
+        ) { manager.showHistory() }
+
+        panel.clickShowHistory()
+
+        assertEquals(1, manager.history)
+    }
+
     private fun controller(ui: SessionUi): ai.kilocode.client.session.update.SessionController {
         val field = SessionUi::class.java.getDeclaredField("controller")
         field.isAccessible = true
@@ -102,10 +117,12 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
 
     private class FakeManager : SessionManager {
         val opened = mutableListOf<String>()
+        var history = 0
         override fun newSession() {
         }
 
         override fun showHistory() {
+            history++
         }
 
         override fun openSession(ref: SessionRef) {
