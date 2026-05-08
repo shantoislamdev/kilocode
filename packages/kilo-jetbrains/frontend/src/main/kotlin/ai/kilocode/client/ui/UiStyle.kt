@@ -23,7 +23,6 @@ import javax.swing.border.Border
 object UiStyle {
     object Size {
         const val WIDTH = 350
-        const val LIMIT = 5
         const val LINES = 3
         const val CHROME = 16
         const val BUTTON_WIDTH = 28

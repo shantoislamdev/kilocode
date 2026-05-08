@@ -49,12 +49,6 @@ class EmptySessionPanel(
     recents: List<SessionDto>,
     private val history: () -> Unit = {},
 ) : BorderLayoutPanel(), Disposable, SessionEditorStyleTarget {
-
-    companion object {
-        internal val LIMIT = UiStyle.Size.LIMIT
-        internal val DESCRIPTION_WIDTH = 250
-    }
-
     val view: CenterShrinkPanel = CenterShrinkPanel(this)
 
     private val model = DefaultListModel<LocalHistoryItem>()
@@ -68,7 +62,7 @@ class EmptySessionPanel(
     private val list = JBList(model).apply {
         isOpaque = false
         selectionMode = ListSelectionModel.SINGLE_SELECTION
-        visibleRowCount = LIMIT
+        visibleRowCount = SessionUiStyle.RecentSessions.LIMIT
         cellRenderer = SessionRenderer()
         cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
         emptyText.clear()
@@ -106,12 +100,12 @@ class EmptySessionPanel(
     private val description = object : BorderLayoutPanel() {
         override fun getPreferredSize(): Dimension {
             val size = super.getPreferredSize()
-            return Dimension(JBUI.scale(DESCRIPTION_WIDTH), size.height)
+            return Dimension(JBUI.scale(SessionUiStyle.RecentSessions.DESCRIPTION_WIDTH), size.height)
         }
 
         override fun getMaximumSize(): Dimension {
             val size = super.getMaximumSize()
-            return Dimension(JBUI.scale(DESCRIPTION_WIDTH), size.height)
+            return Dimension(JBUI.scale(SessionUiStyle.RecentSessions.DESCRIPTION_WIDTH), size.height)
         }
     }.apply {
         isOpaque = false
@@ -157,7 +151,7 @@ class EmptySessionPanel(
 
     private fun setSessions(sessions: List<SessionDto>) {
         model.clear()
-        sessions.take(LIMIT).map(::LocalHistoryItem).forEach(model::addElement)
+        sessions.take(SessionUiStyle.RecentSessions.LIMIT).map(::LocalHistoryItem).forEach(model::addElement)
         revalidate()
         repaint()
     }

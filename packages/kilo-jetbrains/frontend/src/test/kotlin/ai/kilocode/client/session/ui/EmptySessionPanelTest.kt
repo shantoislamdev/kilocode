@@ -87,8 +87,14 @@ class EmptySessionPanelTest : BasePlatformTestCase() {
     fun `test description width is capped at DESCRIPTION_WIDTH`() {
         val panel = panel()
 
-        assertEquals(com.intellij.util.ui.JBUI.scale(EmptySessionPanel.DESCRIPTION_WIDTH), panel.descriptionPreferredSize().width)
-        assertEquals(com.intellij.util.ui.JBUI.scale(EmptySessionPanel.DESCRIPTION_WIDTH), panel.descriptionMaximumSize().width)
+        assertEquals(
+            com.intellij.util.ui.JBUI.scale(SessionUiStyle.RecentSessions.DESCRIPTION_WIDTH),
+            panel.descriptionPreferredSize().width,
+        )
+        assertEquals(
+            com.intellij.util.ui.JBUI.scale(SessionUiStyle.RecentSessions.DESCRIPTION_WIDTH),
+            panel.descriptionMaximumSize().width,
+        )
     }
 
     fun `test description label is centered`() {

@@ -9,6 +9,11 @@ import javax.swing.border.Border
 
 /** Static UI tokens and helpers for session-specific Swing surfaces. */
 object SessionUiStyle {
+    object RecentSessions {
+        const val LIMIT = 5
+        const val DESCRIPTION_WIDTH = 250
+    }
+
     object Timeline {
         val read: Color = JBColor(Color(0x37, 0x94, 0xff), Color(0x37, 0x94, 0xff))
         val write: Color = JBColor(Color(0x00, 0x7f, 0xd4), Color(0x00, 0x7f, 0xd4))
