@@ -32,7 +32,7 @@ class ProgressPanel(
     init {
         isOpaque = false
         isVisible = false
-        layout = FlowLayout(FlowLayout.LEFT, UiStyle.Gap.inline(), 0)
+        layout = FlowLayout(FlowLayout.LEFT, UiStyle.Gap.md(), 0)
         applyStyle(SessionStyle.current())
 
         add(JBLabel(AnimatedIcon.Default()))

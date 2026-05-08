@@ -29,7 +29,7 @@ import java.awt.LayoutManager
  * the panel width and the layout always has a valid width to work with.
  */
 class SessionLayout(
-    private val gap: Int = UiStyle.Gap.part(),
+    private val gap: Int = UiStyle.Gap.small(),
     private val pad: Insets = UiStyle.Insets.none(),
 ) : LayoutManager {
 
@@ -103,7 +103,7 @@ class SessionLayout(
  * [SessionLayout] a valid width to measure against.
  */
 open class SessionLayoutPanel(
-    gap: Int = UiStyle.Gap.part(),
+    gap: Int = UiStyle.Gap.small(),
     pad: Insets = UiStyle.Insets.none(),
 ) : BorderLayoutPanel(), javax.swing.Scrollable {
     init {
