@@ -11,10 +11,6 @@ import javax.swing.UIManager
 
 /** Static UI tokens and helpers for JetBrains session Swing surfaces. */
 object UiStyle {
-    object Size {
-        const val WIDTH = 350
-        const val BUTTON_WIDTH = 28
-    }
 
     object Colors {
         fun bg(): Color = UIUtil.getPanelBackground()
@@ -24,27 +20,15 @@ object UiStyle {
         fun weak(): Color = UIUtil.getContextHelpForeground()
 
         /** Uses the editor background so chat cards feel native beside editor content. */
-        fun panel(): Color = JBColor.lazy { EditorColorsManager.getInstance().globalScheme.defaultBackground }
+        fun editorBackground(): Color = JBColor.lazy { EditorColorsManager.getInstance().globalScheme.defaultBackground }
 
-        fun headerBar(): Color = JBUI.CurrentTheme.ToolWindow.headerBackground(false)
+        fun errorLabelForeground(): Color = JBColor.namedColor("Label.errorForeground", UIUtil.getErrorForeground())
 
-        fun error(): Color = JBColor.namedColor("Label.errorForeground", UIUtil.getErrorForeground())
-
-        fun warning(): Color = JBColor.lazy {
+        fun warningLabelForeground(): Color = JBColor.lazy {
             UIManager.getColor("Component.warningFocusColor")
                 ?: UIManager.getColor("Label.warningForeground")
                 ?: UIUtil.getContextHelpForeground()
         }
-
-        fun running(): Color = JBColor.namedColor("ProgressBar.foreground", UIUtil.getLabelForeground())
-
-        fun picker(): Color = JBColor.lazy {
-            UIManager.getColor("ComboBoxButton.background")
-                ?: UIManager.getColor("ComboBox.nonEditableBackground")
-                ?: UIUtil.getPanelBackground()
-        }
-
-        fun pickerHover(): Color = JBUI.CurrentTheme.ActionButton.hoverBackground()
 
         internal fun contrast(base: Color, delta: Int): Color {
             val step = if (bright(base)) -delta else delta
@@ -71,9 +55,7 @@ object UiStyle {
     }
 
     object Borders {
-        fun warning() = JBUI.Borders.customLine(Colors.warning(), 1)
-
-        fun picker() = JBUI.Borders.empty(Gap.xs(), Gap.lg())
+        fun warning() = JBUI.Borders.customLine(Colors.warningLabelForeground(), 1)
     }
 
     object Gap {

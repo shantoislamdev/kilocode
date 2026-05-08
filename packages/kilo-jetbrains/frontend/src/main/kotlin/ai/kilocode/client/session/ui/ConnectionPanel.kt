@@ -136,7 +136,7 @@ class ConnectionPanel(
     }
 
     private fun showError(text: String, detail: String?) {
-        label.foreground = UiStyle.Colors.error()
+        label.foreground = UiStyle.Colors.errorLabelForeground()
         label.text = text
         retry.isVisible = true
         this.detail = detail?.takeIf { it.isNotBlank() }
@@ -146,7 +146,7 @@ class ConnectionPanel(
     }
 
     private fun showWarning(text: String, detail: String?) {
-        label.foreground = UiStyle.Colors.warning()
+        label.foreground = UiStyle.Colors.warningLabelForeground()
         label.text = text
         retry.isVisible = true
         this.detail = detail?.takeIf { it.isNotBlank() }

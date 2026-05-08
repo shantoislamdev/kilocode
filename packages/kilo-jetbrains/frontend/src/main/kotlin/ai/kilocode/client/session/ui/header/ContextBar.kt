@@ -143,7 +143,7 @@ private class Meter : JComponent() {
     fun reservedColor(): Color = shade(0.28f)
 
     private fun shade(alpha: Float): Color {
-        val base = background ?: UiStyle.Colors.panel()
+        val base = background ?: UiStyle.Colors.editorBackground()
         val grey = if (UiStyle.Colors.bright(base)) Color.BLACK else Color.WHITE
         return UiStyle.Colors.blend(base, grey, alpha)
     }

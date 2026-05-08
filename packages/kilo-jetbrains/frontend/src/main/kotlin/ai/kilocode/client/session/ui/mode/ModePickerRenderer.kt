@@ -82,7 +82,7 @@ internal class ModePickerRenderer(
         val focus = selected || list.hasFocus() || focused
         val fg = UIUtil.getListForeground(selected, focus)
         val weak = if (selected) fg else UiStyle.Colors.weak()
-        val warn = if (selected) fg else UiStyle.Colors.warning()
+        val warn = if (selected) fg else UiStyle.Colors.warningLabelForeground()
 
         background = list.background
         wrap.update(list, selected, focus)

@@ -45,7 +45,7 @@ class ConnectionPanelTest : SessionControllerTestBase() {
 
         assertTrue(panel.isVisible)
         assertEquals("CLI startup failed", panel.summaryText())
-        assertEquals(UiStyle.Colors.error(), panel.summaryColor())
+        assertEquals(UiStyle.Colors.errorLabelForeground(), panel.summaryColor())
         assertTrue(panel.toggleVisible())
         assertFalse(panel.toggleExpanded())
         assertFalse(panel.detailsVisible())
@@ -103,7 +103,7 @@ class ConnectionPanelTest : SessionControllerTestBase() {
 
         assertTrue(panel.isVisible)
         assertEquals("Configuration warnings", panel.summaryText())
-        assertEquals(UiStyle.Colors.warning(), panel.summaryColor())
+        assertEquals(UiStyle.Colors.warningLabelForeground(), panel.summaryColor())
         assertTrue(panel.toggleVisible())
         assertFalse(panel.toggleExpanded())
         assertFalse(panel.detailsVisible())

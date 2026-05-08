@@ -287,7 +287,7 @@ class ToolView(tool: Tool) : PartView() {
         repaint()
     }
 
-    private fun bodyColor() = if (item.state == ToolExecState.ERROR) UiStyle.Colors.error() else UiStyle.Colors.fg()
+    private fun bodyColor() = if (item.state == ToolExecState.ERROR) UiStyle.Colors.errorLabelForeground() else UiStyle.Colors.fg()
 
     private fun bodyMaxHeight(): Int {
         return text.getFontMetrics(text.font).height * bodyMaxRows() +
@@ -354,14 +354,14 @@ private fun setFont(component: JComponent, font: Font): Boolean {
 private fun same(a: Color?, b: Color): Boolean = a?.rgb == b.rgb
 
 private fun color(tool: Tool) = when (tool.state) {
-    ToolExecState.PENDING -> UiStyle.Colors.weak()
-    ToolExecState.RUNNING -> UiStyle.Colors.running()
-    ToolExecState.COMPLETED -> UiStyle.Colors.weak()
-    ToolExecState.ERROR -> UiStyle.Colors.error()
+    ToolExecState.PENDING -> SessionUiStyle.View.Tool.pending()
+    ToolExecState.RUNNING -> SessionUiStyle.View.Tool.running()
+    ToolExecState.COMPLETED -> SessionUiStyle.View.Tool.completed()
+    ToolExecState.ERROR -> SessionUiStyle.View.Tool.error()
 }
 
 private fun titleColor(tool: Tool) = if (tool.state == ToolExecState.ERROR) {
-    UiStyle.Colors.error()
+    UiStyle.Colors.errorLabelForeground()
 } else {
     UiStyle.Colors.fg()
 }

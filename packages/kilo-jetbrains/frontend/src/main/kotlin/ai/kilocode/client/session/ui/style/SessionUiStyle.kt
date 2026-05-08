@@ -26,11 +26,11 @@ object SessionUiStyle {
         internal const val HOVER_ALPHA = 0.35f
 
         /** Creates a visible separator against editor-derived transcript surfaces. */
-        fun line(): Color = JBColor.lazy { UiStyle.Colors.contrast(UiStyle.Colors.panel(), BORDER_DELTA) }
+        fun line(): Color = JBColor.lazy { UiStyle.Colors.contrast(UiStyle.Colors.editorBackground(), BORDER_DELTA) }
 
-        fun surface(): Color = UiStyle.Colors.panel()
+        fun surface(): Color = UiStyle.Colors.editorBackground()
 
-        fun header(): Color = UiStyle.Colors.panel()
+        fun header(): Color = UiStyle.Colors.editorBackground()
 
         /** Local hover color for collapsible transcript card headers. */
         fun headerHover(): Color = JBColor.lazy { UiStyle.Colors.blend(header(), line(), HOVER_ALPHA) }
@@ -69,6 +69,14 @@ object SessionUiStyle {
         object Tool {
             const val BODY_LINES = 15
             const val PREVIEW_LIMIT = 20_000
+
+            fun pending(): Color = UiStyle.Colors.weak()
+
+            fun running(): Color = UiStyle.Colors.fg()
+
+            fun completed(): Color = UiStyle.Colors.weak()
+
+            fun error(): Color = UiStyle.Colors.errorLabelForeground()
         }
     }
 
