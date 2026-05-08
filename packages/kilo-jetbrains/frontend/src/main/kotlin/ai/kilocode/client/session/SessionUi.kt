@@ -3,11 +3,11 @@ package ai.kilocode.client.session
 import ai.kilocode.client.app.KiloAppService
 import ai.kilocode.client.app.KiloSessionService
 import ai.kilocode.client.app.Workspace
-import ai.kilocode.client.plugin.KiloBundle
 import ai.kilocode.client.session.model.SessionModelEvent
 import ai.kilocode.client.session.model.SessionState
 import ai.kilocode.client.session.ui.ConnectionPanel
 import ai.kilocode.client.session.ui.EmptySessionPanel
+import ai.kilocode.client.session.ui.LoadingPanel
 import ai.kilocode.client.session.ui.ReasoningPicker
 import ai.kilocode.client.session.ui.mode.ModePicker
 import ai.kilocode.client.session.ui.model.ModelPicker
@@ -32,8 +32,6 @@ import com.intellij.openapi.editor.colors.EditorColorsManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
-import com.intellij.ui.components.JBLabel
-import com.intellij.util.ui.Centerizer
 import kotlinx.coroutines.CoroutineScope
 import java.awt.BorderLayout
 import javax.swing.BoxLayout
@@ -47,43 +45,18 @@ import javax.swing.JPanel
  * It builds the session panels, wires controller/model listeners, and swaps the
  * center body between the empty state and the message list.
  */
-class SessionUi private constructor(
+class SessionUi(
     project: Project,
     workspace: Workspace,
     sessions: KiloSessionService,
     app: KiloAppService,
     cs: CoroutineScope,
-    id: String?,
-    displayMs: Long,
-    open: (SessionDto) -> Unit,
-    private val loading: Boolean,
+    id: String? = null,
+    displayMs: Long = SessionController.DISPLAY_DELAY_MS,
+    open: (SessionRef) -> Unit = {},
     session: SessionDto? = null,
+    target: SessionRef? = SessionRef.resolve(id, session),
 ) : JPanel(BorderLayout()), Disposable, SessionStyleTarget {
-
-    constructor(
-        project: Project,
-        workspace: Workspace,
-        sessions: KiloSessionService,
-        app: KiloAppService,
-        cs: CoroutineScope,
-        id: String? = null,
-        displayMs: Long = SessionController.DISPLAY_DELAY_MS,
-        open: (SessionDto) -> Unit = {},
-        session: SessionDto? = null,
-    ) : this(project, workspace, sessions, app, cs, session?.id ?: id, displayMs, open, id == null, session)
-
-    internal constructor(
-        project: Project,
-        workspace: Workspace,
-        sessions: KiloSessionService,
-        app: KiloAppService,
-        cs: CoroutineScope,
-        id: String? = null,
-        displayMs: Long = SessionController.DISPLAY_DELAY_MS,
-        loading: Boolean,
-        open: (SessionDto) -> Unit = {},
-        session: SessionDto? = null,
-    ) : this(project, workspace, sessions, app, cs, id, displayMs, open, loading, session)
 
     companion object {
         private val LOG = KiloLog.create(SessionUi::class.java)
@@ -91,7 +64,8 @@ class SessionUi private constructor(
 
     private val project = project
     private val app = app
-    private var opening = id != null
+    private val ref = SessionRef.resolve(id, session, target)
+    private var opening = ref != null
     private var pending = false
     private var loaded: Boolean? = null
     private val flushMs =
@@ -101,15 +75,14 @@ class SessionUi private constructor(
             ?: EVENT_FLUSH_MS
 
     private val controller = SessionController(
-        this, id, sessions, workspace, app, cs, this,
+        this, ref, sessions, workspace, app, cs, this,
         flushMs = flushMs,
         condense = Registry.`is`("kilo.session.condense", true),
         displayMs = displayMs,
-        session = session,
         open = open,
         beforeUpdate = { if (opening) false else scroll.atBottom() },
         afterUpdate = { if (!opening) scroll.followBottom(it) },
-        loaded = ::onHistoryLoaded,
+        loaded = ::onSessionLoaded,
     )
 
 
@@ -132,16 +105,16 @@ class SessionUi private constructor(
     private lateinit var connection: ConnectionPanel
 
     private lateinit var prompt: PromptPanel
-    private lateinit var loadingLabel: JBLabel
+    private lateinit var load: LoadingPanel
     private var style = SessionStyle.current()
 
     init {
         buildUi()
+        scroll.show(body(controller.model.state))
         bindUi()
         bindStyle()
         applyStyle(style)
         onStateChanged(controller.model.state)
-        scroll.show(startBody())
         loaded?.let(::finishOpen)
     }
 
@@ -159,6 +132,8 @@ class SessionUi private constructor(
 
     internal val id: String? get() = controller.id
 
+    internal val cacheKey: String? get() = controller.refKey
+
     internal fun currentStyle() = style
 
     val defaultFocusedComponent: JComponent get() = prompt.defaultFocusedComponent
@@ -172,14 +147,8 @@ class SessionUi private constructor(
             isOpaque = false
         }
 
-        progressBody = JPanel(BorderLayout()).apply {
-            isOpaque = false
-            loadingLabel = JBLabel(KiloBundle.message("session.empty.loading"))
-            add(Centerizer(
-                loadingLabel,
-                Centerizer.TYPE.BOTH,
-            ), BorderLayout.CENTER)
-        }
+        load = LoadingPanel()
+        progressBody = load
         messageBody = SessionMessageListPanel(controller.model, this)
         header = SessionHeaderPanel(controller, this)
 
@@ -309,16 +278,16 @@ class SessionUi private constructor(
         })
     }
 
-    private fun startBody(): JPanel {
-        if (controller.model.showSession) return messageBody
-        if (loading) return progressBody
-        return blankBody
-    }
-
-    private fun onHistoryLoaded(show: Boolean) {
+    private fun onSessionLoaded(show: Boolean) {
         loaded = show
         if (!this::scroll.isInitialized) return
         finishOpen(show)
+    }
+
+    private fun body(state: SessionState): JPanel {
+        if (controller.model.showSession) return messageBody
+        if (state is SessionState.Loading) return progressBody
+        return blankBody
     }
 
     private fun finishOpen(show: Boolean) {
@@ -382,7 +351,7 @@ class SessionUi private constructor(
 
     override fun applyStyle(style: SessionStyle) {
         this.style = style
-        loadingLabel.font = style.uiFont
+        load.applyStyle(style)
         header.applyStyle(style)
         prompt.applyStyle(style)
         scroll.applyStyle(style)

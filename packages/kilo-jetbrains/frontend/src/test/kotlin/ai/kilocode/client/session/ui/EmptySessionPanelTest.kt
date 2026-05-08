@@ -4,6 +4,7 @@ import ai.kilocode.client.app.KiloAppService
 import ai.kilocode.client.app.KiloSessionService
 import ai.kilocode.client.app.KiloWorkspaceService
 import ai.kilocode.client.app.Workspace
+import ai.kilocode.client.session.SessionRef
 import ai.kilocode.client.session.update.SessionController
 import ai.kilocode.client.testing.FakeAppRpcApi
 import ai.kilocode.client.testing.FakeSessionRpcApi
@@ -41,7 +42,7 @@ class EmptySessionPanelTest : BasePlatformTestCase() {
         workspace = workspaces.workspace("/test")
         controller = SessionController(
             parent = testRootDisposable,
-            id = null,
+            ref = null,
             sessions = KiloSessionService(project, scope, FakeSessionRpcApi()),
             workspace = workspace,
             app = app,

@@ -1,5 +1,7 @@
 package ai.kilocode.client.session.update
 
+import ai.kilocode.client.session.SessionRef
+import ai.kilocode.client.session.model.SessionState
 import kotlinx.coroutines.CompletableDeferred
 
 class ViewSwitchingTest : SessionControllerTestBase() {
@@ -84,21 +86,84 @@ class ViewSwitchingTest : SessionControllerTestBase() {
         """, events)
     }
 
-    fun `test empty history transitions to recents`() {
+    fun `test empty explicit session history shows session view`() {
         rpc.recent.add(session("ses_1"))
         val m = controller("ses_test", displayMs = 1_000)
         val events = collect(m)
 
         flush()
 
+        assertTrue(rpc.recentCalls.isEmpty())
         assertControllerEvents("""
             AppChanged
             WorkspaceChanged
-            ViewChanged recents=1
+            ViewChanged progress
+            ViewChanged session
         """, events)
+        assertTrue(m.model.showSession)
+        assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowRecents })
     }
 
-    fun `test slow recents show progress after delay then recents`() {
+    fun `test workspace ready does not load recents during explicit local load`() {
+        projectRpc.state.value = workspaceReady()
+        rpc.recent.add(session("ses_1"))
+        val gate = CompletableDeferred<Unit>()
+        rpc.historyGate = gate
+        val m = controller("ses_test", displayMs = 50)
+        val events = collect(m)
+
+        pause(80)
+
+        assertTrue(rpc.recentCalls.isEmpty())
+        assertTrue(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
+        assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowRecents })
+
+        gate.complete(Unit)
+        flush()
+
+        assertTrue(rpc.recentCalls.isEmpty())
+        assertTrue(events.any { it is SessionControllerEvent.ViewChanged.ShowSession })
+        assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowRecents })
+    }
+
+    fun `test workspace ready does not load recents during cloud import`() {
+        projectRpc.state.value = workspaceReady()
+        rpc.recent.add(session("ses_1"))
+        rpc.importedCloudSession = session("ses_imported")
+        val gate = CompletableDeferred<Unit>()
+        rpc.historyGate = gate
+        val m = controller("cloud:cloud_1", displayMs = 50)
+        val events = collect(m)
+
+        pause(80)
+
+        assertTrue(rpc.recentCalls.isEmpty())
+        assertTrue(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
+        assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowRecents })
+
+        gate.complete(Unit)
+        flush()
+
+        assertTrue(rpc.recentCalls.isEmpty())
+        assertTrue(events.any { it is SessionControllerEvent.ViewChanged.ShowSession })
+        assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowRecents })
+    }
+
+    fun `test existing session load shows progress immediately`() {
+        val gate = CompletableDeferred<Unit>()
+        rpc.historyGate = gate
+        val m = controller("ses_test", displayMs = 1_000)
+        val events = collect(m)
+
+        assertEquals(SessionState.Loading, m.model.state)
+        pause(20)
+
+        assertTrue(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
+        gate.complete(Unit)
+        flush()
+    }
+
+    fun `test slow recents do not show progress then emit recents when complete`() {
         projectRpc.state.value = workspaceReady()
         rpc.recent.add(session("ses_1"))
         val gate = CompletableDeferred<Unit>()
@@ -111,21 +176,20 @@ class ViewSwitchingTest : SessionControllerTestBase() {
         assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
 
         pause(80)
-        assertTrue(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
+        // Slow recents must NOT show progress even after the delay interval
+        assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
 
         gate.complete(Unit)
         flush()
 
-        assertEquals(
-            """
-            ViewChanged progress
-            ViewChanged recents=1
-            """.trimIndent().trim(),
-            events.filterIsInstance<SessionControllerEvent.ViewChanged>().joinToString("\n"),
-        )
+        // After completing, recents must fire directly (no prior progress event)
+        assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
+        assertEquals(1, events.count { it is SessionControllerEvent.ViewChanged.ShowRecents })
+        val recentsView = events.filterIsInstance<SessionControllerEvent.ViewChanged>()
+        assertEquals("ViewChanged recents=1", recentsView.last().toString())
     }
 
-    fun `test recents progress event sees loading state on EDT`() {
+    fun `test recents loaded state visible on EDT when recents event fires`() {
         projectRpc.state.value = workspaceReady()
         rpc.recent.add(session("ses_1"))
         val gate = CompletableDeferred<Unit>()
@@ -133,14 +197,12 @@ class ViewSwitchingTest : SessionControllerTestBase() {
         val m = controller(displayMs = 50)
         val states = collectStates(m)
 
-        pause(80)
-
-        val state = states.single { it.first is SessionControllerEvent.ViewChanged.ShowProgress }.second
-        assertEquals(SessionControllerEvent.ViewChanged.ShowProgress, state.viewState)
-        assertTrue(state.recentsState.startsWith("Loading"))
-
         gate.complete(Unit)
         flush()
+
+        assertFalse(states.any { it.first is SessionControllerEvent.ViewChanged.ShowProgress })
+        val state = states.single { it.first is SessionControllerEvent.ViewChanged.ShowRecents }.second
+        assertEquals("Loaded", state.recentsState)
     }
 
     fun `test fast recents suppress progress`() {
@@ -199,6 +261,43 @@ class ViewSwitchingTest : SessionControllerTestBase() {
         assertTrue(events.any { it is SessionControllerEvent.ViewChanged.ShowSession })
         assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowProgress })
         assertFalse(events.any { it is SessionControllerEvent.ViewChanged.ShowRecents })
+    }
+
+    fun `test id-only local ref starts with local identity`() {
+        val m = controller(SessionRef.Local("ses_test"))
+
+        flush()
+
+        val snap = m.snapshotState()
+        assertEquals("ses_test", snap.refKey)
+        assertEquals("LOCAL", snap.refType)
+    }
+
+    fun `test cloud ref becomes local after import`() {
+        rpc.importedCloudSession = session("ses_imported")
+        val m = controller(SessionRef.Cloud("cloud_1"))
+
+        val start = m.snapshotState()
+        assertEquals("cloud:cloud_1", start.refKey)
+        assertEquals("CLOUD", start.refType)
+
+        flush()
+
+        val end = m.snapshotState()
+        assertEquals("ses_imported", end.refKey)
+        assertEquals("LOCAL", end.refType)
+    }
+
+    fun `test prompt updates blank controller to local ref`() {
+        val m = controller()
+
+        flush()
+        edt { m.prompt("hello") }
+        flush()
+
+        val snap = m.snapshotState()
+        assertEquals("ses_test", snap.refKey)
+        assertEquals("LOCAL", snap.refType)
     }
 
     private fun session(id: String) = ai.kilocode.rpc.dto.SessionDto(

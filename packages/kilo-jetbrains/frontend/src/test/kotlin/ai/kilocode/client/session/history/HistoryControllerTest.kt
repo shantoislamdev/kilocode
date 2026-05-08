@@ -4,6 +4,7 @@ import ai.kilocode.client.app.KiloSessionService
 import ai.kilocode.client.app.KiloWorkspaceService
 import ai.kilocode.client.app.Workspace
 import ai.kilocode.client.plugin.KiloBundle
+import ai.kilocode.client.session.SessionRef
 import ai.kilocode.client.testing.FakeSessionRpcApi
 import ai.kilocode.client.testing.FakeWorkspaceRpcApi
 import ai.kilocode.rpc.dto.CloudSessionDto
@@ -194,7 +195,7 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(listOf("ses_2"), opened)
     }
 
-    fun `test panel imports and opens selected cloud session on enter from search`() {
+    fun `test panel opens selected cloud session immediately on enter from search`() {
         rpc.cloud += cloud("cloud_1", "Cloud")
         rpc.importedCloudSession = session("ses_imported", "Imported")
         val opened = mutableListOf<String>()
@@ -208,8 +209,8 @@ class HistoryControllerTest : BasePlatformTestCase() {
         key(search, KeyEvent.VK_ENTER)
         flush()
 
-        assertEquals(listOf("cloud_1" to "/test"), rpc.imports)
-        assertEquals(listOf("ses_imported"), opened)
+        assertTrue(rpc.imports.isEmpty())
+        assertEquals(listOf("cloud:cloud_1"), opened)
     }
 
     fun `test panel refresh reloads local history`() {
@@ -274,8 +275,12 @@ class HistoryControllerTest : BasePlatformTestCase() {
 
     private fun controller() = HistoryController(sessions, workspace, scope)
 
-    private fun controller(opened: MutableList<String>) = HistoryController(sessions, workspace, scope, open = { item ->
-        opened.add(item.id)
+    private fun controller(opened: MutableList<String>) = HistoryController(sessions, workspace, scope, open = { open ->
+        val id = when (open) {
+            is SessionRef.Local -> open.id
+            is SessionRef.Cloud -> "cloud:${open.id}"
+        }
+        opened.add(id)
     })
 
     private fun collect(controller: HistoryController): MutableList<String> {

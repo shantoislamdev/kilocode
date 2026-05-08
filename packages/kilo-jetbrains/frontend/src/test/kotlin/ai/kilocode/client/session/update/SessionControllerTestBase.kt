@@ -10,6 +10,7 @@ import ai.kilocode.client.testing.FakeWorkspaceRpcApi
 import ai.kilocode.client.testing.FakeSessionRpcApi
 import ai.kilocode.client.app.KiloWorkspaceService
 import ai.kilocode.client.app.Workspace
+import ai.kilocode.client.session.SessionRef
 import ai.kilocode.rpc.dto.AgentDto
 import ai.kilocode.rpc.dto.AgentsDto
 import ai.kilocode.rpc.dto.ChatEventDto
@@ -132,6 +133,14 @@ abstract class SessionControllerTestBase : BasePlatformTestCase() {
     }
 
     protected fun controller(
+        ref: SessionRef,
+        flushMs: Long = Long.MAX_VALUE,
+        displayMs: Long = Long.MAX_VALUE,
+    ): SessionController {
+        return controller(ref = ref, flushMs = flushMs, condense = true, displayMs = displayMs)
+    }
+
+    protected fun controller(
         id: String? = null,
         flushMs: Long,
         condense: Boolean,
@@ -139,20 +148,20 @@ abstract class SessionControllerTestBase : BasePlatformTestCase() {
         session: SessionDto? = null,
         beforeUpdate: () -> Boolean = { false },
         afterUpdate: (Boolean) -> Unit = {},
+        ref: SessionRef? = SessionRef.resolve(id, session),
     ): SessionController {
         val root = Root()
         val m = SessionController(
-          parent,
-          id,
-          sessions,
-          workspace,
-          app,
-          scope,
-          root,
-           flushMs,
-           condense,
-           displayMs,
-           session = session,
+            parent,
+            ref,
+            sessions,
+            workspace,
+            app,
+            scope,
+            root,
+            flushMs,
+            condense,
+            displayMs,
             beforeUpdate = beforeUpdate,
             afterUpdate = afterUpdate,
         )

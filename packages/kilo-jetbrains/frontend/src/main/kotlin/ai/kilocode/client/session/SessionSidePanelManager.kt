@@ -22,11 +22,11 @@ import javax.swing.JPanel
 class SessionSidePanelManager(
     private val project: Project,
     private val root: Workspace,
-    private val create: (Project, Workspace, SessionManager, String?, Boolean, SessionDto?) -> SessionUi = { project, workspace, manager, id, loading, session ->
-        service<SessionUiFactory>().create(project, workspace, manager, id, loading, session)
+    private val create: (Project, Workspace, SessionManager, String?, SessionDto?, SessionRef?) -> SessionUi = { project, workspace, manager, id, session, target ->
+        service<SessionUiFactory>().create(project, workspace, manager, id, session, target)
     },
     private val resolve: (String) -> Workspace = { dir -> service<KiloWorkspaceService>().workspace(dir) },
-    private val history: ((Disposable, (SessionDto) -> Unit, (String) -> Unit) -> JComponent)? = null,
+    private val history: ((Disposable, (SessionRef) -> Unit, (String) -> Unit) -> JComponent)? = null,
 ) : SessionManager, Disposable {
     val component: JPanel = object : JPanel(BorderLayout()), DataProvider {
         override fun getData(dataId: String): Any? {
@@ -46,17 +46,44 @@ class SessionSidePanelManager(
         val active = current
         if (active?.blank == true) return
         register(active)
-        show(create(project, root, this, null, active == null, null))
+        show(create(project, root, this, null, null, null))
     }
 
     override fun openSession(session: SessionDto) {
+        openSession(SessionRef.Local(session))
+    }
+
+    override fun openSession(ref: SessionRef) {
         register(current)
-        val ui = opened.getOrPut(session.id) {
-            create(project, resolve(session.directory), this, session.id, false, session).also {
-                all.add(it)
-            }
+        val ui = opened[ref.key] ?: run {
+            val local = (ref as? SessionRef.Local)?.session?.id
+            val existing = local?.let { opened[it] }
+            if (existing != null) {
+                opened[ref.key] = existing
+                existing
+            } else create(ref)
         }
         show(ui)
+    }
+
+    private fun create(ref: SessionRef): SessionUi {
+        val workspace = when (ref) {
+            is SessionRef.Local -> ref.session?.directory?.let(resolve) ?: root
+            is SessionRef.Cloud -> root
+        }
+        val id = when (ref) {
+            is SessionRef.Local -> ref.id
+            is SessionRef.Cloud -> ref.key
+        }
+        val session = (ref as? SessionRef.Local)?.session
+        return create(project, workspace, this, id, session, ref).also {
+            all.add(it)
+            opened[ref.key] = it
+            val local = session?.id
+            if (local != null) {
+                opened.putIfAbsent(local, it)
+            }
+        }
     }
 
     override fun showHistory() {
@@ -93,7 +120,7 @@ class SessionSidePanelManager(
             sessions = project.service<KiloSessionService>(),
             workspace = root,
             cs = cs,
-            open = { item -> openSession(item.session) },
+            open = this::openSession,
             deleted = this::removeSession,
         )
         Disposer.register(this) { cs.cancel() }
@@ -102,6 +129,7 @@ class SessionSidePanelManager(
 
     private fun removeSession(id: String) {
         val ui = opened.remove(id) ?: return
+        opened.entries.removeIf { it.value === ui }
         all.remove(ui)
         if (current === ui) current = null
         Disposer.dispose(ui)
@@ -109,6 +137,7 @@ class SessionSidePanelManager(
 
     private fun show(ui: SessionUi) {
         all.add(ui)
+        register(ui)
         if (current === ui) return
         release(current)
         component.removeAll()
@@ -119,13 +148,13 @@ class SessionSidePanelManager(
     }
 
     private fun register(ui: SessionUi?) {
-        val id = ui?.id ?: return
-        opened.putIfAbsent(id, ui)
+        val key = ui?.cacheKey ?: return
+        opened.putIfAbsent(key, ui)
     }
 
     private fun release(ui: SessionUi?) {
         if (ui == null) return
-        if (ui.id != null) {
+        if (ui.cacheKey != null) {
             register(ui)
             return
         }

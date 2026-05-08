@@ -32,9 +32,12 @@ class HistoryLoadingTest : SessionControllerTestBase() {
         val events = collect(c)
         flush()
 
+        // ViewChanged progress fires immediately on controller construction (step 3 of plan).
+        // ViewChanged session fires after non-empty history is loaded.
         assertControllerEvents("""
             AppChanged
             WorkspaceChanged
+            ViewChanged progress
             ViewChanged session
         """, events)
 
@@ -42,6 +45,30 @@ class HistoryLoadingTest : SessionControllerTestBase() {
             """
             user#msg1
 
+            [app: DISCONNECTED] [workspace: PENDING]
+            """,
+            c,
+        )
+    }
+
+    fun `test empty explicit session history shows messages view`() {
+        rpc.recent.add(session("ses_recent"))
+
+        val c = controller("ses_test")
+        val events = collect(c)
+        val modelEvents = collectModelEvents(c)
+        flush()
+
+        assertTrue(rpc.recentCalls.isEmpty())
+        assertModelEvents("HistoryLoaded", modelEvents)
+        assertControllerEvents("""
+            AppChanged
+            WorkspaceChanged
+            ViewChanged progress
+            ViewChanged session
+        """, events)
+        assertSession(
+            """
             [app: DISCONNECTED] [workspace: PENDING]
             """,
             c,

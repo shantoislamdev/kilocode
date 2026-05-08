@@ -20,18 +20,18 @@ class SessionUiFactory(
         workspace: Workspace,
         manager: SessionManager,
         id: String? = null,
-        loading: Boolean = id == null,
         session: SessionDto? = null,
+        target: SessionRef? = SessionRef.resolve(id, session),
     ): SessionUi = SessionUi(
         project = project,
         workspace = workspace,
         sessions = project.service<KiloSessionService>(),
         app = service<KiloAppService>(),
         cs = scope(),
-        id = session?.id ?: id,
-        loading = loading,
+        id = id,
         session = session,
-        open = manager::openSession,
+        target = target,
+        open = { ref -> manager.openSession(ref) },
     )
 
     fun scope(): CoroutineScope {

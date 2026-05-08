@@ -8,6 +8,7 @@ import ai.kilocode.client.session.history.HistoryPanel
 import ai.kilocode.client.testing.FakeAppRpcApi
 import ai.kilocode.client.testing.FakeSessionRpcApi
 import ai.kilocode.client.testing.FakeWorkspaceRpcApi
+import ai.kilocode.rpc.dto.CloudSessionDto
 import ai.kilocode.rpc.dto.KiloAppStateDto
 import ai.kilocode.rpc.dto.KiloAppStatusDto
 import ai.kilocode.rpc.dto.KiloWorkspaceStateDto
@@ -34,7 +35,7 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
     private lateinit var app: KiloAppService
     private val managers = mutableListOf<SessionSidePanelManager>()
     private val created = mutableListOf<Pair<String, String?>>()
-    private val loading = mutableListOf<Boolean>()
+    private val targets = mutableListOf<SessionRef?>()
     private val ui = mutableListOf<SessionUi>()
 
     override fun setUp() {
@@ -81,7 +82,6 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
 
         assertNotSame(first, second)
         assertEquals(listOf("/test" to null, "/test" to null), created)
-        assertEquals(listOf(true, false), loading)
     }
 
     fun `test new session on blank session keeps active component`() {
@@ -94,7 +94,6 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
 
         assertSame(first, second)
         assertEquals(listOf("/test" to null), created)
-        assertEquals(listOf(true), loading)
     }
 
     fun `test default focused component tracks active session`() {
@@ -132,7 +131,6 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
 
         assertSame(first, second)
         assertEquals(listOf("/test" to "ses_1", "/test" to null), created)
-        assertEquals(listOf(false, false), loading)
     }
 
     fun `test prompted blank session is reused from recents`() {
@@ -170,7 +168,6 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
         manager.openSession(session("ses_1", "/repo"))
 
         assertEquals(listOf("/repo" to "ses_1"), created)
-        assertEquals(listOf(false), loading)
     }
 
     fun `test open session seeds session metadata into ui`() {
@@ -218,7 +215,7 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
     }
 
     fun `test opening local history item shows session ui`() {
-        lateinit var open: (SessionDto) -> Unit
+        lateinit var open: (SessionRef) -> Unit
         val history = JLabel("History")
         val manager = manager(history = { _, fn, _ ->
             open = fn
@@ -226,10 +223,67 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
         })
 
         manager.showHistory()
-        open(session("ses_1"))
+        open(SessionRef.Local(session("ses_1")))
 
         assertTrue(active(manager) is SessionUi)
         assertEquals(listOf("/test" to "ses_1"), created)
+    }
+
+    fun `test opening cloud history item shows session ui before import`() {
+        lateinit var open: (SessionRef) -> Unit
+        rpc.historyGate = kotlinx.coroutines.CompletableDeferred()
+        rpc.importedCloudSession = session("ses_imported")
+        val manager = manager(history = { _, fn, _ ->
+            open = fn
+            JLabel("History")
+        })
+
+        manager.showHistory()
+        open(SessionRef.Cloud(cloud("cloud_1")))
+        settle()
+
+        assertTrue(active(manager) is SessionUi)
+        assertEquals(listOf("/test" to "cloud:cloud_1"), created)
+        assertEquals("cloud:cloud_1", targets.single()?.key)
+        assertEquals(listOf("cloud_1" to "/test"), rpc.imports)
+
+        rpc.historyGate?.complete(Unit)
+        settle()
+        assertSame(active(manager), ui.single())
+        assertEquals(listOf("/test" to "cloud:cloud_1"), created)
+    }
+
+    fun `test opening same cloud session while in-flight reuses existing ui`() {
+        rpc.historyGate = kotlinx.coroutines.CompletableDeferred()
+        rpc.importedCloudSession = session("ses_imported")
+        val manager = manager()
+        val ref = SessionRef.Cloud(cloud("cloud_1"))
+
+        manager.openSession(ref)
+        val first = active(manager)
+        manager.newSession()
+        manager.openSession(ref)
+        val second = active(manager)
+
+        assertSame(first, second)
+        assertEquals(listOf("/test" to "cloud:cloud_1", "/test" to null), created)
+
+        rpc.historyGate!!.complete(Unit)
+        settle()
+    }
+
+    fun `test imported cloud session is reused when opened as local`() {
+        rpc.importedCloudSession = session("ses_imported")
+        val manager = manager()
+
+        manager.openSession(SessionRef.Cloud(cloud("cloud_1")))
+        settle()
+        val first = active(manager)
+        manager.openSession(session("ses_imported"))
+        val second = active(manager)
+
+        assertSame(first, second)
+        assertEquals(listOf("/test" to "cloud:cloud_1"), created)
     }
 
     fun `test new session from history shows blank session`() {
@@ -241,6 +295,26 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
 
         assertTrue(active(manager) is SessionUi)
         assertEquals(listOf("/test" to null), created)
+    }
+
+    fun `test opening same local session while in-flight reuses existing ui`() {
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        rpc.historyGate = gate
+        val manager = manager()
+        val session = session("ses_1")
+
+        manager.openSession(session)
+        val first = active(manager)
+        // Open the same session again while history is still loading
+        manager.newSession()
+        manager.openSession(session)
+        val second = active(manager)
+
+        assertSame("in-flight session must be reused", first, second)
+        assertEquals(listOf("/test" to "ses_1", "/test" to null), created)
+
+        gate.complete(Unit)
+        settle()
     }
 
     fun `test deleted cached history session is not reused`() {
@@ -262,15 +336,15 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
     }
 
     private fun manager(
-        history: ((com.intellij.openapi.Disposable, (SessionDto) -> Unit, (String) -> Unit) -> JComponent)? = null,
+        history: ((com.intellij.openapi.Disposable, (SessionRef) -> Unit, (String) -> Unit) -> JComponent)? = null,
     ): SessionSidePanelManager {
         val manager = SessionSidePanelManager(
             project = project,
             root = workspace,
-            create = { project, workspace, owner, id, show, session ->
+            create = { project, workspace, owner, id, session, target ->
                 created.add(workspace.directory to id)
-                loading.add(show)
-                SessionUi(project, workspace, sessions, app, scope, id = id, loading = show, open = owner::openSession, session = session).also {
+                targets.add(target)
+                SessionUi(project, workspace, sessions, app, scope, id = id, open = { item -> owner.openSession(item) }, session = session, target = target).also {
                     ui.add(it)
                     Disposer.register(it) { ui.remove(it) }
                 }
@@ -306,6 +380,14 @@ class SessionSidePanelManagerTest : BasePlatformTestCase() {
         title = title,
         version = "1",
         time = SessionTimeDto(created = 1.0, updated = 2.0),
+    )
+
+    private fun cloud(id: String) = CloudSessionDto(
+        id = id,
+        title = "Cloud $id",
+        createdAt = "2026-01-01T00:00:00Z",
+        updatedAt = "2026-01-02T00:00:00Z",
+        version = 1.0,
     )
 
 }

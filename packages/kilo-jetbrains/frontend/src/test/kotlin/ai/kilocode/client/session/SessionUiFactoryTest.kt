@@ -48,7 +48,7 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
     }
 
     fun `test factory creates blank session ui`() {
-        val ui = direct().create(project, workspace, FakeManager(), null, true)
+        val ui = direct().create(project, workspace, FakeManager(), null)
 
         assertNotNull(ui)
     }
@@ -56,7 +56,7 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
     fun `test factory wires open callback`() {
         val manager = FakeManager()
         val rpc = session("ses_1")
-        val ui = SessionUi(project, workspace, sessions, app, scope, open = manager::openSession)
+        val ui = SessionUi(project, workspace, sessions, app, scope, open = { ref -> manager.openSession(ref) })
         val controller = controller(ui)
 
         com.intellij.openapi.application.ApplicationManager.getApplication().invokeAndWait {
@@ -66,15 +66,16 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
         assertEquals(listOf("ses_1"), manager.opened)
     }
 
-    fun `test empty panel opens through controller`() {
+    fun `test empty panel opens through SessionRef via controller`() {
         val manager = FakeManager()
         val rpc = session("ses_1")
-        val ui = SessionUi(project, workspace, sessions, app, scope, open = manager::openSession)
+        val ui = SessionUi(project, workspace, sessions, app, scope, open = { ref -> manager.openSession(ref) })
         val controller = controller(ui)
         val panel = ai.kilocode.client.session.ui.EmptySessionPanel(testRootDisposable, controller, listOf(rpc))
 
         panel.clickRecent(0)
 
+        // Recent click routes through SessionRef.Local path
         assertEquals(listOf("ses_1"), manager.opened)
     }
 
@@ -104,8 +105,15 @@ class SessionUiFactoryTest : BasePlatformTestCase() {
         override fun newSession() {
         }
 
-        override fun openSession(session: SessionDto) {
-            opened.add(session.id)
+        override fun showHistory() {
+        }
+
+        override fun openSession(ref: SessionRef) {
+            val id = when (ref) {
+                is SessionRef.Local -> ref.id
+                is SessionRef.Cloud -> ref.key
+            }
+            opened.add(id)
         }
     }
 }
