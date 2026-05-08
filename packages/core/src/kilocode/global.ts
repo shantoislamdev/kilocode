@@ -11,10 +11,10 @@ import fs from "fs/promises"
  * mkdir: if stat fails the entry is broken and we remove + recreate it.
  */
 export async function ensureRealDir(p: string) {
-  await fs.mkdir(p, { recursive: true }).catch(() => {})
+  await fs.mkdir(p, { recursive: true })
   const ok = await fs.stat(p).then(() => true).catch(() => false)
   if (!ok) {
-    await fs.rm(p, { force: true }).catch(() => {})
+    await fs.rm(p, { force: true })
     await fs.mkdir(p, { recursive: true })
   }
 }
