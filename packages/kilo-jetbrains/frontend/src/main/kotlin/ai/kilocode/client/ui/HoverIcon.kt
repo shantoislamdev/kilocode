@@ -25,7 +25,7 @@ class HoverIcon : JButton() {
         })
     }
 
-    override fun getPreferredSize(): Dimension = JBUI.size(UiStyle.Size.BUTTON, UiStyle.Size.BUTTON)
+    override fun getPreferredSize(): Dimension = JBUI.size(24, 24)
 
     override fun getMinimumSize(): Dimension = preferredSize
 

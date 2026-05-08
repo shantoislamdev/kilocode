@@ -16,7 +16,6 @@ object UiStyle {
     object Size {
         const val WIDTH = 350
         const val BUTTON_WIDTH = 28
-        const val BUTTON = 24
         const val TOOL_BODY = 20_000
 
         fun toolBodyLimit(): Int = TOOL_BODY
