@@ -91,10 +91,11 @@ class HistoryController(
 
     private fun loadCloud(reset: Boolean) {
         val cursor = cloud.cursor.takeUnless { reset }
+        val gitUrl = git
         edt { cloud.start(reset) }
         cs.launch {
             try {
-                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, git)
+                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, gitUrl)
                 val items = result.sessions.map(::cloudItem)
                 edt {
                     if (reset) cloud.replace(items, result.nextCursor)

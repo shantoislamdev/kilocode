@@ -75,8 +75,18 @@ open class HistoryModel<T : HistoryItem> : AbstractListModel<T>() {
     private fun filter() {
         val old = rows.size
         rows = all.filter(::matches)
-        val end = maxOf(old, rows.size).coerceAtLeast(1) - 1
-        fireContentsChanged(this, 0, end)
+        val new = rows.size
+        when {
+            old > new -> {
+                if (new > 0) fireContentsChanged(this, 0, new - 1)
+                fireIntervalRemoved(this, new, old - 1)
+            }
+            new > old -> {
+                if (old > 0) fireContentsChanged(this, 0, old - 1)
+                fireIntervalAdded(this, old, new - 1)
+            }
+            new > 0 -> fireContentsChanged(this, 0, new - 1)
+        }
     }
 
     private fun matches(item: T): Boolean {

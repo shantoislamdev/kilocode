@@ -276,7 +276,16 @@ class KiloBackendSessionManager(
 
     private fun encode(value: String) = java.net.URLEncoder.encode(value, Charsets.UTF_8)
 
-    private fun escape(value: String) = value
-        .replace("\\", "\\\\")
-        .replace("\"", "\\\"")
+    private fun escape(value: String) = value.buildString {
+        for (c in value) {
+            when (c) {
+                '\\' -> append("\\\\")
+                '"' -> append("\\\"")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (c < '\u0020') append("\\u%04x".format(c.code)) else append(c)
+            }
+        }
+    }
 }
