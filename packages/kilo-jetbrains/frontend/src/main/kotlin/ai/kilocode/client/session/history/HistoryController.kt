@@ -18,7 +18,7 @@ class HistoryController(
     private val deleted: (String) -> Unit = {},
 ) {
     companion object {
-        const val CLOUD_LIMIT = 50
+        const val CLOUD_LIMIT = 150
     }
 
     val local = HistoryModel<LocalHistoryItem>()

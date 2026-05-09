@@ -22,12 +22,16 @@ import com.intellij.ui.tabs.JBTabsFactory
 import com.intellij.ui.tabs.JBTabsPosition
 import com.intellij.ui.tabs.TabInfo
 import com.intellij.ui.tabs.TabsListener
+import com.intellij.util.ui.Centerizer
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.components.BorderLayoutPanel
 import java.awt.BorderLayout
 import java.awt.CardLayout
 import java.awt.Cursor
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.event.HierarchyEvent
 import java.awt.event.KeyEvent
 import java.awt.event.MouseAdapter
@@ -52,7 +56,7 @@ class HistoryPanel(
     private val cloudSearch = search(controller.cloud)
     private val localList = localList()
     private val cloudList = cloudList()
-    private val more = JButton(KiloBundle.message("history.cloud.load.more"))
+    private val more = LoadMoreButton()
     private val localPanel = panel(localSearch, localList)
     private val cloudPanel = panel(cloudSearch, cloudList, more)
     private val cards = CardLayout()
@@ -176,8 +180,9 @@ class HistoryPanel(
                 viewportBorder = JBUI.Borders.empty()
             }, BorderLayout.CENTER)
             footer?.let {
-                it.border = JBUI.Borders.emptyTop(UiStyle.Gap.lg())
-                add(it, BorderLayout.SOUTH)
+                add(Centerizer(it, Centerizer.TYPE.HORIZONTAL).apply {
+                    border = JBUI.Borders.emptyTop(UiStyle.Gap.lg())
+                }, BorderLayout.SOUTH)
             }
         }
     }
@@ -381,6 +386,49 @@ class HistoryPanel(
 
     override fun dispose() {
         // no-op
+    }
+
+    private class LoadMoreButton : JButton(KiloBundle.message("history.cloud.load.more")) {
+        private var over = false
+
+        init {
+            isFocusable = false
+            setRequestFocusEnabled(false)
+            isContentAreaFilled = false
+            isBorderPainted = false
+            isOpaque = false
+            cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+            addMouseListener(object : MouseAdapter() {
+                override fun mouseEntered(e: MouseEvent) {
+                    sync(true)
+                }
+
+                override fun mouseExited(e: MouseEvent) {
+                    sync(false)
+                }
+            })
+        }
+
+        override fun paintComponent(g: Graphics) {
+            if (isEnabled && over) {
+                val g2 = g.create() as Graphics2D
+                try {
+                    g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+                    g2.color = JBUI.CurrentTheme.ActionButton.hoverBackground()
+                    val arc = JBUI.scale(JBUI.getInt("Button.arc", 6))
+                    g2.fillRoundRect(0, 0, width, height, arc, arc)
+                } finally {
+                    g2.dispose()
+                }
+            }
+            super.paintComponent(g)
+        }
+
+        private fun sync(value: Boolean) {
+            if (over == value) return
+            over = value
+            repaint()
+        }
     }
 
     internal fun showingLoading() = !controller.local.loaded && !controller.cloud.loaded && (controller.local.loading || controller.cloud.loading)

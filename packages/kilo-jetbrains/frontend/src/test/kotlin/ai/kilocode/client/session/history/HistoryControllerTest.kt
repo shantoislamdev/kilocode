@@ -86,7 +86,7 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(1, controller.cloud.items.size)
         assertEquals("cloud_1", controller.cloud.items[0].id)
         assertEquals("next_1", controller.cloud.cursor)
-        assertEquals(FakeSessionRpcApi.CloudCall("/test", null, 50, "git@example.com:repo.git"), rpc.cloudCalls[0])
+        assertEquals(FakeSessionRpcApi.CloudCall("/test", null, 150, "git@example.com:repo.git"), rpc.cloudCalls[0])
 
         rpc.cloud.clear()
         rpc.cloud += cloud("cloud_2", "Cloud Two")
@@ -95,7 +95,7 @@ class HistoryControllerTest : BasePlatformTestCase() {
         flush()
 
         assertEquals(listOf("cloud_1", "cloud_2"), controller.cloud.items.map { it.id })
-        assertEquals(FakeSessionRpcApi.CloudCall("/test", "next_1", 50, "git@example.com:repo.git"), rpc.cloudCalls[1])
+        assertEquals(FakeSessionRpcApi.CloudCall("/test", "next_1", 150, "git@example.com:repo.git"), rpc.cloudCalls[1])
     }
 
     fun `test local delete calls rpc and removes item`() {
