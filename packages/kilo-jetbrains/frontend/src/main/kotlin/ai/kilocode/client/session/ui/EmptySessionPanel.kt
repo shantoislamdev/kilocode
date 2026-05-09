@@ -230,7 +230,7 @@ class EmptySessionPanel(
         private val time = JBLabel()
 
         init {
-            layout = BorderLayout(UiStyle.Gap.lg(), 0)
+            layout = BorderLayout(UiStyle.Gap.pad(), 0)
             border = JBUI.Borders.empty(UiStyle.Gap.lg(), UiStyle.Gap.lg(), UiStyle.Gap.lg(), UiStyle.Gap.lg())
             add(title, BorderLayout.CENTER)
             add(time, BorderLayout.EAST)
