@@ -553,7 +553,15 @@ private fun emptyHeader() = SessionHeaderSnapshot(
     canCompact = false,
 )
 
-private fun TokensDto.total(): Long = input + output + reasoning + cacheRead + cacheWrite
+private fun TokensDto.total(): Long = listOf(input, output, reasoning, cacheRead, cacheWrite).fold(0L) { sum, value ->
+    if (value <= 0) return@fold sum
+    if (Long.MAX_VALUE - sum < value) return@fold Long.MAX_VALUE
+    sum + value
+}
+
+private fun TokensDto.stepWeight(): Int = (input.coerceIn(0L, 10L) + output.coerceIn(0L, 10L) + reasoning.coerceIn(0L, 10L))
+    .coerceIn(1L, 10L)
+    .toInt()
 
 private fun parseModelKey(value: String): Pair<String, String>? {
     val slash = value.indexOf('/')
@@ -599,7 +607,7 @@ private fun Content.weight(): Int = when (this) {
     is Reasoning -> content.length / 200 + 1
     is Tool -> listOf(input.size, output?.length?.div(400) ?: 0, error?.length?.div(200) ?: 0).sum() + 1
     is Compaction -> 2
-    is StepFinish -> tokens?.let { (it.input + it.output + it.reasoning).toInt() } ?: 1
+    is StepFinish -> tokens?.stepWeight() ?: 1
     is Generic -> 1
 }
 

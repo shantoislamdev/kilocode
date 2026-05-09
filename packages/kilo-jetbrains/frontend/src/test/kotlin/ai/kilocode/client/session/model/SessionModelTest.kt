@@ -157,12 +157,16 @@ class SessionModelTest : UsefulTestCase() {
         model.addMessage(msg("m1", "assistant"))
 
         model.updateContent("m1", part("p1", "m1", "tool", tool = "read"))
-        model.updateContent("m1", part("p2", "m1", "tool", tool = "write"))
-        model.updateContent("m1", part("p3", "m1", "tool", tool = "bash"))
+        model.updateContent("m1", part("p2", "m1", "tool", tool = "glob"))
+        model.updateContent("m1", part("p3", "m1", "tool", tool = "write"))
+        model.updateContent("m1", part("p4", "m1", "tool", tool = "apply_patch"))
+        model.updateContent("m1", part("p5", "m1", "tool", tool = "bash"))
 
         assertEquals(ToolKind.READ, (model.message("m1")!!.parts["p1"] as Tool).kind)
-        assertEquals(ToolKind.WRITE, (model.message("m1")!!.parts["p2"] as Tool).kind)
-        assertEquals(ToolKind.GENERIC, (model.message("m1")!!.parts["p3"] as Tool).kind)
+        assertEquals(ToolKind.READ, (model.message("m1")!!.parts["p2"] as Tool).kind)
+        assertEquals(ToolKind.WRITE, (model.message("m1")!!.parts["p3"] as Tool).kind)
+        assertEquals(ToolKind.WRITE, (model.message("m1")!!.parts["p4"] as Tool).kind)
+        assertEquals(ToolKind.GENERIC, (model.message("m1")!!.parts["p5"] as Tool).kind)
     }
 
     fun `test updateContent tool stores rich fields`() {
@@ -747,6 +751,13 @@ class SessionModelTest : UsefulTestCase() {
         assertEquals("Step finish", step.title)
         assertEquals(10, step.weight)
         assertFalse(step.active)
+    }
+
+    fun `test header timeline clamps large step finish token weight`() {
+        model.upsertMessage(msg("a1", "assistant"))
+        model.updateContent("a1", part("s1", "a1", "step-finish", tokens = TokensDto(Long.MAX_VALUE, 1, 1, 0, 0)))
+
+        assertEquals(10, model.header.timeline.single().weight)
     }
 
     fun `test loadHistory and clear reset header state`() {
