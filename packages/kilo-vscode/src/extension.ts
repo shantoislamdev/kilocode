@@ -193,7 +193,6 @@ export function activate(context: vscode.ExtensionContext) {
       deserializeWebviewPanel(panel: vscode.WebviewPanel) {
         if (restore.agentManager === false) {
           panel.dispose()
-          remember({ agentManager: false })
           return Promise.resolve()
         }
         const ctx = agentManagerHost.wrapExistingPanel(panel, {

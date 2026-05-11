@@ -218,7 +218,7 @@ export class AgentManagerProvider implements Disposable {
     this.panel = ctx
 
     this.statsPoller.setVisible(ctx.visible)
-    this.onVisibilityChange?.(true)
+    this.onVisibilityChange?.(ctx.visible)
     ctx.onDidChangeVisibility((visible) => {
       this.statsPoller.setVisible(visible)
     })
