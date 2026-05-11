@@ -21,6 +21,7 @@ import { describePatterns, resolveLabel, savedRuleStates, type RuleDecision } fr
 import { PermissionCommand } from "./PermissionCommand"
 import { PermissionDiff } from "./PermissionDiff"
 import { permissionDiffs } from "./permission-diff-utils"
+import { normalizeUrls } from "../../../../../opencode/src/kilocode/util/url"
 import type { PermissionRequest } from "../../types/messages"
 
 let rulesExpandedPreference = false
@@ -44,13 +45,7 @@ export const PermissionDock: Component<{
     const cmd = props.request.args?.command
     if (typeof cmd !== "string") return undefined
     // Normalize IDN/Unicode hostnames to punycode ASCII to prevent homograph attacks.
-    return cmd.replace(/https?:\/\/\S+/g, (match) => {
-      try {
-        return new URL(match).href
-      } catch {
-        return match
-      }
-    })
+    return normalizeUrls(cmd)
   }
   const description = createMemo(() =>
     command() ? null : describePatterns(props.request.toolName, props.request.patterns, language.t),
