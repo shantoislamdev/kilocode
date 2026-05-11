@@ -106,8 +106,8 @@ To install Kilo for Slack, go to the Integrations menu in the sidebar at [app.ki
 
 | Platform | Integration Type | Details |
 |---|---|---|
-| GitHub | GitHub App | [GitHub Setup Guide](https://kilo.ai/docs/automate/integrations#connecting-github) |
-| GitLab | OAuth or PAT | [GitLab Setup Guide](https://kilo.ai/docs/automate/integrations#connecting-gitlab) |
+| GitHub | GitHub App | [GitHub Setup Guide](/automate/integrations#connecting-github) |
+| GitLab | OAuth or PAT | [GitLab Setup Guide](/automate/integrations#connecting-gitlab) |
 
 ---
 
