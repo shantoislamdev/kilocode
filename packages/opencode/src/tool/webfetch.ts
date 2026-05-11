@@ -39,10 +39,10 @@ export const WebFetchTool = Tool.define(
 
           yield* ctx.ask({
             permission: "webfetch",
-            patterns: [url],
+            patterns: [url], // kilocode_change
             always: ["*"],
             metadata: {
-              url,
+              url, // kilocode_change
               format: params.format,
               timeout: params.timeout,
             },
@@ -74,7 +74,7 @@ export const WebFetchTool = Tool.define(
             "Accept-Language": "en-US,en;q=0.9",
           }
 
-          const request = HttpClientRequest.get(url).pipe(HttpClientRequest.setHeaders(headers))
+          const request = HttpClientRequest.get(url).pipe(HttpClientRequest.setHeaders(headers)) // kilocode_change
 
           // Retry with honest UA if blocked by Cloudflare bot detection (TLS fingerprint mismatch)
           const response = yield* httpOk.execute(request).pipe(
@@ -85,7 +85,7 @@ export const WebFetchTool = Tool.define(
                 err.reason.response.headers["cf-mitigated"] === "challenge",
               () =>
                 httpOk.execute(
-                  HttpClientRequest.get(url).pipe(
+                  HttpClientRequest.get(url).pipe( // kilocode_change
                     HttpClientRequest.setHeaders({ ...headers, "User-Agent": "kilo" }), // kilocode_change
                   ),
                 ),
@@ -106,7 +106,7 @@ export const WebFetchTool = Tool.define(
 
           const contentType = response.headers["content-type"] || ""
           const mime = contentType.split(";")[0]?.trim().toLowerCase() || ""
-          const title = `${url} (${contentType})`
+          const title = `${url} (${contentType})` // kilocode_change
 
           if (isImageAttachment(mime)) {
             const base64Content = Buffer.from(arrayBuffer).toString("base64")

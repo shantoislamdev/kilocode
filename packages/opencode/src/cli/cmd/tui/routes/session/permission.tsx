@@ -295,7 +295,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
             if (permission === "bash") {
               const title =
                 typeof data.description === "string" && data.description ? data.description : "Shell command"
-              const command = normalizeUrls(typeof data.command === "string" ? data.command : "")
+              const command = normalizeUrls(typeof data.command === "string" ? data.command : "") // kilocode_change
               return {
                 icon: "#",
                 title,
@@ -326,7 +326,7 @@ export function PermissionPrompt(props: { request: PermissionRequest }) {
             }
 
             if (permission === "webfetch") {
-              const url = normalizeUrls(typeof data.url === "string" ? data.url : "")
+              const url = normalizeUrls(typeof data.url === "string" ? data.url : "") // kilocode_change
               return {
                 icon: "%",
                 title: `WebFetch ${url}`,
