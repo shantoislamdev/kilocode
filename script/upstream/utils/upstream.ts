@@ -110,9 +110,9 @@ async function resolveTag(tag: string): Promise<string | null> {
  */
 export async function writeVersion(tag: string): Promise<string> {
   const repo = await root()
-  const path = `${repo}/${versionFile}`
-  await Bun.write(path, `${tag}\n`)
-  return path
+  const dest = `${repo}/${versionFile}`
+  await Bun.write(dest, `${tag}\n`)
+  return dest
 }
 
 export async function versions(source: string): Promise<VersionInfo[]> {
