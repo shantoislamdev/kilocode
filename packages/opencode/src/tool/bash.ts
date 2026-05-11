@@ -20,6 +20,7 @@ import { Shell } from "@/shell/shell"
 import { BashArity } from "@/permission/arity"
 import * as Truncate from "./truncate"
 import { Plugin } from "@/plugin"
+import { normalizeUrls } from "@/kilocode/util/url" // kilocode_change
 import { Effect, Stream } from "effect"
 import { ChildProcess } from "effect/unstable/process"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
@@ -238,18 +239,6 @@ function preview(text: string) {
   return "...\n\n" + text.slice(-MAX_METADATA_LENGTH)
 }
 
-// Normalize any http/https URLs in a command string so that IDN/Unicode hostnames
-// are converted to their punycode ASCII form, preventing homograph attacks in
-// permission dialogs where "аpitest.com" (Cyrillic) looks identical to "apitest.com".
-function normalizeUrls(text: string) {
-  return text.replace(/https?:\/\/\S+/g, (match) => {
-    try {
-      return new URL(match).href
-    } catch {
-      return match
-    }
-  })
-}
 
 function tail(text: string, maxLines: number, maxBytes: number) {
   const lines = text.split("\n")

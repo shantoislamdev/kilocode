@@ -19,20 +19,9 @@ import { useDialog } from "../../ui/dialog"
 import { getScrollAcceleration } from "../../util/scroll"
 import { useTuiConfig } from "../../context/tui-config"
 import { ConfigProtection } from "@/kilocode/permission/config-paths" // kilocode_change
+import { normalizeUrls } from "@/kilocode/util/url" // kilocode_change
 
 type PermissionStage = "permission" | "always" | "reject"
-
-// Convert IDN/Unicode hostnames to punycode ASCII in any http/https URLs found
-// in the given string, to prevent homograph attacks in permission dialogs.
-function normalizeUrls(text: string) {
-  return text.replace(/https?:\/\/\S+/g, (match) => {
-    try {
-      return new URL(match).href
-    } catch {
-      return match
-    }
-  })
-}
 
 function normalizePath(input?: string) {
   if (!input) return ""

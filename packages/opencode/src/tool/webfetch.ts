@@ -4,6 +4,7 @@ import * as Tool from "./tool"
 import TurndownService from "turndown"
 import DESCRIPTION from "./webfetch.txt"
 import { isImageAttachment } from "@/util/media"
+import { normalizeUrls } from "@/kilocode/util/url" // kilocode_change
 
 const MAX_RESPONSE_SIZE = 5 * 1024 * 1024 // 5MB
 const DEFAULT_TIMEOUT = 30 * 1000 // 30 seconds
@@ -34,16 +35,7 @@ export const WebFetchTool = Tool.define(
             throw new Error("URL must start with http:// or https://")
           }
 
-          // Normalize URL: convert IDN/Unicode hostnames to punycode ASCII to prevent
-          // homograph attacks where visually similar Unicode characters impersonate trusted domains.
-          // e.g. "аpitest.com" (Cyrillic а) → "xn--pitest-n5b.com"
-          const url = (() => {
-            try {
-              return new URL(params.url).href
-            } catch {
-              return params.url
-            }
-          })()
+          const url = normalizeUrls(params.url) // kilocode_change
 
           yield* ctx.ask({
             permission: "webfetch",
