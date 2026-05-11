@@ -61,6 +61,7 @@ export function ModelInfoPanel(props: Props) {
     >
       <scrollbox
         maxHeight={maxHeight()}
+        paddingRight={1}
       >
         <box>
           <text fg={theme.text} attributes={TextAttributes.BOLD}>
@@ -114,22 +115,34 @@ export function ModelInfoPanel(props: Props) {
           </box>
         </Show>
         <Show when={caps()?.reasoning || inputLine() || outputLine()}>
-          <text fg={theme.textMuted}></text>
           <box flexDirection="column">
             <Show when={caps()?.reasoning}>
-              <text fg={theme.textMuted}>  [Reasoning]</text>
+              <box flexDirection="row" justifyContent="space-between">
+                <text fg={theme.textMuted}>Reasoning</text>
+                <text fg={theme.text}>Yes</text>
+              </box>
             </Show>
             <Show when={inputLine()}>
-              {(line) => <text fg={theme.textMuted}>  {line()}</text>}
+              {(line) => (
+                <box flexDirection="row" justifyContent="space-between">
+                  <text fg={theme.textMuted}>Caps</text>
+                  <text fg={theme.text}>{line().replace(/^In:\s*/, "")}</text>
+                </box>
+              )}
             </Show>
             <Show when={outputLine()}>
-              {(line) => <text fg={theme.textMuted}>  {line()}</text>}
+              {(line) => (
+                <box flexDirection="row" justifyContent="space-between">
+                  <text fg={theme.textMuted}>Out</text>
+                  <text fg={theme.text}>{line().replace(/^Out:\s*/, "")}</text>
+                </box>
+              )}
             </Show>
           </box>
-          <text fg={theme.textMuted}></text>
         </Show>
         <Show when={desc()}>
-          <text fg={theme.textMuted} width={28}>
+          <text fg={theme.textMuted}>{" "}</text>
+          <text fg={theme.textMuted} width={23}>
             {desc()}
           </text>
         </Show>
