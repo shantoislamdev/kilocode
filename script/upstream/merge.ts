@@ -38,6 +38,7 @@ import { transformConflictedScripts, transformAllScripts } from "./transforms/tr
 import { transformConflictedExtensions, transformAllExtensions } from "./transforms/transform-extensions"
 import { transformConflictedWeb, transformAllWeb } from "./transforms/transform-web"
 import { resolveLockFileConflicts, regenerateLockFiles } from "./transforms/lock-files"
+import { writeVersion } from "./utils/upstream"
 
 interface MergeOptions {
   version?: string
@@ -507,6 +508,11 @@ async function main() {
   logger.info("Resetting Kilo-specific files...")
   const keepOursResults = await resetToOurs(config.keepOurs, { dryRun: false, verbose: options.verbose })
   logger.success(`Reset ${keepOursResults.length} files to Kilo's version`)
+
+  // 6k. Record the last merged upstream tag so future automation can find it
+  // without walking ls-remote + isAncestor for every tag.
+  const versionFile = await writeVersion(targetVersion.tag)
+  logger.success(`Recorded ${targetVersion.tag} in ${versionFile.split("/").pop()}`)
 
   // Clean untracked build artifacts from Kilo-specific directories.
   // These packages don't exist in upstream, so their .gitignore files are absent
