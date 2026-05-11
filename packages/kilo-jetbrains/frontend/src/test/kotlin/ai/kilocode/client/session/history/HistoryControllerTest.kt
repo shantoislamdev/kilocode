@@ -81,13 +81,13 @@ class HistoryControllerTest : BasePlatformTestCase() {
         rpc.cloudCursor = "next_1"
         val controller = controller()
 
-        controller.reloadCloud(gitUrl = "git@example.com:repo.git")
+        controller.reloadCloud()
         flush()
 
         assertEquals(1, controller.cloud.items.size)
         assertEquals("cloud_1", controller.cloud.items[0].id)
         assertEquals("next_1", controller.cloud.cursor)
-        assertEquals(FakeSessionRpcApi.CloudCall("/test", null, 150, "git@example.com:repo.git"), rpc.cloudCalls[0])
+        assertEquals(FakeSessionRpcApi.CloudCall("/test", null, 50, null), rpc.cloudCalls[0])
 
         rpc.cloud.clear()
         rpc.cloud += cloud("cloud_2", "Cloud Two")
@@ -96,7 +96,7 @@ class HistoryControllerTest : BasePlatformTestCase() {
         flush()
 
         assertEquals(listOf("cloud_1", "cloud_2"), controller.cloud.items.map { it.id })
-        assertEquals(FakeSessionRpcApi.CloudCall("/test", "next_1", 150, "git@example.com:repo.git"), rpc.cloudCalls[1])
+        assertEquals(FakeSessionRpcApi.CloudCall("/test", "next_1", 50, null), rpc.cloudCalls[1])
     }
 
     fun `test local delete calls rpc and removes item`() {
@@ -296,6 +296,21 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(HistorySection.TODAY, HistoryTime.section(today, now.toEpochMilli()))
         assertEquals(HistorySection.YESTERDAY, HistoryTime.section(yesterday, now.toEpochMilli()))
         assertEquals(KiloBundle.message("history.time.hours", 10), HistoryTime.relative(offset, now.toEpochMilli()))
+    }
+
+    fun `test history section boundaries are inclusive at 7 and 30 days`() {
+        val now = Instant.now()
+        val exactly7 = LocalHistoryItem(session("s7", "7d", now.minus(7, ChronoUnit.DAYS).toEpochMilli().toDouble()))
+        val exactly30 = LocalHistoryItem(session("s30", "30d", now.minus(30, ChronoUnit.DAYS).toEpochMilli().toDouble()))
+        val within7 = LocalHistoryItem(session("s6", "6d", now.minus(6, ChronoUnit.DAYS).toEpochMilli().toDouble()))
+        val within30 = LocalHistoryItem(session("s29", "29d", now.minus(29, ChronoUnit.DAYS).toEpochMilli().toDouble()))
+        val beyond30 = LocalHistoryItem(session("s31", "31d", now.minus(31, ChronoUnit.DAYS).toEpochMilli().toDouble()))
+
+        assertEquals(HistorySection.WEEK, HistoryTime.section(exactly7, now.toEpochMilli()))
+        assertEquals(HistorySection.WEEK, HistoryTime.section(within7, now.toEpochMilli()))
+        assertEquals(HistorySection.MONTH, HistoryTime.section(exactly30, now.toEpochMilli()))
+        assertEquals(HistorySection.MONTH, HistoryTime.section(within30, now.toEpochMilli()))
+        assertEquals(HistorySection.OLDER, HistoryTime.section(beyond30, now.toEpochMilli()))
     }
 
     fun `test list is focusable and uses multiple interval selection`() {

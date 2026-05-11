@@ -7,13 +7,16 @@ import ai.kilocode.client.session.ui.style.SessionEditorStyle
 import ai.kilocode.client.ui.UiStyle
 import com.intellij.icons.AllIcons
 import com.intellij.ide.ui.LafManagerListener
-import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.actionSystem.ActionGroup
 import com.intellij.openapi.actionSystem.ActionManager
 import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnAction
+import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.DataProvider
+import com.intellij.openapi.actionSystem.Presentation
+import com.intellij.openapi.actionSystem.impl.ActionButton
 import com.intellij.openapi.util.Disposer
 import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.PopupHandler
@@ -53,7 +56,6 @@ import javax.swing.event.ListDataListener
 class HistoryPanel(
     parent: Disposable,
     private val controller: HistoryController,
-    private val gitUrl: () -> String? = { null },
     private val nav: () -> Unit = {},
     private val manager: SessionManager? = null,
 ) : BorderLayoutPanel(), Disposable, DataProvider {
@@ -116,7 +118,7 @@ class HistoryPanel(
     fun refresh() {
         stale = false
         updateTheme()
-        controller.reload(gitUrl())
+        controller.reload()
     }
 
     private fun bindTheme() {
@@ -167,14 +169,19 @@ class HistoryPanel(
         )
     }
 
-    private fun back() = BorderLayoutPanel().apply {
-        add(JButton(KiloBundle.message("history.back"), AllIcons.Actions.Back).apply {
-            putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, true)
-            isFocusable = false
+    private fun back(): BorderLayoutPanel {
+        val label = KiloBundle.message("history.back")
+        val action = object : AnAction(label, null, AllIcons.Actions.Back) {
+            override fun actionPerformed(e: AnActionEvent) = nav()
+        }
+        val presentation = Presentation(label).apply { icon = AllIcons.Actions.Back }
+        val btn = ActionButton(action, presentation, ActionPlaces.TOOLBAR, JBUI.size(16)).apply {
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
-            addActionListener { nav() }
-        }, BorderLayout.WEST)
-        border = JBUI.Borders.emptyRight(UiStyle.Gap.lg())
+        }
+        return BorderLayoutPanel().apply {
+            add(btn, BorderLayout.WEST)
+            border = JBUI.Borders.emptyRight(UiStyle.Gap.lg())
+        }
     }
 
     private fun panel(search: SearchTextField, list: JList<out HistoryItem>, footer: JComponent? = null): JComponent {
@@ -356,17 +363,17 @@ class HistoryPanel(
 
     internal fun backText(): String? {
         val view = activeInfo().foreSideComponent ?: return null
-        return UIUtil.uiTraverser(view).filter(JButton::class.java).firstOrNull()?.text
+        return UIUtil.uiTraverser(view).filter(ActionButton::class.java).firstOrNull()?.presentation?.text
     }
 
     internal fun backCursor(): Int? {
         val view = activeInfo().foreSideComponent ?: return null
-        return UIUtil.uiTraverser(view).filter(JButton::class.java).firstOrNull()?.cursor?.type
+        return UIUtil.uiTraverser(view).filter(ActionButton::class.java).firstOrNull()?.cursor?.type
     }
 
     internal fun clickBack() {
         val view = activeInfo().foreSideComponent ?: return
-        UIUtil.uiTraverser(view).filter(JButton::class.java).firstOrNull()?.doClick()
+        UIUtil.uiTraverser(view).filter(ActionButton::class.java).firstOrNull()?.click()
     }
 
     internal fun clickDelete() {

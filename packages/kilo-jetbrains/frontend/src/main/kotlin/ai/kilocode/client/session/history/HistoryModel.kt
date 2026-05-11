@@ -66,8 +66,6 @@ open class HistoryModel<T : HistoryItem> : AbstractListModel<T>() {
         filter()
     }
 
-    fun hasFilter(): Boolean = query.isNotEmpty()
-
     fun refresh() {
         val end = size.coerceAtLeast(1) - 1
         fireContentsChanged(this, 0, end)

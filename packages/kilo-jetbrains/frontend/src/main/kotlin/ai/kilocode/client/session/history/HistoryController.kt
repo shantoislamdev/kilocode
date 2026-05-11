@@ -18,7 +18,7 @@ class HistoryController(
     private val deleted: (String) -> Unit = {},
 ) {
     companion object {
-        const val CLOUD_LIMIT = 150
+        const val CLOUD_LIMIT = 50
     }
 
     val local = HistoryModel<LocalHistoryItem>()
@@ -26,11 +26,10 @@ class HistoryController(
 
     private val deleting = mutableSetOf<String>()
     private val opener = open
-    private var git: String? = null
 
-    fun reload(gitUrl: String? = null) {
+    fun reload() {
         reloadLocal()
-        reloadCloud(gitUrl)
+        reloadCloud()
     }
 
     fun reloadLocal() {
@@ -46,8 +45,7 @@ class HistoryController(
         }
     }
 
-    fun reloadCloud(gitUrl: String? = null) {
-        git = gitUrl
+    fun reloadCloud() {
         loadCloud(reset = true)
     }
 
@@ -104,11 +102,10 @@ class HistoryController(
 
     private fun loadCloud(reset: Boolean) {
         val cursor = cloud.cursor.takeUnless { reset }
-        val gitUrl = git
         edt { cloud.start(reset) }
         cs.launch {
             try {
-                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, gitUrl)
+                val result = sessions.cloudSessions(workspace.directory, cursor, CLOUD_LIMIT, null)
                 val items = result.sessions.map(::cloudItem)
                 edt {
                     if (reset) cloud.replace(items, result.nextCursor)
