@@ -34,5 +34,6 @@ export function fmtContext(n: number): string {
 
 export function fmtDate(s: string): string {
   const d = new Date(s)
+  if (isNaN(d.getTime())) return s
   return d.toLocaleDateString(undefined, { year: "numeric", month: "short" })
 }

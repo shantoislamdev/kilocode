@@ -1,10 +1,9 @@
 import { TextAttributes } from "@opentui/core"
 import { useTerminalDimensions } from "@opentui/solid"
-import { createMemo } from "solid-js"
+import { createMemo, Show } from "solid-js"
 import { useTheme } from "@tui/context/theme"
 import type { Model } from "@kilocode/sdk/v2"
 import { avgPrice, fmtCachedPrice, fmtContext, fmtDate, fmtPrice } from "./model-info-panel-utils"
-import { Show } from "solid-js"
 
 interface Props {
   model: Model
@@ -121,10 +120,10 @@ export function ModelInfoPanel(props: Props) {
               <text fg={theme.textMuted}>  [Reasoning]</text>
             </Show>
             <Show when={inputLine()}>
-              <text fg={theme.textMuted}>  {inputLine()}</text>
+              {(line) => <text fg={theme.textMuted}>  {line()}</text>}
             </Show>
             <Show when={outputLine()}>
-              <text fg={theme.textMuted}>  {outputLine()}</text>
+              {(line) => <text fg={theme.textMuted}>  {line()}</text>}
             </Show>
           </box>
           <text fg={theme.textMuted}></text>
