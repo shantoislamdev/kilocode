@@ -1,6 +1,6 @@
 ---
 title: Execute Command Tool | Kilo Code Docs
-description: Learn how the execute_command tool runs CLI commands on your system to install dependencies, build projects, start servers, and perform other terminal operations.
+description: Learn how the execute_command tool runs CLI commands on your system to install dependencies, build projects, start servers, and run terminal operations.
 ---
 
 # execute_command

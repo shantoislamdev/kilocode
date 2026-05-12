@@ -1,6 +1,6 @@
 ---
 title: Browser Action Tool | Kilo Code Docs
-description: Learn how the browser_action tool enables web automation via a Puppeteer-controlled browser to navigate sites, click elements, type text, and capture screenshots.
+description: Learn how the browser_action tool enables web automation via a Puppeteer-controlled browser to navigate sites, click elements, and capture screenshots.
 ---
 
 # browser_action
