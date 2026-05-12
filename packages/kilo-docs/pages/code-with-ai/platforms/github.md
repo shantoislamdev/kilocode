@@ -50,20 +50,6 @@ When a bug report comes in and you want to understand what's going on before div
 
 The bot examines the bug report, searches the codebase for related code paths, and shares its analysis directly in the issue thread.
 
-### Apply changes across multiple repositories
-
-If the same fix or upgrade needs to land in several repos, mention them all:
-
-```
-@kilocode-bot please fix this in the cloud, landing, and handbook repos
-```
-
-Especially useful for:
-
-- Dependency upgrades
-- Configuration updates
-- Cross-cutting refactors
-
 ---
 
 ## How It Works
