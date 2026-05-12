@@ -2356,6 +2356,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       partial.provider !== undefined ||
       partial.disabled_providers !== undefined ||
       partial.enabled_providers !== undefined
+    const refreshAgents =
+      partial.default_agent !== undefined ||
+      partial.agent !== undefined ||
+      project.default_agent !== undefined ||
+      project.agent !== undefined
     const hasGlobal = Object.keys(partial).length > 0
     const hasProject = Object.keys(project).length > 0
 
@@ -2388,7 +2393,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
         globalConfig: global,
         features: configFeatures(merged),
       })
-      if (refreshProviders) await this.fetchAndSendProviders()
+      await Promise.all([
+        refreshProviders ? this.fetchAndSendProviders() : Promise.resolve(),
+        refreshAgents ? this.fetchAndSendAgents() : Promise.resolve(),
+      ])
     } catch (error) {
       console.error("[Kilo New] KiloProvider: Config write succeeded but post-write refresh failed:", error)
       const patch =
@@ -3091,9 +3099,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     }
 
     // Config was updated without a full dispose (e.g. permission-only save).
-    // Fetch and push the updated config so the Settings panel reflects the change.
+    // Fetch and push the updated config + refresh agents and providers so the
+    // Settings panel and mode/model pickers reflect the change.
     if (event.type === "global.config.updated") {
-      void this.fetchAndSendConfigUpdated()
+      void Promise.all([this.fetchAndSendConfigUpdated(), this.fetchAndSendAgents(), this.fetchAndSendProviders()])
       return
     }
 

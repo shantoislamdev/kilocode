@@ -521,6 +521,25 @@ export const SessionProvider: ParentComponent = (props) => {
     })
   }
 
+  function clearModeModelSelection(agentName: string, persist = false) {
+    setUserSetAgents((prev) => {
+      const next = { ...prev }
+      delete next[agentName]
+      return next
+    })
+    setStore(
+      "modelSelections",
+      produce((selections) => {
+        delete selections[agentName]
+      }),
+    )
+    if (persist) vscode.postMessage({ type: "clearModelSelection", agent: agentName })
+  }
+
+  function shouldClearModeModelSelection(agentName: string) {
+    return getModeModel(agentName) !== null && userSetAgents()[agentName] === true
+  }
+
   function clearHiddenErrors(ids: string[]) {
     if (ids.length === 0) return
     setHiddenErrors((prev) => {
@@ -547,6 +566,10 @@ export const SessionProvider: ParentComponent = (props) => {
   /** Clear the per-mode model override, falling back to config default. */
   function clearModelOverride(sessionID?: string) {
     const sid = sessionID ?? currentSessionID()
+    const agentName = sid ? agentForScope(sid) : selectedAgentName()
+    // Always clear the persisted per-mode model selection so the user's
+    // configured (or fallback) model becomes effective, not the last manual pick.
+    clearModeModelSelection(agentName, true)
     if (sid) {
       setStore(
         "sessionOverrides",
@@ -555,22 +578,7 @@ export const SessionProvider: ParentComponent = (props) => {
         }),
       )
       hideErrors(sid)
-      return
     }
-    const agentName = selectedAgentName()
-    setUserSetAgents((prev) => {
-      const next = { ...prev }
-      delete next[agentName]
-      return next
-    })
-    setStore(
-      "modelSelections",
-      produce((selections) => {
-        delete selections[agentName]
-      }),
-    )
-    // Clear from model.json via extension host
-    vscode.postMessage({ type: "clearModelSelection", agent: agentName })
   }
 
   // Handle agentsLoaded immediately (not in onMount) so we never miss
@@ -1709,8 +1717,15 @@ export const SessionProvider: ParentComponent = (props) => {
           delete overrides[id]
         }),
       )
+      if (shouldClearModeModelSelection(name)) {
+        clearModeModelSelection(name)
+      }
     } else {
       setPendingAgentSelection(name)
+      if (shouldClearModeModelSelection(name)) {
+        clearModeModelSelection(name)
+        return
+      }
       // When switching mode, initialize model for the new mode if the user
       // hasn't explicitly set one for it
       if (!userSetAgents()[name] && !store.modelSelections[name]) {
