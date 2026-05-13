@@ -1,6 +1,7 @@
 import { test, expect, describe } from "bun:test"
 import type { Provider } from "../../../src/provider/provider"
-import { formatTable, formatMarkdown, isTextModel } from "../../../src/kilocode/cli/cmd/roll-call"
+import { formatTable, formatMarkdown, handle, isTextModel } from "../../../src/kilocode/cli/cmd/roll-call"
+import { Provider } from "../../../src/provider/provider"
 
 const base = {
   input: { text: false, audio: false, image: false, video: false, pdf: false },
@@ -127,5 +128,36 @@ describe("formatMarkdown", () => {
 
     expect(md).toContain("hello \\| world")
     expect(md.split("\n")[2].match(/(?<!\\)\|/g)?.length).toBe(5)
+  })
+})
+
+describe("handle", () => {
+  test("does not print progress before markdown output", async () => {
+    const original = Provider.list
+    const logs: string[] = []
+    const print = console.log
+
+    Provider.list = async () => ({})
+    console.log = (msg?: unknown) => {
+      logs.push(String(msg))
+    }
+
+    try {
+      await handle({
+        prompt: "Hello",
+        timeout: 1,
+        filter: "test",
+        parallel: 1,
+        output: "md",
+        verbose: true,
+        quiet: false,
+      })
+    } finally {
+      Provider.list = original
+      console.log = print
+      process.exitCode = undefined
+    }
+
+    expect(logs).toEqual([])
   })
 })

@@ -145,8 +145,9 @@ export async function handle(args: ArgumentsCamelCase) {
   }
 
   const json = args.output === "json"
+  const structured = json || args.output === "md"
 
-  if (!args.quiet && !json) {
+  if (!args.quiet && !structured) {
     UI.println(`${color(UI.Style.TEXT_INFO)}Starting roll call for models with prompt: "${args.prompt}"${color(UI.Style.TEXT_NORMAL)}`)
     UI.println(
       `${color(UI.Style.TEXT_INFO)}Timeout per model: ${args.timeout}ms, Parallel calls: ${args.parallel}${color(UI.Style.TEXT_NORMAL)}`,
@@ -175,13 +176,13 @@ export async function handle(args: ArgumentsCamelCase) {
       )
 
       if (models.length === 0) {
-        if (!args.quiet && !json) UI.println(`${color(UI.Style.TEXT_WARNING)}No models to test after filtering.${color(UI.Style.TEXT_NORMAL)}`)
+        if (!args.quiet && !structured) UI.println(`${color(UI.Style.TEXT_WARNING)}No models to test after filtering.${color(UI.Style.TEXT_NORMAL)}`)
         if (json) console.log(JSON.stringify([], null, 2))
         process.exitCode = 1
         return
       }
 
-      if (!args.quiet && !json) {
+      if (!args.quiet && !structured) {
         UI.println(`${color(UI.Style.TEXT_INFO)}Prompting ${models.length} models...${color(UI.Style.TEXT_NORMAL)}`)
       }
 
@@ -196,7 +197,7 @@ export async function handle(args: ArgumentsCamelCase) {
 
         results.push({ model: name, ...result })
 
-        if (!args.verbose || args.quiet || json) return
+        if (!args.verbose || args.quiet || structured) return
         if (result.access) {
           UI.println(`${color(UI.Style.TEXT_SUCCESS)}✔${color(UI.Style.TEXT_NORMAL)} ${name} - ${result.latency}ms`)
           return
