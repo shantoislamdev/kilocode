@@ -126,6 +126,8 @@ interface Result {
 }
 
 export async function handle(args: ArgumentsCamelCase) {
+  const list = args.list ?? Provider.list
+
   if (args.parallel < 1) {
     UI.error("--parallel must be at least 1")
     process.exitCode = 1
@@ -157,7 +159,7 @@ export async function handle(args: ArgumentsCamelCase) {
   await Instance.provide({
     directory: process.cwd(),
     async fn() {
-      const providers = await Provider.list()
+      const providers = await list()
       const regex = (() => {
         try {
           return new RegExp(args.filter, "i")
@@ -327,4 +329,5 @@ type ArgumentsCamelCase = {
   output: "table" | "json" | "md"
   verbose: boolean
   quiet: boolean
+  list?: typeof Provider.list
 }

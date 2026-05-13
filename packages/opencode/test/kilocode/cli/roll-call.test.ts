@@ -1,6 +1,6 @@
 import { test, expect, describe } from "bun:test"
-import { formatTable, formatMarkdown, handle, isTextModel } from "../../../src/kilocode/cli/cmd/roll-call"
 import { Provider } from "../../../src/provider/provider"
+import { formatTable, formatMarkdown, handle, isTextModel } from "../../../src/kilocode/cli/cmd/roll-call"
 
 const base = {
   input: { text: false, audio: false, image: false, video: false, pdf: false },
@@ -132,11 +132,9 @@ describe("formatMarkdown", () => {
 
 describe("handle", () => {
   test("does not print progress before markdown output", async () => {
-    const original = Provider.list
     const logs: string[] = []
     const print = console.log
 
-    Provider.list = async () => ({})
     console.log = (msg?: unknown) => {
       logs.push(String(msg))
     }
@@ -150,9 +148,9 @@ describe("handle", () => {
         output: "md",
         verbose: true,
         quiet: false,
+        list: async () => ({}),
       })
     } finally {
-      Provider.list = original
       console.log = print
       process.exitCode = undefined
     }
