@@ -33,10 +33,8 @@ import { SuggestBar } from "./SuggestBar"
 // so the user can see what the AI set up.
 export const UPSTREAM_SUPPRESSED_TOOLS = new Set(["todowrite", "todoread"])
 
-type PlanExitStatus = "new" | "updated" | "ready"
-
-/** Extract plan path and status from a completed plan_exit tool part. */
-function planExitInfo(part: SDKPart, parts: SDKPart[]): { plan: string; status: PlanExitStatus } | undefined {
+/** Extract plan path from a completed plan_exit tool part. */
+function planExitInfo(part: SDKPart): { plan: string } | undefined {
   if (part.type !== "tool") return undefined
   const tp = part as unknown as ToolPart
   if (tp.tool !== "plan_exit") return undefined
@@ -44,94 +42,15 @@ function planExitInfo(part: SDKPart, parts: SDKPart[]): { plan: string; status: 
   const meta = (tp.state as { metadata?: Record<string, unknown> }).metadata ?? {}
   const plan = typeof meta.plan === "string" ? meta.plan : undefined
   if (!plan) return undefined
-  const status = meta.status === "updated" || meta.status === "new" ? meta.status : inferPlanStatus(plan, parts, tp)
-  return { plan, status }
+  return { plan }
 }
 
-function inferPlanStatus(plan: string, parts: SDKPart[], exit: ToolPart): PlanExitStatus {
-  const idx = parts.findIndex((part) => part.type === "tool" && (part as unknown as ToolPart).id === exit.id)
-  const prior = idx === -1 ? parts : parts.slice(0, idx)
-  const matches = prior
-    .filter((part): part is SDKPart & { type: "tool" } => part.type === "tool")
-    .map((part) => part as unknown as ToolPart)
-    .filter((part) => part.state?.status === "completed")
-    .filter((part) => toolTouchesPlan(plan, part))
-
-  const read = matches.some((part) => part.tool === "read")
-  const write = matches.some((part) => part.tool === "write")
-
-  if (matches.some((part) => part.tool === "edit")) return "updated"
-  if (matches.some((part) => part.tool === "apply_patch" && patchUpdatedPlan(plan, part))) return "updated"
-  if (matches.some((part) => part.tool === "write" && toolDeletions(part) > 0)) return "updated"
-  if (read && write) return "updated"
-  if (write) return "new"
-  return "ready"
-}
-
-function toolFilePath(part: ToolPart): string | undefined {
-  const state = part.state as { input?: Record<string, unknown>; metadata?: Record<string, unknown> }
-  const input = state.input ?? {}
-  const meta = state.metadata ?? {}
-  if (typeof input.filePath === "string") return input.filePath
-  if (typeof input.path === "string") return input.path
-  const diff = meta.filediff as { file?: unknown } | undefined
-  if (typeof diff?.file === "string") return diff.file
-  return undefined
-}
-
-function toolTouchesPlan(plan: string, part: ToolPart): boolean {
-  if (samePlanPath(plan, toolFilePath(part))) return true
-  const meta = (part.state as { metadata?: Record<string, unknown> }).metadata ?? {}
-  const files = meta.files
-  if (!Array.isArray(files)) return false
-  return files.some((item) => samePlanPath(plan, planPath(item)))
-}
-
-function planPath(item: unknown): string | undefined {
-  if (!item || typeof item !== "object") return undefined
-  const obj = item as { filePath?: unknown; relativePath?: unknown }
-  if (typeof obj.relativePath === "string") return obj.relativePath
-  if (typeof obj.filePath === "string") return obj.filePath
-  return undefined
-}
-
-function patchUpdatedPlan(plan: string, part: ToolPart): boolean {
-  const meta = (part.state as { metadata?: Record<string, unknown> }).metadata ?? {}
-  const files = meta.files
-  if (!Array.isArray(files)) return false
-  return files.some((item) => {
-    if (!samePlanPath(plan, planPath(item))) return false
-    const file = item as { type?: unknown; deletions?: unknown }
-    if (file.type === "update" || file.type === "delete" || file.type === "move") return true
-    return typeof file.deletions === "number" && file.deletions > 0
-  })
-}
-
-function toolDeletions(part: ToolPart): number {
-  const meta = (part.state as { metadata?: Record<string, unknown> }).metadata ?? {}
-  const diff = meta.filediff as { deletions?: unknown } | undefined
-  return typeof diff?.deletions === "number" ? diff.deletions : 0
-}
-
-function samePlanPath(plan: string, file: string | undefined): boolean {
-  if (!file) return false
-  const a = normalizePlanPath(plan)
-  const b = normalizePlanPath(file)
-  if (a === b) return true
-  return a.endsWith("/" + b) || b.endsWith("/" + a)
-}
-
-function normalizePlanPath(value: string): string {
-  return value.replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/+$/, "")
-}
-
-function PlanExitCard(props: { part: ToolPart; parts: SDKPart[] }) {
+function PlanExitCard(props: { part: ToolPart }) {
   const language = useLanguage()
   const server = useServer()
   const data = useData()
-  const all = createMemo(() => Object.values(data.store.part ?? {}).flat() as SDKPart[])
   const info = createMemo(() =>
-    planExitInfo(props.part as unknown as SDKPart, [...props.parts, ...all()]),
+    planExitInfo(props.part as unknown as SDKPart),
   )
   const display = createMemo(() => {
     const i = info()
@@ -139,10 +58,7 @@ function PlanExitCard(props: { part: ToolPart; parts: SDKPart[] }) {
     return planDisplayPath(i.plan, server.workspaceDirectory())
   })
   const label = createMemo(() => {
-    const i = info()
-    if (!i) return ""
-    if (i.status === "updated") return language.t("plan.exit.readyUpdated")
-    if (i.status === "new") return language.t("plan.exit.readyNew")
+    if (!info()) return ""
     return language.t("plan.exit.ready")
   })
   const open = (e: MouseEvent) => {
@@ -342,7 +258,7 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
                             </Show>
                           }
                         >
-                          {(tp) => <PlanExitCard part={tp()} parts={parts()} />}
+                          {(tp) => <PlanExitCard part={tp()} />}
                         </Show>
                       }
                     >

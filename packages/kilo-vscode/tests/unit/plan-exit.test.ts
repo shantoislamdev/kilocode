@@ -47,38 +47,37 @@ describe("planDisplayPath", () => {
 describe("plan_exit renderer uses openFile not openDiff (source)", () => {
   const ROOT = path.resolve(import.meta.dir, "../..")
   const FILE = path.join(ROOT, "webview-ui/src/components/chat/AssistantMessage.tsx")
+  const TURN_FILE = path.join(ROOT, "webview-ui/src/components/chat/VscodeSessionTurn.tsx")
   const src = fs.readFileSync(FILE, "utf-8")
+  const turnSrc = fs.readFileSync(TURN_FILE, "utf-8")
 
   it("PlanExitCard calls data.openFile", () => {
     expect(src).toContain("data.openFile")
   })
 
-  it("infers status from write/edit tools in the same assistant turn", () => {
-    expect(src).toContain("function inferPlanStatus")
-    expect(src).toContain('part.tool === "edit"')
-    expect(src).toContain('part.tool === "read"')
-    expect(src).toContain('part.tool === "write"')
-    expect(src).toContain('part.tool === "apply_patch"')
-    expect(src).toContain("toolDeletions(part) > 0")
-    expect(src).toContain("patchUpdatedPlan(plan, part)")
-    expect(src).toContain("if (read && write) return \"updated\"")
+  it("always uses the generic ready label", () => {
+    expect(src).toContain('language.t("plan.exit.ready")')
+    expect(src).not.toContain('language.t("plan.exit.readyUpdated")')
+    expect(src).not.toContain('language.t("plan.exit.readyNew")')
   })
 
-  it("matches apply_patch metadata files against the plan path", () => {
-    expect(src).toContain("function patchUpdatedPlan")
-    expect(src).toContain("meta.files")
-    expect(src).toContain('file.type === "update"')
-    expect(src).toContain("file.deletions > 0")
-  })
-
-  it("infers status from all loaded message parts", () => {
-    expect(src).toContain("Object.values(data.store.part ?? {}).flat()")
-    expect(src).toContain("[...props.parts, ...all()]")
+  it("does not infer status from tool history", () => {
+    expect(src).not.toContain("function inferPlanStatus")
+    expect(src).not.toContain("function patchUpdatedPlan")
+    expect(src).not.toContain("function toolTouchesPlan")
+    expect(src).not.toContain("toolDeletions")
+    expect(src).not.toContain("readyUpdated")
+    expect(src).not.toContain("readyNew")
+    expect(src).not.toContain("Object.values(data.store.part ?? {}).flat()")
+    expect(src).not.toContain("[...props.parts, ...all()]")
+    expect(src).not.toContain("turnParts")
+    expect(turnSrc).not.toContain("assistantMessages().flatMap")
+    expect(turnSrc).not.toContain("turnParts={assistantParts()}")
   })
 
   it("does not depend on opencode-provided plan status metadata", () => {
-    expect(src).toContain('meta.status === "updated" || meta.status === "new"')
-    expect(src).toContain("inferPlanStatus(plan, parts, tp)")
+    expect(src).not.toContain('meta.status === "updated" || meta.status === "new"')
+    expect(src).not.toContain("meta.status")
   })
 
   it("PlanExitCard does not call openDiffVirtual", () => {
