@@ -49,9 +49,7 @@ function PlanExitCard(props: { part: ToolPart }) {
   const language = useLanguage()
   const server = useServer()
   const data = useData()
-  const info = createMemo(() =>
-    planExitInfo(props.part as unknown as SDKPart),
-  )
+  const info = createMemo(() => planExitInfo(props.part as unknown as SDKPart))
   const display = createMemo(() => {
     const i = info()
     if (!i) return ""
@@ -70,13 +68,8 @@ function PlanExitCard(props: { part: ToolPart }) {
   return (
     <Show when={info()}>
       <div data-component="plan-exit-card">
-        <span data-slot="plan-exit-label">{label()}</span>
-        {" "}
-        <a
-          data-slot="plan-exit-link"
-          href="#"
-          onClick={open}
-        >
+        <span data-slot="plan-exit-label">{label()}</span>{" "}
+        <a data-slot="plan-exit-link" href="#" onClick={open}>
           {display()}
         </a>
       </div>
@@ -218,7 +211,14 @@ export const AssistantMessage: Component<AssistantMessageProps> = (props) => {
 
           return (
             <Show
-              when={isUpstreamSuppressed || activeQuestion() || activeSuggestion() || bash() || planExit() || PART_MAPPING[part.type]}
+              when={
+                isUpstreamSuppressed ||
+                activeQuestion() ||
+                activeSuggestion() ||
+                bash() ||
+                planExit() ||
+                PART_MAPPING[part.type]
+              }
             >
               <div data-component="tool-part-wrapper" data-part-type={part.type}>
                 <Show
