@@ -48,7 +48,7 @@ internal class SessionScroll(
     private var seq = 0
 
     init {
-        jump = JBLabel(ScrollButtonIcon).apply {
+        jump = JBLabel(ScrollButtonIcon.create()).apply {
             cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
             toolTipText = KiloBundle.message("session.scroll.bottom")
             isVisible = false
@@ -120,7 +120,7 @@ internal class SessionScroll(
 
     fun applyStyle(style: SessionEditorStyle) {
         this.style = style
-        jump.repaint()
+        jump.icon = ScrollButtonIcon.create()
         messages.applyStyle(style)
         val view = component.viewport.view
         if (view !== messages) (view as? SessionEditorStyleTarget)?.applyStyle(style)
