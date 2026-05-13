@@ -22,6 +22,7 @@ import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.PopupHandler
 import com.intellij.ui.SearchTextField
 import com.intellij.ui.ScrollingUtil
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.tabs.JBTabs
@@ -64,6 +65,11 @@ class HistoryPanel(
     private val localList = localList()
     private val cloudList = cloudList()
     private val more = LoadMoreButton()
+    private val repoOnly = JBCheckBox(KiloBundle.message("history.cloud.repo.only"), true).apply {
+        isVisible = false
+        border = JBUI.Borders.emptyLeft(UiStyle.Gap.lg())
+        addActionListener { controller.applyRepoOnly(isSelected) }
+    }
     private val localPanel = panel(localSearch, localList)
     private val cloudPanel = panel(cloudSearch, cloudList, more)
     private val cards = CardLayout()
@@ -96,6 +102,9 @@ class HistoryPanel(
         bind(localList, controller.local)
         bind(cloudList, controller.cloud)
         bindTheme()
+        controller.onRepoOnlyChanged = { value ->
+            repoOnly.isSelected = value
+        }
         addHierarchyListener { e ->
             if (e.changeFlags and HierarchyEvent.SHOWING_CHANGED.toLong() == 0L) return@addHierarchyListener
             if (isShowing && stale) {
@@ -186,7 +195,13 @@ class HistoryPanel(
 
     private fun panel(search: SearchTextField, list: JList<out HistoryItem>, footer: JComponent? = null): JComponent {
         return BorderLayoutPanel().apply {
-            add(search, BorderLayout.NORTH)
+            val north = BorderLayoutPanel().apply {
+                add(search, BorderLayout.CENTER)
+                if (list === cloudList) {
+                    add(repoOnly, BorderLayout.SOUTH)
+                }
+            }
+            add(north, BorderLayout.NORTH)
             add(JBScrollPane(list).apply {
                 border = JBUI.Borders.empty()
                 viewportBorder = JBUI.Borders.empty()
@@ -265,6 +280,7 @@ class HistoryPanel(
         syncList(cloudList, controller.cloud)
         more.isEnabled = controller.cloud.cursor != null && !controller.cloud.loading
         more.isVisible = controller.cloud.cursor != null || controller.cloud.loading
+        repoOnly.isVisible = controller.gitUrl != null
         cards.show(body, if (loading()) CARD_LOAD else CARD_TABS)
         revalidate()
         repaint()
@@ -404,6 +420,14 @@ class HistoryPanel(
         return items.indices.mapNotNull { HistoryRenderer.section(items, it) }
     }
 
+    internal fun repoOnlyVisible() = repoOnly.isVisible
+
+    internal fun repoOnlySelected() = repoOnly.isSelected
+
+    internal fun clickRepoOnly() {
+        repoOnly.doClick()
+    }
+
     private fun activeList(): JBList<out HistoryItem> = if (tabs.selectedInfo === cloudInfo) cloudList else localList
 
     private fun activeModel(): HistoryModel<out HistoryItem> = if (tabs.selectedInfo === cloudInfo) controller.cloud else controller.local
@@ -423,7 +447,7 @@ class HistoryPanel(
     }
 
     override fun dispose() {
-        // no-op
+        controller.onRepoOnlyChanged = null
     }
 
     private class LoadMoreButton : JButton(KiloBundle.message("history.cloud.load.more")) {

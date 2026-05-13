@@ -546,7 +546,116 @@ class HistoryControllerTest : BasePlatformTestCase() {
         assertEquals(listOf("ses_2"), controller.local.visibleItems.map { it.id })
     }
 
+    fun `test cloud load passes git url when repo only enabled`() {
+        rpc.cloud += cloud("cloud_1", "Cloud One")
+        val url = "git@github.com:test/repo.git"
+        val controller = controllerWithGit(url)
+
+        controller.reloadCloud()
+        flush()
+
+        assertEquals(1, rpc.cloudCalls.size)
+        assertEquals(url, rpc.cloudCalls[0].gitUrl)
+        assertEquals(true, controller.repoOnly)
+        assertEquals(url, controller.gitUrl)
+    }
+
+    fun `test cloud load passes null when no git url`() {
+        rpc.cloud += cloud("cloud_1", "Cloud One")
+        val controller = controllerWithGit(null)
+
+        controller.reloadCloud()
+        flush()
+
+        assertEquals(1, rpc.cloudCalls.size)
+        assertNull(rpc.cloudCalls[0].gitUrl)
+        assertEquals(false, controller.repoOnly)
+        assertNull(controller.gitUrl)
+    }
+
+    fun `test cloud load passes null when repo only disabled`() {
+        rpc.cloud += cloud("cloud_1", "Cloud One")
+        val url = "git@github.com:test/repo.git"
+        val controller = controllerWithGit(url)
+
+        controller.reloadCloud()
+        flush()
+        assertEquals(url, rpc.cloudCalls[0].gitUrl)
+
+        controller.applyRepoOnly(false)
+        flush()
+
+        assertEquals(2, rpc.cloudCalls.size)
+        assertNull(rpc.cloudCalls[1].gitUrl)
+    }
+
+    fun `test load more passes git url when repo only enabled`() {
+        rpc.cloud += cloud("cloud_1", "Cloud One")
+        rpc.cloudCursor = "next_1"
+        val url = "git@github.com:test/repo.git"
+        val controller = controllerWithGit(url)
+
+        controller.reloadCloud()
+        flush()
+
+        rpc.cloud.clear()
+        rpc.cloud += cloud("cloud_2", "Cloud Two")
+        rpc.cloudCursor = null
+        controller.loadMoreCloud()
+        flush()
+
+        assertEquals(2, rpc.cloudCalls.size)
+        assertEquals(url, rpc.cloudCalls[1].gitUrl)
+    }
+
+    fun `test repo only checkbox visible only when git url exists`() {
+        val url = "git@github.com:test/repo.git"
+        val panel = HistoryPanel(parent, controllerWithGit(url))
+        flush()
+
+        panel.clickCloud()
+        flush()
+
+        assertTrue(panel.repoOnlyVisible())
+        assertTrue(panel.repoOnlySelected())
+    }
+
+    fun `test repo only checkbox hidden when no git url`() {
+        val panel = HistoryPanel(parent, controllerWithGit(null))
+        flush()
+
+        panel.clickCloud()
+        flush()
+
+        assertFalse(panel.repoOnlyVisible())
+    }
+
+    fun `test repo only checkbox toggle reloads cloud history`() {
+        rpc.cloud += cloud("cloud_1", "Cloud One")
+        val url = "git@github.com:test/repo.git"
+        val panel = HistoryPanel(parent, controllerWithGit(url))
+        flush()
+
+        panel.clickCloud()
+        flush()
+
+        val before = rpc.cloudCalls.size
+
+        panel.clickRepoOnly()
+        flush()
+
+        assertTrue(rpc.cloudCalls.size > before)
+        assertFalse(panel.repoOnlySelected())
+    }
+
     private fun controller() = HistoryController(sessions, workspace, scope)
+
+    private fun controllerWithGit(url: String?) = HistoryController(
+        sessions,
+        workspace,
+        scope,
+        gitUrlProvider = { url },
+    )
 
     private fun controller(opened: MutableList<String>) = HistoryController(sessions, workspace, scope, open = { open ->
         val id = when (open) {
