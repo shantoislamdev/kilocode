@@ -1,5 +1,4 @@
 import { test, expect, describe } from "bun:test"
-import type { Provider } from "../../../src/provider/provider"
 import { formatTable, formatMarkdown, handle, isTextModel } from "../../../src/kilocode/cli/cmd/roll-call"
 import { Provider } from "../../../src/provider/provider"
 
