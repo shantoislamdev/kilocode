@@ -455,13 +455,7 @@ export namespace KiloSessions {
     return result
   }
 
-  export async function bootstrap(sessionId: string, seen = new Set<string>()) {
-    if (seen.has(sessionId)) {
-      log.warn("session bootstrap skipped: parent cycle detected", { sessionId })
-      return
-    }
-    seen.add(sessionId)
-
+  export async function bootstrap(sessionId: string) {
     if (ingestDisabled) {
       log.info("session bootstrap skipped: ingest disabled", { sessionId })
       return
@@ -473,25 +467,11 @@ export namespace KiloSessions {
       return
     }
 
-    const session = await Session.get(SessionID.make(sessionId)).catch(() => undefined)
-    if (session?.parentID) {
-      const parent = await get(session.parentID).catch(() => undefined)
-      if (!parent) await bootstrap(session.parentID, seen)
-    }
-
     log.info("creating session", { sessionId })
-
-    const metadata = await meta(sessionId)
 
     const response = await client.fetch(`${client.url}/api/session`, {
       method: "POST",
-      body: JSON.stringify({
-        sessionId,
-        ...(session?.parentID ? { parentSessionId: session.parentID } : {}),
-        ...(session?.title ? { title: session.title } : {}),
-        platform: metadata.platform,
-        metadata,
-      }),
+      body: JSON.stringify({ sessionId }),
     })
 
     if (!response.ok) {
