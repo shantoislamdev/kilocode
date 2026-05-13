@@ -134,6 +134,7 @@ describe("handle", () => {
   test("does not print progress before markdown output", async () => {
     const logs: string[] = []
     const print = console.log
+    const code = process.exitCode
 
     console.log = (msg?: unknown) => {
       logs.push(String(msg))
@@ -152,9 +153,9 @@ describe("handle", () => {
       })
     } finally {
       console.log = print
-      process.exitCode = undefined
+      process.exitCode = code
     }
 
-    expect(logs).toEqual([])
+    expect(logs).toEqual([formatMarkdown([])])
   })
 })

@@ -180,6 +180,8 @@ export async function handle(args: ArgumentsCamelCase) {
       if (models.length === 0) {
         if (!args.quiet && !structured) UI.println(`${color(UI.Style.TEXT_WARNING)}No models to test after filtering.${color(UI.Style.TEXT_NORMAL)}`)
         if (json) console.log(JSON.stringify([], null, 2))
+        if (args.output === "md") console.log(formatMarkdown([]))
+        if (structured) return
         process.exitCode = 1
         return
       }
