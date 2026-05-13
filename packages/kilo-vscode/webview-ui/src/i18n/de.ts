@@ -1618,4 +1618,6 @@ export const dict = {
   "diffViewer.baseBranch.empty": "Keine passenden Branches",
   "diffViewer.baseBranch.loading": "Branches werden geladen…",
   "diffViewer.baseBranch.none": "—",
+  // plan_exit tool part display
+  "plan.exit.ready": "Plan ist bereit:",
 } satisfies Partial<Record<Keys, string>>

@@ -1582,4 +1582,6 @@ export const dict = {
   "diffViewer.baseBranch.empty": "一致するブランチがありません",
   "diffViewer.baseBranch.loading": "ブランチを読み込み中…",
   "diffViewer.baseBranch.none": "—",
+  // plan_exit tool part display
+  "plan.exit.ready": "プランの準備ができました:",
 }

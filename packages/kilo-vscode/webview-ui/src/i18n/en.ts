@@ -1592,6 +1592,4 @@ export const dict = {
 
   // plan_exit tool part display
   "plan.exit.ready": "Plan is ready:",
-  "plan.exit.readyNew": "New plan is ready:",
-  "plan.exit.readyUpdated": "Existing plan was updated:",
 }

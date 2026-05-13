@@ -1567,4 +1567,6 @@ export const dict = {
   "diffViewer.baseBranch.empty": "일치하는 브랜치 없음",
   "diffViewer.baseBranch.loading": "브랜치 로딩 중…",
   "diffViewer.baseBranch.none": "—",
+  // plan_exit tool part display
+  "plan.exit.ready": "계획이 준비되었습니다:",
 }
