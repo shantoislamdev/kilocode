@@ -54,11 +54,10 @@ export function fallbackSanitization(content: string): string {
       continue
     }
 
-    // if value contains a colon, convert to block scalar
+    // if value contains a colon, quote it as a scalar
     if (value.includes(":")) {
-      // kilocode_change start - preserve unquoted colon values as a block scalar
-      result.push(`${key}: |`)
-      result.push(`  ${value}`)
+      // kilocode_change start - preserve unquoted colon values as exact strings
+      result.push(`${key}: "${value.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`)
       // kilocode_change end
       continue
     }
