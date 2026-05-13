@@ -1,5 +1,6 @@
 export * as ConfigAgent from "./agent"
 
+import path from "path"
 import { Exit, Schema, SchemaGetter } from "effect"
 import { Bus } from "@/bus"
 import { zod } from "@/util/effect-zod"
