@@ -8,6 +8,7 @@ import { MessageV2 } from "../../src/session/message-v2"
 import { MessageID, PartID, type SessionID } from "../../src/session/schema"
 import { AppRuntime } from "../../src/effect/app-runtime"
 import { tmpdir } from "../fixture/fixture"
+import { KiloSession } from "../../src/kilocode/session"
 
 const projectRoot = path.join(__dirname, "../..")
 void Log.init({ print: false })
@@ -86,6 +87,26 @@ describe("session.created event", () => {
         expect(events.indexOf("created")).toBeLessThan(events.indexOf("updated"))
 
         await remove(info.id)
+      },
+    })
+  })
+})
+
+describe("session platform attribution", () => {
+  test("child sessions inherit the root platform override", async () => {
+    await Instance.provide({
+      directory: projectRoot,
+      fn: async () => {
+        const root = await create({ platform: "agent-manager" })
+        const child = await create({ parentID: root.id, title: "child" })
+
+        expect(KiloSession.getPlatformOverride(root.id)).toBe("agent-manager")
+        expect(KiloSession.getPlatformOverride(child.id)).toBe("agent-manager")
+        expect(KiloSession.resolvePlatform(child.id)).toBe("agent-manager")
+        expect(KiloSession.resolveRoot(child.id)).toBe(root.id)
+        expect(KiloSession.featureForPlatform(KiloSession.resolvePlatform(child.id))).toBe("agent-manager")
+
+        await remove(root.id)
       },
     })
   })

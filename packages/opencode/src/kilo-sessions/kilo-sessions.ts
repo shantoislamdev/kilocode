@@ -467,11 +467,25 @@ export namespace KiloSessions {
       return
     }
 
+    const session = await Session.get(SessionID.make(sessionId)).catch(() => undefined)
+    if (session?.parentID) {
+      const parent = await get(session.parentID).catch(() => undefined)
+      if (!parent) await bootstrap(session.parentID)
+    }
+
     log.info("creating session", { sessionId })
+
+    const metadata = await meta(sessionId)
 
     const response = await client.fetch(`${client.url}/api/session`, {
       method: "POST",
-      body: JSON.stringify({ sessionId }),
+      body: JSON.stringify({
+        sessionId,
+        ...(session?.parentID ? { parentSessionId: session.parentID } : {}),
+        ...(session?.title ? { title: session.title } : {}),
+        platform: metadata.platform,
+        metadata,
+      }),
     })
 
     if (!response.ok) {
@@ -691,7 +705,7 @@ export namespace KiloSessions {
   }
 
   async function meta(sessionId?: string) {
-    const override = sessionId ? KiloSession.getPlatformOverride(sessionId) : undefined
+    const override = sessionId ? KiloSession.resolvePlatform(sessionId) : undefined
     const platform = override || process.env["KILO_PLATFORM"] || "cli"
     const orgId = await getOrgId()
     const gitBranch = await Vcs.branch().catch(() => undefined)

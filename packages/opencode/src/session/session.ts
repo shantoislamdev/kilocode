@@ -489,6 +489,7 @@ export const layer: Layer.Layer<Service, never, Bus.Service | Storage.Service | 
       directory: string
       path?: string
       permission?: Permission.Ruleset
+      platform?: string
     }) {
       const ctx = yield* InstanceState.context
       const result: Info = {
@@ -508,6 +509,10 @@ export const layer: Layer.Layer<Service, never, Bus.Service | Storage.Service | 
         },
       }
       log.info("created", result)
+
+      if (input.platform) {
+        KiloSession.setPlatformOverride(result.id, input.platform)
+      }
 
       yield* sync.run(Event.Created, { sessionID: result.id, info: result })
 
@@ -652,13 +657,9 @@ export const layer: Layer.Layer<Service, never, Bus.Service | Storage.Service | 
         path: sessionPath(ctx.worktree, ctx.directory),
         title: input?.title,
         permission: input?.permission,
+        platform: input?.platform ?? (input?.parentID ? KiloSession.resolvePlatform(input.parentID) : undefined),
         workspaceID: input?.workspaceID ?? workspace, // kilocode_change - allow explicit override
       })
-      // kilocode_change start - store platform override for session ingest
-      if (input?.platform) {
-        KiloSession.setPlatformOverride(session.id, input.platform)
-      }
-      // kilocode_change end
       return session
     })
 

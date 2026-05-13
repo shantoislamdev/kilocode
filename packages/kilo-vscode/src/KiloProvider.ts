@@ -1336,7 +1336,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
 
     try {
       const workspaceDir = this.getContextDirectory()
-      const { data: session } = await this.client.session.create({ directory: workspaceDir }, { throwOnError: true })
+      const { data: session } = await this.client.session.create(
+        { directory: workspaceDir, platform: this.opts.platform },
+        { throwOnError: true },
+      )
       this.setCurrentSession(session)
       this.contextSessionID = session.id
       this.trackDirectory(session.id, workspaceDir)
@@ -2438,7 +2441,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     })
 
     if (!sessionID && !this.currentSession) {
-      const { data: session } = await this.client.session.create({ directory: dir }, { throwOnError: true })
+      const { data: session } = await this.client.session.create(
+        { directory: dir, platform: this.opts.platform },
+        { throwOnError: true },
+      )
       this.setCurrentSession(session)
       this.contextSessionID = session.id
       this.trackDirectory(session.id, dir)

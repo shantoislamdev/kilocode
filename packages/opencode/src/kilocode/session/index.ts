@@ -58,6 +58,60 @@ export namespace KiloSession {
     return overrides.get(id)
   }
 
+  function getParentID(id: string): string | undefined {
+    const row = Database.use((db) =>
+      db
+        .select({ parentID: SessionTable.parent_id })
+        .from(SessionTable)
+        .where(eq(SessionTable.id, SessionID.make(id)))
+        .get(),
+    )
+    return row?.parentID ?? undefined
+  }
+
+  export function resolvePlatform(id: string): string | undefined {
+    const override = overrides.get(id)
+    if (override) return override
+
+    let current: string | undefined = id
+    const seen = new Set<string>()
+    while (current && !seen.has(current)) {
+      seen.add(current)
+      const parentID = getParentID(current)
+      if (!parentID) break
+      const parentOverride = overrides.get(parentID)
+      if (parentOverride) return parentOverride
+      current = parentID
+    }
+
+    return undefined
+  }
+
+  export function resolveRoot(id: string): string {
+    let root = id
+    const seen = new Set<string>()
+    while (!seen.has(root)) {
+      seen.add(root)
+      const parentID = getParentID(root)
+      if (!parentID) return root
+      root = parentID
+    }
+    return root
+  }
+
+  export function featureForPlatform(platform: string | undefined): string | undefined {
+    switch (platform) {
+      case "agent-manager":
+        return "agent-manager"
+      case "vscode":
+        return "vscode-extension"
+      case "cli":
+        return "cli"
+      default:
+        return undefined
+    }
+  }
+
   export function clearPlatformOverride(id: string) {
     overrides.delete(id)
   }

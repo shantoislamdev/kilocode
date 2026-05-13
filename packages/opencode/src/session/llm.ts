@@ -22,9 +22,10 @@ import { Auth } from "@/auth"
 // kilocode_change start
 import { DEFAULT_HEADERS } from "@/kilocode/const"
 import { getKiloProjectId } from "@/kilocode/project-id"
-import { HEADER_PROJECTID, HEADER_MACHINEID, HEADER_TASKID } from "@kilocode/kilo-gateway"
+import { ENV_FEATURE, HEADER_FEATURE, HEADER_PROJECTID, HEADER_MACHINEID, HEADER_TASKID } from "@kilocode/kilo-gateway"
 import { Identity } from "@kilocode/kilo-telemetry"
 import { makeRuntime } from "@/effect/run-service"
+import { KiloSession } from "@/kilocode/session"
 // kilocode_change end
 import { Installation } from "@/installation"
 import { InstallationVersion } from "@opencode-ai/core/installation/version"
@@ -104,6 +105,9 @@ const live: Layer.Layer<
         ],
         { concurrency: "unbounded" },
       )
+      const rootSessionID = KiloSession.resolveRoot(input.sessionID)
+      const platform = KiloSession.resolvePlatform(rootSessionID) ?? process.env["KILO_PLATFORM"]
+      const feature = KiloSession.featureForPlatform(platform) ?? process.env[ENV_FEATURE]
 
       // TODO: move this to a proper hook
       const isOpenaiOauth = item.id === "openai" && info?.type === "oauth"
@@ -417,7 +421,8 @@ const live: Layer.Layer<
           ...(isKilo && input.agent.name ? { "x-kilocode-mode": input.agent.name.toLowerCase() } : {}),
           ...(isKilo && kiloProjectId ? { [HEADER_PROJECTID]: kiloProjectId } : {}),
           ...(isKilo && machineId ? { [HEADER_MACHINEID]: machineId } : {}),
-          ...(isKilo ? { [HEADER_TASKID]: input.sessionID } : {}),
+          ...(isKilo ? { [HEADER_TASKID]: rootSessionID } : {}),
+          ...(isKilo && feature ? { [HEADER_FEATURE]: feature } : {}),
           // kilocode_change end
           ...input.model.headers,
           ...headers,
