@@ -192,9 +192,21 @@ function bundledPath(): string {
 }
 
 function platformPaths(): string[] {
-  if (process.platform === "darwin") return ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg"]
-  if (process.platform === "win32") return ["C:\\ffmpeg\\bin\\ffmpeg.exe"]
-  return ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/snap/bin/ffmpeg"]
+  if (process.platform === "darwin") return ["/opt/homebrew/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/opt/local/bin/ffmpeg"]
+  if (process.platform === "win32") {
+    return [
+      "C:\\ffmpeg\\bin\\ffmpeg.exe",
+      process.env.ProgramFiles ? path.join(process.env.ProgramFiles, "ffmpeg", "bin", "ffmpeg.exe") : undefined,
+      process.env["ProgramFiles(x86)"]
+        ? path.join(process.env["ProgramFiles(x86)"], "ffmpeg", "bin", "ffmpeg.exe")
+        : undefined,
+      process.env.USERPROFILE
+        ? path.join(process.env.USERPROFILE, "scoop", "apps", "ffmpeg", "current", "bin", "ffmpeg.exe")
+        : undefined,
+      "C:\\ProgramData\\chocolatey\\bin\\ffmpeg.exe",
+    ].filter((item): item is string => !!item)
+  }
+  return ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/snap/bin/ffmpeg", "/home/linuxbrew/.linuxbrew/bin/ffmpeg"]
 }
 
 function inputArgSets(): string[][] {
