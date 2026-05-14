@@ -19,6 +19,8 @@ import { UnicodeGraphemesAddon } from "@xterm/addon-unicode-graphemes"
 import "@xterm/xterm/css/xterm.css"
 import { useVSCode } from "../../src/context/vscode"
 import { useLanguage } from "../../src/context/language"
+import { formatReviewCommentsMarkdown } from "../../src/utils/review-comment-markdown"
+import type { ReviewComment } from "../../src/types/messages"
 
 interface Props {
   terminalId: string
@@ -279,6 +281,14 @@ export const TerminalTab: Component<Props> = (props) => {
       pendingFrame = requestAnimationFrame(runRepaint)
     }
     const fontSub = vscode.onMessage((message) => {
+      if (message.type === "appendReviewCommentsToTerminal") {
+        if (message.targetTerminalId !== props.terminalId) return
+        const comments = (message as { comments?: ReviewComment[] }).comments
+        if (!Array.isArray(comments) || comments.length === 0) return
+        term.paste(`${formatReviewCommentsMarkdown(comments)}\n`)
+        return
+      }
+
       const size =
         message.type === "fontSizeChanged" ? message.fontSize : message.type === "ready" ? message.fontSize : undefined
       if (size === undefined) return
