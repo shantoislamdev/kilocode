@@ -50,12 +50,12 @@ jobs:
         id: version
         run: |
           tag="$GITHUB_REF_NAME"
-          if [[ "$tag" != jetbrains/* ]]; then
-            echo "Unsupported tag '$tag'. Expected jetbrains/<version>." >&2
+          if [[ "$tag" != jetbrains/v* ]]; then
+            echo "Unsupported tag '$tag'. Expected jetbrains/v<version>." >&2
             exit 1
           fi
 
-          version="${tag#jetbrains/}"
+          version="${tag#jetbrains/v}"
           if [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-rc\.[0-9]+$ ]]; then
             {
               echo "version=$version"
@@ -73,11 +73,11 @@ jobs:
               echo "marketplace_channel=default"
               echo "cli_channel=latest"
             } >> "$GITHUB_OUTPUT"
-            echo "Stable JetBrains Marketplace publishing is implemented but intentionally disabled; use an rc tag such as jetbrains/7.0.1-rc.1." >&2
+            echo "Stable JetBrains Marketplace publishing is implemented but intentionally disabled; use an rc tag such as jetbrains/v7.0.1-rc.1." >&2
             exit 1
           fi
 
-          echo "Unsupported JetBrains plugin version '$version'. Expected x.y.z-rc.n or x.y.z." >&2
+          echo "Unsupported JetBrains plugin version '$version'. Expected jetbrains/vx.y.z-rc.n or jetbrains/vx.y.z." >&2
           exit 1
 
       - name: Validate publishing secrets

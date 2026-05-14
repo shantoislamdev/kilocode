@@ -54,9 +54,9 @@ The built plugin archive is at `build/distributions/kilo.jetbrains-<version>.zip
 
 ## Publish release candidates
 
-JetBrains release-candidate builds publish from tags matching `jetbrains/x.y.z-rc.n`, for example `jetbrains/7.0.1-rc.1`. The git tag is the source of truth for the Marketplace plugin version; production Gradle builds ignore manually supplied version properties and fail if `HEAD` is not tagged with `jetbrains/<version>`. Local dev builds can use the placeholder `0.0.0-dev` version.
+JetBrains release-candidate builds publish from tags matching `jetbrains/vx.y.z-rc.n`, for example `jetbrains/v7.0.1-rc.1`. The git tag is the source of truth for the Marketplace plugin version; the `v` prefix is stripped before the version is set in the plugin metadata so the Marketplace version remains a plain semver (`x.y.z-rc.n`). Production Gradle builds fail if `HEAD` is not tagged with `jetbrains/v<version>`. Local dev builds use the placeholder `0.0.0-dev` version.
 
-The `publish-jetbrains` workflow publishes RC builds to the JetBrains Marketplace `eap` channel and uploads the same plugin ZIP to a GitHub prerelease for the tag. Stable tags like `jetbrains/x.y.z` are recognized by the workflow but intentionally rejected until default-channel publishing is enabled.
+The `publish-jetbrains` workflow publishes RC builds to the JetBrains Marketplace `eap` channel and uploads the same plugin ZIP to a GitHub prerelease for the tag. Stable tags like `jetbrains/vx.y.z` are recognized by the workflow but intentionally rejected until default-channel publishing is enabled.
 
 Testers can install or update EAP builds from this custom plugin repository:
 

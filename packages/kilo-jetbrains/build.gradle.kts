@@ -17,14 +17,14 @@ fun gitTag(): String? {
     val text = providers.exec {
         commandLine("git", "tag", "--points-at", "HEAD")
     }.standardOutput.asText.get()
-    return text.lineSequence().map { it.trim() }.firstOrNull { it.startsWith("jetbrains/") }
+    return text.lineSequence().map { it.trim() }.firstOrNull { it.startsWith("jetbrains/v") }
 }
 
 val release = providers.gradleProperty("production").map { it.toBoolean() }.orElse(false).get()
 val ver = if (release) checked(
-    gitTag()?.removePrefix("jetbrains/")
-        ?: error("Missing JetBrains plugin version. Publish builds must run from a jetbrains/<version> tag."),
-) else checked(gitTag()?.removePrefix("jetbrains/") ?: "0.0.0-dev")
+    gitTag()?.removePrefix("jetbrains/v")
+        ?: error("Missing JetBrains plugin version. Publish builds must run from a jetbrains/v<version> tag."),
+) else checked(gitTag()?.removePrefix("jetbrains/v") ?: "0.0.0-dev")
 
 val notes = providers.gradleProperty("kilo.changeNotes").orElse("Release candidate build.")
 val channel = providers.gradleProperty("kilo.channel").map { it.trim() }.orElse("default")
