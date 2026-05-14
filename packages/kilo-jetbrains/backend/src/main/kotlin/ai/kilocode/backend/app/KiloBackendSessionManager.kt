@@ -265,7 +265,7 @@ class KiloBackendSessionManager(
         time = SessionTimeDto(
             created = s.time.created.toDouble(),
             updated = s.time.updated.toDouble(),
-            archived = s.time.archived?.toDouble(),
+            archived = s.time.archived,
         ),
         summary = s.summary?.let {
             SessionSummaryDto(
@@ -286,7 +286,7 @@ class KiloBackendSessionManager(
         time = SessionTimeDto(
             created = s.time.created.toDouble(),
             updated = s.time.updated.toDouble(),
-            archived = s.time.archived?.toDouble(),
+            archived = s.time.archived,
         ),
         summary = s.summary?.let {
             SessionSummaryDto(
