@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import { getSpeechToTextModel } from "../shared/speech-to-text-models"
+import { getSpeechToTextModel } from "./models"
 
 export function buildSpeechToTextSettingsMessage() {
   const config = vscode.workspace.getConfiguration("kilo-code.new.speechToText")

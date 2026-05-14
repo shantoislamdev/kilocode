@@ -1,5 +1,5 @@
 import * as vscode from "vscode"
-import { buildSpeechToTextSettingsMessage } from "./speech-to-text-settings"
+import { buildSpeechToTextSettingsMessage } from "./settings"
 import type { KiloProvider } from "../KiloProvider"
 
 export function watchSpeechToTextConfig(provider: KiloProvider): vscode.Disposable {

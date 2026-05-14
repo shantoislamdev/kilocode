@@ -1,7 +1,7 @@
 import { createSignal, onCleanup } from "solid-js"
 import { showToast } from "@kilocode/kilo-ui/toast"
 import type { Accessor } from "solid-js"
-import type { ExtensionMessage, WebviewMessage } from "../types/messages"
+import type { ExtensionMessage, WebviewMessage } from "../../types/messages"
 
 type VSCode = {
   postMessage: (message: WebviewMessage) => void

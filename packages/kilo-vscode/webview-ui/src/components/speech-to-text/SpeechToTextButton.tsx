@@ -2,7 +2,7 @@ import { Button } from "@kilocode/kilo-ui/button"
 import { Tooltip } from "@kilocode/kilo-ui/tooltip"
 import { Spinner } from "@kilocode/kilo-ui/spinner"
 import type { Component } from "solid-js"
-import type { SpeechToText } from "../../hooks/useSpeechToText"
+import type { SpeechToText } from "./useSpeechToText"
 
 type Props = {
   speech: SpeechToText

@@ -1,4 +1,4 @@
-import { SPEECH_TO_TEXT_MODELS } from "../../../../src/shared/speech-to-text-models"
+import { SPEECH_TO_TEXT_MODELS } from "../../../../src/speech-to-text/models"
 
 export type SpeechToTextModelOption = {
   value: string

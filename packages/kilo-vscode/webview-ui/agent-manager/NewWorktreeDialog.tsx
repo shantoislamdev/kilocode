@@ -18,7 +18,7 @@ import { useProvider } from "../src/context/provider"
 import { useConfig } from "../src/context/config"
 import { ModelSelectorBase } from "../src/components/shared/ModelSelector"
 import { ModeSwitcherBase } from "../src/components/shared/ModeSwitcher"
-import { SpeechToTextButton } from "../src/components/shared/SpeechToTextButton"
+import { SpeechToTextButton } from "../src/components/speech-to-text/SpeechToTextButton"
 import { ThinkingSelectorBase } from "../src/components/shared/ThinkingSelector"
 import {
   MultiModelSelector,
@@ -29,11 +29,12 @@ import {
 } from "./MultiModelSelector"
 import { useLanguage } from "../src/context/language"
 import { useImageAttachments, type ImageAttachment } from "../src/hooks/useImageAttachments"
-import { useSpeechToText } from "../src/hooks/useSpeechToText"
+import { useSpeechToText } from "../src/components/speech-to-text/useSpeechToText"
 import { convertToMentionPath } from "../src/utils/path-mentions"
+import { insertSpacedText } from "../src/components/chat/prompt-input-utils"
 import { BranchSelect, BranchSelectPopover } from "../src/components/shared/BranchSelect"
 import { KILO_PROVIDER_ID } from "../../src/shared/provider-model"
-import { getSpeechToTextModel } from "../../src/shared/speech-to-text-models"
+import { getSpeechToTextModel } from "../../src/speech-to-text/models"
 
 type VersionCount = 1 | 2 | 3 | 4
 const VERSION_OPTIONS: VersionCount[] = [1, 2, 3, 4]
@@ -269,19 +270,13 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
     const current = prompt()
     const start = ref?.selectionStart ?? current.length
     const end = ref?.selectionEnd ?? start
-    const before = current.slice(0, start)
-    const after = current.slice(end)
-    const prefix = before && !/\s$/.test(before) ? " " : ""
-    const suffix = after && !/^\s/.test(after) ? " " : ""
-    const inserted = `${prefix}${value}${suffix}`
-    const next = `${before}${inserted}${after}`
-    const pos = before.length + inserted.length
+    const result = insertSpacedText(current, value, start, end)
 
-    setPrompt(next)
-    persistPrompt(next)
+    setPrompt(result.text)
+    persistPrompt(result.text)
     if (!ref) return
-    ref.value = next
-    ref.setSelectionRange(pos, pos)
+    ref.value = result.text
+    ref.setSelectionRange(result.pos, result.pos)
     ref.focus()
     adjustHeight()
   }

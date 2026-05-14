@@ -22,7 +22,7 @@ import { useConfig } from "../../context/config"
 import { useProvider } from "../../context/provider"
 import { ModelSelector } from "../shared/ModelSelector"
 import { ModeSwitcher } from "../shared/ModeSwitcher"
-import { SpeechToTextButton } from "../shared/SpeechToTextButton"
+import { SpeechToTextButton } from "../speech-to-text/SpeechToTextButton"
 import { ThinkingSelector } from "../shared/ThinkingSelector"
 import { useFileMention } from "../../hooks/useFileMention"
 import { useTerminalContext } from "../../hooks/useTerminalContext"
@@ -31,17 +31,17 @@ import { hasTerminalMention } from "../../hooks/terminal-context-utils"
 import { hasGitChangesMention } from "../../hooks/git-changes-context-utils"
 import { useSlashCommand } from "../../hooks/useSlashCommand"
 import { useGhostText } from "../../hooks/useGhostText"
-import { useSpeechToText } from "../../hooks/useSpeechToText"
+import { useSpeechToText } from "../speech-to-text/useSpeechToText"
 import { useImageAttachments, type ImageAttachment } from "../../hooks/useImageAttachments"
 import { convertToMentionPath } from "../../utils/path-mentions"
 import { usePromptHistory } from "../../hooks/usePromptHistory"
 import { WandSparkles } from "@kilocode/kilo-ui/lucide"
-import { fileName, dirName, buildHighlightSegments, atEnd, isPromptBusy } from "./prompt-input-utils"
+import { fileName, dirName, buildHighlightSegments, atEnd, insertSpacedText, isPromptBusy } from "./prompt-input-utils"
 import type { ReviewComment, TextPart } from "../../types/messages"
 import { formatReviewCommentsMarkdown } from "../../utils/review-comment-markdown"
 import { pendingDraftKey, scopeDraftKey, sessionDraftKey } from "../../utils/prompt-drafts"
 import { KILO_PROVIDER_ID } from "../../../../src/shared/provider-model"
-import { getSpeechToTextModel } from "../../../../src/shared/speech-to-text-models"
+import { getSpeechToTextModel } from "../../../../src/speech-to-text/models"
 
 // Per-session input text storage (module-level so it survives remounts)
 const drafts = new Map<string, string>()
@@ -664,22 +664,16 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
     const current = text()
     const start = ref?.selectionStart ?? current.length
     const end = ref?.selectionEnd ?? start
-    const before = current.slice(0, start)
-    const after = current.slice(end)
-    const prefix = before && !/\s$/.test(before) ? " " : ""
-    const suffix = after && !/^\s/.test(after) ? " " : ""
-    const inserted = `${prefix}${value}${suffix}`
-    const next = `${before}${inserted}${after}`
-    const pos = before.length + inserted.length
+    const result = insertSpacedText(current, value, start, end)
 
-    setText(next)
+    setText(result.text)
     if (!ref) return
-    ref.value = next
-    ref.setSelectionRange(pos, pos)
+    ref.value = result.text
+    ref.setSelectionRange(result.pos, result.pos)
     ref.focus()
     adjustHeight()
     syncHighlightScroll()
-    ghost.scheduleRequest(next, ref)
+    ghost.scheduleRequest(result.text, ref)
   }
 
   const startSpeech = () => {

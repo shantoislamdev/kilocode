@@ -1,6 +1,6 @@
 import { getErrorMessage } from "../kilo-provider-utils"
-import { transcribeSpeech } from "./speech-to-text"
-import { cancelSpeechCapture, startSpeechCapture, stopSpeechCapture } from "./speech-to-text-capture"
+import { transcribeSpeech } from "./transcribe"
+import { cancelSpeechCapture, startSpeechCapture, stopSpeechCapture } from "./capture"
 import type { KiloConnectionService } from "../services/cli-backend/connection-service"
 
 type Msg = {

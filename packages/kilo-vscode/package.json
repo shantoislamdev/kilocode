@@ -784,22 +784,6 @@
         "kilo-code.new.speechToText.model": {
           "type": "string",
           "default": "openai/gpt-4o-mini-transcribe",
-          "enum": [
-            "openai/gpt-4o-mini-transcribe",
-            "openai/gpt-4o-transcribe",
-            "openai/whisper-1",
-            "openai/whisper-large-v3-turbo",
-            "openai/whisper-large-v3",
-            "google/chirp-3"
-          ],
-          "enumDescriptions": [
-            "OpenAI GPT-4o Mini Transcribe",
-            "OpenAI GPT-4o Transcribe",
-            "OpenAI Whisper 1",
-            "Groq-hosted Whisper Large V3 Turbo",
-            "Groq-hosted Whisper Large V3",
-            "Google Chirp 3"
-          ],
           "description": "Model to use for experimental speech-to-text voice input. Requires Kilo Gateway."
         },
         "kilo-code.new.claudeCodeCompat": {

@@ -71,8 +71,8 @@ import {
   validAutocompleteSetting,
   watchAutocompleteConfig,
 } from "./services/autocomplete/settings"
-import { validSpeechToTextSetting } from "./services/speech-to-text-settings"
-import { sendSpeechToTextSettings, watchSpeechToTextConfig } from "./services/speech-to-text-config"
+import { validSpeechToTextSetting } from "./speech-to-text/settings"
+import { sendSpeechToTextSettings, watchSpeechToTextConfig } from "./speech-to-text/config"
 import { routeEarlyMessage } from "./kilo-provider/early-message"
 import * as ModelState from "./kilo-provider/model-state"
 import { handleForkSession } from "./kilo-provider/fork-session"

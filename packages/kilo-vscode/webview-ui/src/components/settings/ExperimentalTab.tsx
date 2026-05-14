@@ -11,8 +11,8 @@ import { useVSCode } from "../../context/vscode"
 import type { ExtensionMessage } from "../../types/messages"
 import SettingsRow from "./SettingsRow"
 import { KILO_PROVIDER_ID } from "../../../../src/shared/provider-model"
-import { DEFAULT_SPEECH_TO_TEXT_MODEL, getSpeechToTextModel } from "../../../../src/shared/speech-to-text-models"
-import { SPEECH_TO_TEXT_MODEL_OPTIONS } from "./speech-to-text-model-selector"
+import { DEFAULT_SPEECH_TO_TEXT_MODEL, getSpeechToTextModel } from "../../../../src/speech-to-text/models"
+import { SPEECH_TO_TEXT_MODEL_OPTIONS } from "../speech-to-text/model-selector"
 
 interface ShareOption {
   value: string

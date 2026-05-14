@@ -36,24 +36,8 @@ export async function startSpeechCapture(input: Input): Promise<void> {
 
   const bin = await findFFmpeg()
   const file = path.join(os.tmpdir(), `kilo-stt-${process.pid}-${Date.now()}.wav`)
-  const args = ["-y", ...inputArgs(), "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", "-f", "wav", file]
-  const proc = spawn(bin, args, { stdio: ["pipe", "ignore", "pipe"] })
-  const state: Recording = { ...input, file, proc, stderr: [], stopped: false }
+  const state = await startWithArgs(bin, file, input, inputArgSets())
   active = state
-
-  proc.stderr?.on("data", (data: Buffer) => {
-    if (state.stderr.length < 20) state.stderr.push(data.toString())
-  })
-  proc.on("exit", (code, signal) => {
-    state.exit = { code, signal }
-    if (active === state && !state.stopped) active = undefined
-  })
-  proc.on("error", (err) => {
-    state.stderr.push(err.message)
-    if (active === state && !state.stopped) active = undefined
-  })
-
-  await waitForStart(state)
 }
 
 export async function stopSpeechCapture(requestId: string): Promise<Audio> {
@@ -120,6 +104,37 @@ async function waitForStart(state: Recording): Promise<void> {
   })
 }
 
+async function startWithArgs(bin: string, file: string, input: Input, args: string[][]): Promise<Recording> {
+  const [first, ...rest] = args
+  if (!first) throw new Error(`Unsupported platform for speech input: ${process.platform}`)
+
+  const proc = spawn(bin, ["-y", ...first, "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", "-f", "wav", file], {
+    stdio: ["pipe", "ignore", "pipe"],
+  })
+  const state: Recording = { ...input, file, proc, stderr: [], stopped: false }
+  active = state
+
+  proc.stderr?.on("data", (data: Buffer) => {
+    if (state.stderr.length < 20) state.stderr.push(data.toString())
+  })
+  proc.on("exit", (code, signal) => {
+    state.exit = { code, signal }
+    if (active === state && !state.stopped) active = undefined
+  })
+  proc.on("error", (err) => {
+    state.stderr.push(err.message)
+    if (active === state && !state.stopped) active = undefined
+  })
+
+  try {
+    await waitForStart(state)
+    return state
+  } catch (err) {
+    if (rest.length === 0) throw err
+    return startWithArgs(bin, file, input, rest)
+  }
+}
+
 async function stopProcess(state: Recording): Promise<void> {
   if (state.proc.exitCode !== null || state.proc.signalCode) return
 
@@ -150,9 +165,13 @@ function requireActive(requestId: string): Recording {
 }
 
 async function findFFmpeg(): Promise<string> {
-  const paths = [process.env.KILO_FFMPEG_PATH, process.env.FFMPEG_PATH, bundledPath(), ...platformPaths(), "ffmpeg"].filter(
-    Boolean,
-  )
+  const paths = [
+    process.env.KILO_FFMPEG_PATH,
+    process.env.FFMPEG_PATH,
+    bundledPath(),
+    ...platformPaths(),
+    "ffmpeg",
+  ].filter(Boolean)
 
   for (const bin of paths) {
     if (!bin) continue
@@ -178,11 +197,15 @@ function platformPaths(): string[] {
   return ["/usr/bin/ffmpeg", "/usr/local/bin/ffmpeg", "/snap/bin/ffmpeg"]
 }
 
-function inputArgs(): string[] {
-  if (process.platform === "darwin") return ["-f", "avfoundation", "-i", ":default"]
-  if (process.platform === "linux") return ["-f", "pulse", "-i", "default"]
-  if (process.platform === "win32") return ["-f", "dshow", "-i", "audio=default"]
-  throw new Error(`Unsupported platform for speech input: ${process.platform}`)
+function inputArgSets(): string[][] {
+  if (process.platform === "darwin") return [["-f", "avfoundation", "-i", ":default"]]
+  if (process.platform === "linux")
+    return [
+      ["-f", "pulse", "-i", "default"],
+      ["-f", "alsa", "-i", "default"],
+    ]
+  if (process.platform === "win32") return [["-f", "dshow", "-i", "audio=default"]]
+  return []
 }
 
 function summary(state: Recording, fallback: string): string {

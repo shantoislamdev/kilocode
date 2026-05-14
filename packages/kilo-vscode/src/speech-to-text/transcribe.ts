@@ -1,6 +1,6 @@
 import type { KiloConnectionService } from "../services/cli-backend/connection-service"
 import { getErrorMessage } from "../kilo-provider-utils"
-import { getSpeechToTextModel } from "../shared/speech-to-text-models"
+import { getSpeechToTextModel } from "./models"
 
 const PATH = "/kilo/audio/transcriptions"
 

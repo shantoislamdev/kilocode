@@ -1,11 +1,7 @@
 import type { KiloConnectionService } from "./cli-backend/connection-service"
 import { routeAutocompleteMessage } from "./autocomplete/settings"
-import { buildSpeechToTextSettingsMessage } from "./speech-to-text-settings"
-import {
-  handleSpeechToTextCancel,
-  handleSpeechToTextStart,
-  handleSpeechToTextStop,
-} from "../kilo-provider/speech-to-text-handler"
+import { buildSpeechToTextSettingsMessage } from "../speech-to-text/settings"
+import { handleSpeechToTextCancel, handleSpeechToTextStart, handleSpeechToTextStop } from "../speech-to-text/handler"
 
 type Msg = {
   type: string
