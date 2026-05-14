@@ -253,13 +253,10 @@ export namespace KiloCompactionChunks {
         system: [],
         messages: [...input.data, { role: "user", content: [{ type: "text", text: input.text }] }],
         model: mdl,
-      }).pipe(
-        Effect.ensuring(
-          input.session.removeMessage({ sessionID: input.sessionID, messageID: worker.message.id }).pipe(Effect.ignore),
-        ),
-      )
+      })
       const parts = MessageV2.parts(worker.message.id)
       const output = text(worker.message, parts)
+      yield* input.session.removeMessage({ sessionID: input.sessionID, messageID: worker.message.id }).pipe(Effect.ignore)
       if (result !== "continue") return { result, output: undefined }
       if (!output) return { result: "stop" as const, output: undefined }
       return { result, output }
