@@ -245,18 +245,25 @@ export namespace KiloCompactionChunks {
           ),
         },
       }
-      const result = yield* worker.process({
-        user: input.user,
-        agent,
-        sessionID: input.sessionID,
-        tools: {},
-        system: [],
-        messages: [...input.data, { role: "user", content: [{ type: "text", text: input.text }] }],
-        model: mdl,
-      })
-      const parts = MessageV2.parts(worker.message.id)
-      const output = text(worker.message, parts)
-      yield* input.session.removeMessage({ sessionID: input.sessionID, messageID: worker.message.id }).pipe(Effect.ignore)
+      const out = yield* Effect.gen(function* () {
+        const result = yield* worker.process({
+          user: input.user,
+          agent,
+          sessionID: input.sessionID,
+          tools: {},
+          system: [],
+          messages: [...input.data, { role: "user", content: [{ type: "text", text: input.text }] }],
+          model: mdl,
+        })
+        const parts = MessageV2.parts(worker.message.id)
+        return { result, output: text(worker.message, parts) }
+      }).pipe(
+        Effect.ensuring(
+          input.session.removeMessage({ sessionID: input.sessionID, messageID: worker.message.id }).pipe(Effect.ignore),
+        ),
+      )
+      const result = out.result
+      const output = out.output
       if (result !== "continue") return { result, output: undefined }
       if (!output) return { result: "stop" as const, output: undefined }
       return { result, output }
