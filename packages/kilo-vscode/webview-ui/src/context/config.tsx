@@ -82,6 +82,15 @@ export const ConfigProvider: ParentComponent = (props) => {
       setSettings((prev) => ({ ...prev, ...patch, ...settingsDraft() }))
       return
     }
+    if (message.type === "speechToTextSettingsLoaded") {
+      const patch = {
+        "speechToText.enabled": message.settings.enabled,
+        "speechToText.model": message.settings.model,
+      }
+      setSavedSettings((prev) => ({ ...prev, ...patch }))
+      setSettings((prev) => ({ ...prev, ...patch, ...settingsDraft() }))
+      return
+    }
     if (message.type === "configLoaded") {
       // Skip if a save is in-flight — a stale configLoaded must not overwrite
       // the optimistically-updated state while the write is being confirmed.
@@ -146,11 +155,13 @@ export const ConfigProvider: ParentComponent = (props) => {
   // extensionDataReady will fire once initialization completes and we retry once.
   vscode.postMessage({ type: "requestConfig" })
   vscode.postMessage({ type: "requestAutocompleteSettings" })
+  vscode.postMessage({ type: "requestSpeechToTextSettings" })
 
   const fallback = setTimeout(() => {
     if (loading()) {
       vscode.postMessage({ type: "requestConfig" })
       vscode.postMessage({ type: "requestAutocompleteSettings" })
+      vscode.postMessage({ type: "requestSpeechToTextSettings" })
     }
   }, 3000)
 
@@ -161,6 +172,7 @@ export const ConfigProvider: ParentComponent = (props) => {
     if (loading()) {
       vscode.postMessage({ type: "requestConfig" })
       vscode.postMessage({ type: "requestAutocompleteSettings" })
+      vscode.postMessage({ type: "requestSpeechToTextSettings" })
     }
   })
 

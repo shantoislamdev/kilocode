@@ -5,9 +5,14 @@ import { TextField } from "@kilocode/kilo-ui/text-field"
 import { Card } from "@kilocode/kilo-ui/card"
 import { useConfig } from "../../context/config"
 import { useLanguage } from "../../context/language"
+import { useProvider } from "../../context/provider"
+import { useServer } from "../../context/server"
 import { useVSCode } from "../../context/vscode"
 import type { ExtensionMessage } from "../../types/messages"
 import SettingsRow from "./SettingsRow"
+import { KILO_PROVIDER_ID } from "../../../../src/shared/provider-model"
+import { DEFAULT_SPEECH_TO_TEXT_MODEL, getSpeechToTextModel } from "../../../../src/shared/speech-to-text-models"
+import { SPEECH_TO_TEXT_MODEL_OPTIONS } from "./speech-to-text-model-selector"
 
 interface ShareOption {
   value: string
@@ -21,8 +26,10 @@ const SHARE_OPTIONS: ShareOption[] = [
 ]
 
 const ExperimentalTab: Component = () => {
-  const { config, updateConfig } = useConfig()
+  const { config, settings, updateConfig, updateSetting } = useConfig()
   const language = useLanguage()
+  const provider = useProvider()
+  const server = useServer()
   const vscode = useVSCode()
   const [active, setActive] = createSignal(false)
 
@@ -39,6 +46,13 @@ const ExperimentalTab: Component = () => {
   })
 
   const experimental = createMemo(() => config().experimental ?? {})
+  const kiloReady = createMemo(
+    () =>
+      provider.connected().includes(KILO_PROVIDER_ID) &&
+      !config().disabled_providers?.includes(KILO_PROVIDER_ID) &&
+      !!server.profileData(),
+  )
+  const speechModel = createMemo(() => getSpeechToTextModel(String(settings()["speechToText.model"] ?? "")).id)
 
   const updateExperimental = (key: string, value: unknown) => {
     updateConfig({
@@ -191,6 +205,42 @@ const ExperimentalTab: Component = () => {
           >
             {language.t("settings.experimental.agentManagerTool.title")}
           </Switch>
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.experimental.speechToText.title")}
+          description={
+            kiloReady()
+              ? language.t("settings.experimental.speechToText.description")
+              : language.t("settings.experimental.speechToText.disabledDescription")
+          }
+        >
+          <Switch
+            checked={Boolean(settings()["speechToText.enabled"] ?? false)}
+            onChange={(checked) => updateSetting("speechToText.enabled", checked)}
+            disabled={!kiloReady()}
+            hideLabel
+          >
+            {language.t("settings.experimental.speechToText.title")}
+          </Switch>
+        </SettingsRow>
+
+        <SettingsRow
+          title={language.t("settings.experimental.speechToTextModel.title")}
+          description={language.t("settings.experimental.speechToTextModel.description")}
+        >
+          <Select
+            options={SPEECH_TO_TEXT_MODEL_OPTIONS}
+            current={SPEECH_TO_TEXT_MODEL_OPTIONS.find((item) => item.value === speechModel())}
+            value={(item) => item.value}
+            label={(item) => `${item.label} (${item.provider})`}
+            onSelect={(item) => updateSetting("speechToText.model", item?.value ?? DEFAULT_SPEECH_TO_TEXT_MODEL.id)}
+            variant="secondary"
+            size="small"
+            triggerVariant="settings"
+            disabled={!kiloReady()}
+            placeholder={DEFAULT_SPEECH_TO_TEXT_MODEL.label}
+          />
         </SettingsRow>
 
         <SettingsRow

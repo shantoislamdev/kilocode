@@ -132,6 +132,11 @@ export function createKiloRoutes(deps: KiloRoutesDeps) {
     cost: z.number().optional(),
   })
 
+  const TranscriptionResponse = z.object({
+    text: z.string(),
+    usage: z.unknown().optional(),
+  })
+
   return new Hono()
     .get(
       "/profile",
@@ -386,6 +391,68 @@ export function createKiloRoutes(deps: KiloRoutesDeps) {
             "Content-Type": "text/event-stream",
             "Cache-Control": "no-cache",
             Connection: "keep-alive",
+          },
+        })
+      },
+    )
+    .post(
+      "/audio/transcriptions",
+      describeRoute({
+        summary: "Speech to text transcription",
+        description: "Proxy an audio transcription request to the Kilo Gateway",
+        operationId: "kilo.audio.transcriptions",
+        responses: {
+          200: {
+            description: "Transcription response",
+            content: {
+              "application/json": {
+                schema: resolver(TranscriptionResponse),
+              },
+            },
+          },
+          ...errors(400, 401),
+        },
+      }),
+      validator(
+        "json",
+        z.object({
+          model: z.string(),
+          input_audio: z.object({
+            data: z.string(),
+            format: z.string(),
+          }),
+          language: z.string().optional(),
+          temperature: z.number().optional(),
+        }),
+      ),
+      async (c: any) => {
+        const auth = await Auth.get("kilo")
+        if (!auth) return c.json({ error: "Not authenticated with Kilo Gateway" }, 401)
+
+        const token = auth.type === "api" ? auth.key : auth.type === "oauth" ? auth.access : undefined
+        if (!token) return c.json({ error: "No valid token found" }, 401)
+
+        const organizationId = auth.type === "oauth" ? auth.accountId : undefined
+        const body = c.req.valid("json")
+        const headers = {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+          ...buildKiloHeaders(undefined, { kilocodeOrganizationId: organizationId }),
+          [HEADER_FEATURE]: "vscode-extension",
+        }
+
+        const response = await fetch(`${KILO_API_BASE}/api/gateway/v1/audio/transcriptions`, {
+          method: "POST",
+          headers,
+          signal: c.req.raw.signal,
+          body: JSON.stringify(body),
+        })
+
+        const text = await response.text()
+        return new Response(text, {
+          status: response.status,
+          headers: {
+            "Content-Type": response.headers.get("Content-Type") ?? "application/json",
           },
         })
       },

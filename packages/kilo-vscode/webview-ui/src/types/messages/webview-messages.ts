@@ -315,9 +315,30 @@ export interface RequestAutocompleteSettingsMessage {
   type: "requestAutocompleteSettings"
 }
 
+export interface RequestSpeechToTextSettingsMessage {
+  type: "requestSpeechToTextSettings"
+}
+
 export interface RequestChatCompletionMessage {
   type: "requestChatCompletion"
   text: string
+  requestId: string
+}
+
+export interface SpeechToTextStartMessage {
+  type: "speechToTextStart"
+  requestId: string
+  model: string
+  language?: string
+}
+
+export interface SpeechToTextStopMessage {
+  type: "speechToTextStop"
+  requestId: string
+}
+
+export interface SpeechToTextCancelMessage {
+  type: "speechToTextCancel"
   requestId: string
 }
 
@@ -1064,7 +1085,11 @@ export type WebviewMessage =
   | DeleteSessionRequest
   | RenameSessionRequest
   | RequestAutocompleteSettingsMessage
+  | RequestSpeechToTextSettingsMessage
   | RequestChatCompletionMessage
+  | SpeechToTextStartMessage
+  | SpeechToTextStopMessage
+  | SpeechToTextCancelMessage
   | RequestFileSearchMessage
   | RequestTerminalContextMessage
   | RequestGitChangesContextMessage

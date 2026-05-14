@@ -15,8 +15,10 @@ import { useVSCode } from "../src/context/vscode"
 import { useServer } from "../src/context/server"
 import { useSession } from "../src/context/session"
 import { useProvider } from "../src/context/provider"
+import { useConfig } from "../src/context/config"
 import { ModelSelectorBase } from "../src/components/shared/ModelSelector"
 import { ModeSwitcherBase } from "../src/components/shared/ModeSwitcher"
+import { SpeechToTextButton } from "../src/components/shared/SpeechToTextButton"
 import { ThinkingSelectorBase } from "../src/components/shared/ThinkingSelector"
 import {
   MultiModelSelector,
@@ -27,8 +29,11 @@ import {
 } from "./MultiModelSelector"
 import { useLanguage } from "../src/context/language"
 import { useImageAttachments, type ImageAttachment } from "../src/hooks/useImageAttachments"
+import { useSpeechToText } from "../src/hooks/useSpeechToText"
 import { convertToMentionPath } from "../src/utils/path-mentions"
 import { BranchSelect, BranchSelectPopover } from "../src/components/shared/BranchSelect"
+import { KILO_PROVIDER_ID } from "../../src/shared/provider-model"
+import { getSpeechToTextModel } from "../../src/shared/speech-to-text-models"
 
 type VersionCount = 1 | 2 | 3 | 4
 const VERSION_OPTIONS: VersionCount[] = [1, 2, 3, 4]
@@ -65,6 +70,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
   const server = useServer()
   const session = useSession()
   const provider = useProvider()
+  const { config, settings } = useConfig()
 
   const [tab, setTab] = createSignal<DialogTab>("new")
 
@@ -91,6 +97,13 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
   const [compareOpen, setCompareOpen] = createSignal(false)
   const [highlightedIndex, setHighlightedIndex] = createSignal(0)
   const [variant, setVariant] = createSignal<string | undefined>(session.currentVariant())
+  const speech = useSpeechToText(vscode, server, { t })
+  const canUseSpeech = () =>
+    settings()["speechToText.enabled"] === true &&
+    provider.connected().includes(KILO_PROVIDER_ID) &&
+    !config().disabled_providers?.includes(KILO_PROVIDER_ID) &&
+    !!server.profileData()
+  const speechModel = () => getSpeechToTextModel(String(settings()["speechToText.model"] ?? "")).id
 
   // Variant list for the currently selected model
   const variants = createMemo(() => {
@@ -196,6 +209,7 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
 
   const canSubmit = () => {
     if (starting()) return false
+    if (speech.active()) return false
     if (compareMode() && totalAllocations(modelAllocations()) === 0) return false
     return true
   }
@@ -248,6 +262,32 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
     if (!textareaRef) return
     textareaRef.style.height = "auto"
     textareaRef.style.height = `${Math.min(textareaRef.scrollHeight, 200)}px`
+  }
+
+  const insertSpeechText = (value: string) => {
+    const ref = textareaRef
+    const current = prompt()
+    const start = ref?.selectionStart ?? current.length
+    const end = ref?.selectionEnd ?? start
+    const before = current.slice(0, start)
+    const after = current.slice(end)
+    const prefix = before && !/\s$/.test(before) ? " " : ""
+    const suffix = after && !/^\s/.test(after) ? " " : ""
+    const inserted = `${prefix}${value}${suffix}`
+    const next = `${before}${inserted}${after}`
+    const pos = before.length + inserted.length
+
+    setPrompt(next)
+    persistPrompt(next)
+    if (!ref) return
+    ref.value = next
+    ref.setSelectionRange(pos, pos)
+    ref.focus()
+    adjustHeight()
+  }
+
+  const startSpeech = () => {
+    speech.start({ model: speechModel(), insert: insertSpeechText })
   }
 
   // --- Import tab state ---
@@ -421,7 +461,11 @@ export const NewWorktreeDialog: Component<{ onClose: () => void; defaultBaseBran
                     </Show>
                   </Show>
                 </div>
-                <div class="prompt-input-hint-actions" />
+                <div class="prompt-input-hint-actions">
+                  <Show when={canUseSpeech()}>
+                    <SpeechToTextButton speech={speech} disabled={starting()} start={startSpeech} label={t} />
+                  </Show>
+                </div>
               </div>
             </div>
 
