@@ -339,18 +339,15 @@ export function createKiloRoutes(deps: KiloRoutesDeps) {
         }),
       ),
       async (c: any) => {
-        const auth = await Auth.get("kilo")
+        const proxy = await getProxyAuth()
 
-        if (!auth) {
+        if (!proxy.auth) {
           return c.json({ error: "Not authenticated with Kilo Gateway" }, 401)
         }
 
-        const token = auth.type === "api" ? auth.key : auth.type === "oauth" ? auth.access : undefined
-        if (!token) {
+        if (!proxy.token) {
           return c.json({ error: "No valid token found" }, 401)
         }
-
-        const organizationId = auth.type === "oauth" ? auth.accountId : undefined
 
         const { prefix, suffix, model, maxTokens, temperature } = c.req.valid("json")
         const fimModel = model ?? "mistralai/codestral-2501"
@@ -362,8 +359,8 @@ export function createKiloRoutes(deps: KiloRoutesDeps) {
 
         const headers = {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-          ...buildKiloHeaders(undefined, { kilocodeOrganizationId: organizationId }),
+          Authorization: `Bearer ${proxy.token}`,
+          ...buildKiloHeaders(undefined, { kilocodeOrganizationId: proxy.organizationId }),
           [HEADER_FEATURE]: "autocomplete",
         }
 
@@ -436,16 +433,16 @@ export function createKiloRoutes(deps: KiloRoutesDeps) {
         }),
       ),
       async (c: any) => {
-        const auth = await getProxyAuth()
-        if (!auth.auth) return c.json({ error: "Not authenticated with Kilo Gateway" }, 401)
+        const proxy = await getProxyAuth()
+        if (!proxy.auth) return c.json({ error: "Not authenticated with Kilo Gateway" }, 401)
 
-        if (!auth.token) return c.json({ error: "No valid token found" }, 401)
+        if (!proxy.token) return c.json({ error: "No valid token found" }, 401)
 
         const body = c.req.valid("json")
         const headers = {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${auth.token}`,
-          ...buildKiloHeaders(undefined, { kilocodeOrganizationId: auth.organizationId }),
+          Authorization: `Bearer ${proxy.token}`,
+          ...buildKiloHeaders(undefined, { kilocodeOrganizationId: proxy.organizationId }),
           [HEADER_FEATURE]: "vscode-extension",
         }
 

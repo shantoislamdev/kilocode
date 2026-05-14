@@ -783,7 +783,6 @@
         },
         "kilo-code.new.speechToText.model": {
           "type": "string",
-          "default": "openai/gpt-4o-mini-transcribe",
           "description": "Model to use for experimental speech-to-text voice input. Requires Kilo Gateway."
         },
         "kilo-code.new.claudeCodeCompat": {

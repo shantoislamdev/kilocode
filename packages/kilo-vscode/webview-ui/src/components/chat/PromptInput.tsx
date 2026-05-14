@@ -23,6 +23,7 @@ import { useProvider } from "../../context/provider"
 import { ModelSelector } from "../shared/ModelSelector"
 import { ModeSwitcher } from "../shared/ModeSwitcher"
 import { SpeechToTextButton } from "../speech-to-text/SpeechToTextButton"
+import { canUseSpeechToText, selectedSpeechToTextModel } from "../speech-to-text/availability"
 import { ThinkingSelector } from "../shared/ThinkingSelector"
 import { useFileMention } from "../../hooks/useFileMention"
 import { useTerminalContext } from "../../hooks/useTerminalContext"
@@ -40,8 +41,6 @@ import { fileName, dirName, buildHighlightSegments, atEnd, insertSpacedText, isP
 import type { ReviewComment, TextPart } from "../../types/messages"
 import { formatReviewCommentsMarkdown } from "../../utils/review-comment-markdown"
 import { pendingDraftKey, scopeDraftKey, sessionDraftKey } from "../../utils/prompt-drafts"
-import { KILO_PROVIDER_ID } from "../../../../src/shared/provider-model"
-import { getSpeechToTextModel } from "../../../../src/speech-to-text/models"
 
 // Per-session input text storage (module-level so it survives remounts)
 const drafts = new Map<string, string>()
@@ -332,12 +331,8 @@ export const PromptInput: Component<PromptInputProps> = (props) => {
 
   const isBusy = () => isPromptBusy(session.status(), !!props.suggesting?.(), !!props.questioning?.())
   const isDisabled = () => !server.isConnected()
-  const canUseSpeech = () =>
-    settings()["speechToText.enabled"] === true &&
-    provider.connected().includes(KILO_PROVIDER_ID) &&
-    !config().disabled_providers?.includes(KILO_PROVIDER_ID) &&
-    !!server.profileData()
-  const speechModel = () => getSpeechToTextModel(String(settings()["speechToText.model"] ?? "")).id
+  const canUseSpeech = () => canUseSpeechToText(settings(), config(), provider.connected(), server.profileData())
+  const speechModel = () => selectedSpeechToTextModel(settings())
   const hasInput = () => text().trim().length > 0 || imageAttach.images().length > 0 || reviewComments().length > 0
   const canSend = () =>
     hasInput() && !isDisabled() && !speech.active() && !terminal.pending() && !git.pending() && !props.blocked?.()

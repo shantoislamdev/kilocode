@@ -10,8 +10,8 @@ import { useServer } from "../../context/server"
 import { useVSCode } from "../../context/vscode"
 import type { ExtensionMessage } from "../../types/messages"
 import SettingsRow from "./SettingsRow"
-import { KILO_PROVIDER_ID } from "../../../../src/shared/provider-model"
-import { DEFAULT_SPEECH_TO_TEXT_MODEL, getSpeechToTextModel } from "../../../../src/speech-to-text/models"
+import { DEFAULT_SPEECH_TO_TEXT_MODEL } from "../../../../src/speech-to-text/models"
+import { hasSpeechToTextAccess, selectedSpeechToTextModel } from "../speech-to-text/availability"
 import { SPEECH_TO_TEXT_MODEL_OPTIONS } from "../speech-to-text/model-selector"
 
 interface ShareOption {
@@ -46,13 +46,8 @@ const ExperimentalTab: Component = () => {
   })
 
   const experimental = createMemo(() => config().experimental ?? {})
-  const kiloReady = createMemo(
-    () =>
-      provider.connected().includes(KILO_PROVIDER_ID) &&
-      !config().disabled_providers?.includes(KILO_PROVIDER_ID) &&
-      !!server.profileData(),
-  )
-  const speechModel = createMemo(() => getSpeechToTextModel(String(settings()["speechToText.model"] ?? "")).id)
+  const kiloReady = createMemo(() => hasSpeechToTextAccess(config(), provider.connected(), server.profileData()))
+  const speechModel = createMemo(() => selectedSpeechToTextModel(settings()))
 
   const updateExperimental = (key: string, value: unknown) => {
     updateConfig({
