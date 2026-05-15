@@ -268,6 +268,7 @@ export const dict = {
   "prompt.attachment.remove": "Удалить вложение",
   "prompt.action.send": "Отправить",
   "prompt.action.send.blocked": "Сначала ответьте на ожидающий вопрос или отклоните его",
+  "prompt.action.send.recording": "Расшифровать и отправить",
   "prompt.action.stop": "Остановить",
   "prompt.action.enhance": "Улучшить промпт",
   "prompt.action.autoApprove.enable": "Включить автоодобрение",
