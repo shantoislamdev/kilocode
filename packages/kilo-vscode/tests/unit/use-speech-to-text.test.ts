@@ -1,7 +1,12 @@
-import { describe, expect, it } from "bun:test"
+import { describe, expect, it, mock } from "bun:test"
 import { createRoot } from "solid-js"
-import { useSpeechToText } from "../../webview-ui/src/components/speech-to-text/useSpeechToText"
 import type { ExtensionMessage, WebviewMessage } from "../../webview-ui/src/types/messages"
+
+mock.module("@kilocode/kilo-ui/toast", () => ({
+  showToast: () => undefined,
+}))
+
+const { useSpeechToText } = await import("../../webview-ui/src/components/speech-to-text/useSpeechToText")
 
 function setup() {
   const sent: WebviewMessage[] = []
