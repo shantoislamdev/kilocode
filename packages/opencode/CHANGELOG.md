@@ -1,5 +1,11 @@
 # @kilocode/cli
 
+## 7.3.0
+
+### Patch Changes
+
+- [#10279](https://github.com/Kilo-Org/kilocode/pull/10279) [`a3769d8`](https://github.com/Kilo-Org/kilocode/commit/a3769d83de3e1121c05877f5673dbcb5d3429c6b) - Keep Enhance Prompt focused on rewriting draft prompts instead of answering question-shaped drafts directly.
+
 ## 7.2.54
 
 ### Minor Changes
