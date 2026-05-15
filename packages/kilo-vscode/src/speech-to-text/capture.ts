@@ -160,9 +160,32 @@ async function startWithArgs(bin: string, file: string, input: Input, args: Args
 
 function pipeProcess(pipe: string[], bin: string, file: string): ChildProcess {
   const source = spawn("pw-record", pipe, { stdio: ["ignore", "pipe", "pipe"] })
-  const proc = spawn(bin, ["-y", "-f", "s16le", "-ar", "16000", "-ac", "1", "-i", "pipe:0", "-acodec", "pcm_s16le", "-ar", "16000", "-ac", "1", "-f", "wav", file], {
-    stdio: ["pipe", "ignore", "pipe"],
-  })
+  const proc = spawn(
+    bin,
+    [
+      "-y",
+      "-f",
+      "s16le",
+      "-ar",
+      "16000",
+      "-ac",
+      "1",
+      "-i",
+      "pipe:0",
+      "-acodec",
+      "pcm_s16le",
+      "-ar",
+      "16000",
+      "-ac",
+      "1",
+      "-f",
+      "wav",
+      file,
+    ],
+    {
+      stdio: ["pipe", "ignore", "pipe"],
+    },
+  )
 
   if (source.stdout && proc.stdin) source.stdout.pipe(proc.stdin)
   source.on("error", (err) => proc.emit("error", err))
