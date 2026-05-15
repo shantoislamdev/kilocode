@@ -271,6 +271,7 @@ export const dict = {
   "prompt.attachment.remove": "첨부 파일 제거",
   "prompt.action.send": "전송",
   "prompt.action.send.blocked": "먼저 대기 중인 질문에 답하거나 닫아주세요",
+  "prompt.action.send.recording": "텍스트 변환 및 전송",
   "prompt.action.stop": "중지",
   "prompt.action.enhance": "프롬프트 개선",
   "prompt.action.autoApprove.enable": "자동 승인 사용",

@@ -269,6 +269,7 @@ export const dict = {
   "prompt.attachment.remove": "Remover anexo",
   "prompt.action.send": "Enviar",
   "prompt.action.send.blocked": "Responda ou feche a pergunta pendente primeiro",
+  "prompt.action.send.recording": "Transcrever e enviar",
   "prompt.action.stop": "Parar",
   "prompt.action.enhance": "Melhorar prompt",
   "prompt.action.autoApprove.enable": "Ativar aprovação automática",

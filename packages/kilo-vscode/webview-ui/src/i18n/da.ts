@@ -269,6 +269,7 @@ export const dict = {
   "prompt.attachment.remove": "Fjern vedhæftning",
   "prompt.action.send": "Send",
   "prompt.action.send.blocked": "Besvar eller afvis det afventende spørgsmål først",
+  "prompt.action.send.recording": "Transskriber og send",
   "prompt.action.stop": "Stop",
   "prompt.action.enhance": "Forbedr prompt",
   "prompt.action.autoApprove.enable": "Aktiver automatisk godkendelse",
