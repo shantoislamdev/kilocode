@@ -1679,7 +1679,11 @@ export class AgentManagerProvider implements Disposable {
   }
 
   public getWorktreeDirectories(): string[] {
-    return this.getStateManager()?.getWorktrees().map((wt) => wt.path) ?? []
+    return (
+      this.getStateManager()
+        ?.getWorktrees()
+        .map((wt) => wt.path) ?? []
+    )
   }
 
   /**
