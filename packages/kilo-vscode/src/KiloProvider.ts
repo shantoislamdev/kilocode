@@ -450,10 +450,10 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview)
     this.setupWebviewMessageHandler(webviewView.webview)
 
-    vscode.commands.executeCommand("setContext", "kilo-code.new.sidebarVisible", webviewView.visible)
+    this.setSidebarVisible(webviewView.visible)
     this.visibilityDisposable?.dispose()
     this.visibilityDisposable = webviewView.onDidChangeVisibility(() => {
-      vscode.commands.executeCommand("setContext", "kilo-code.new.sidebarVisible", webviewView.visible)
+      this.setSidebarVisible(webviewView.visible)
       if (this.statsPoller) {
         this.statsPoller.setEnabled(webviewView.visible)
         this.statsPoller.setVisible(webviewView.visible)
@@ -461,6 +461,11 @@ export class KiloProvider implements vscode.WebviewViewProvider, TelemetryProper
       this.focusSession(webviewView.visible ? this.currentSession?.id : undefined)
     })
     this.initializeConnection()
+  }
+
+  private setSidebarVisible(visible: boolean): void {
+    vscode.commands.executeCommand("setContext", "kilo-code.new.sidebarVisible", visible)
+    this.opts.onSidebarVisibilityChange?.(visible)
   }
 
   /**

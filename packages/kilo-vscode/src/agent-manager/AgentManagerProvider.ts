@@ -71,6 +71,7 @@ export class AgentManagerProvider implements Disposable {
   private cachedLocalStats: { type: "agentManager.localStats"; stats: LocalStats } | undefined
   private unsubTool: (() => void) | undefined
   private closing: Promise<void> | undefined
+  private onVisibilityChange: ((visible: boolean) => void) | undefined
 
   /** Session ID most recently loaded via a `loadMessages` message from the webview.
    *  Updated synchronously — unlike the session provider's currentSession which depends on
@@ -186,6 +187,10 @@ export class AgentManagerProvider implements Disposable {
     )
   }
 
+  public onPanelVisibilityChange(cb: (visible: boolean) => void): void {
+    this.onVisibilityChange = cb
+  }
+
   /** Restore the Agent Manager panel from a previously serialized state.
    *  The caller (extension.ts / vscode-host.ts) wraps the raw panel before passing it. */
   public deserializePanel(ctx: PanelContext): void {
@@ -213,6 +218,7 @@ export class AgentManagerProvider implements Disposable {
     this.panel = ctx
 
     this.statsPoller.setVisible(ctx.visible)
+    this.onVisibilityChange?.(ctx.visible)
     ctx.onDidChangeVisibility((visible) => {
       this.statsPoller.setVisible(visible)
     })
@@ -234,6 +240,7 @@ export class AgentManagerProvider implements Disposable {
         this.prBridge.poller.stop()
         this.diffs.stop()
         this.panel = undefined
+        this.onVisibilityChange?.(false)
       }
       ctx.sessions.dispose()
     })
