@@ -2,6 +2,7 @@ import { type Component, createEffect, createMemo, onCleanup } from "solid-js"
 import type { AnnotationSide, DiffLineAnnotation, SelectedLineRange } from "@pierre/diffs"
 import { markdownCommentBlocks, type MarkdownRange } from "./markdown-comment-ranges"
 import type { AnnotationMeta } from "./review-annotations"
+import { annotationSelector, isAnnotationMutation } from "./markdown-annotation-mutation"
 
 type Insert = "after" | "list" | "table"
 
@@ -88,15 +89,7 @@ function matches(annotation: DiffLineAnnotation<AnnotationMeta>, anchor: Anchor,
   return true
 }
 
-const selector = ".am-markdown-inline-annotations, .am-markdown-list-annotation, .am-markdown-table-annotation"
-
-// Keep host insertion observable, only nested annotation UI updates are safe to ignore.
-export function isAnnotationMutation(mutation: Pick<MutationRecord, "target">): boolean {
-  const target = mutation.target
-  if (!("closest" in target)) return false
-  if (typeof target.closest !== "function") return false
-  return target.closest(selector) !== null
-}
+const selector = annotationSelector()
 
 function removeInserted(root: HTMLElement, layer: HTMLElement): void {
   layer.replaceChildren()
