@@ -165,7 +165,11 @@ function pipeProcess(pipe: string[], bin: string, file: string): ChildProcess {
   })
 
   if (source.stdout && proc.stdin) source.stdout.pipe(proc.stdin)
+  source.on("error", (err) => proc.emit("error", err))
   source.stderr?.on("data", (data: Buffer) => proc.stderr?.emit("data", data))
+  source.once("exit", () => {
+    if (proc.stdin?.writable) proc.stdin.end()
+  })
   proc.once("exit", () => {
     if (!source.killed) source.kill("SIGTERM")
   })
